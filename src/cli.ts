@@ -5,8 +5,14 @@ import path from "path";
 import { version } from "../package.json";
 import { createStructureFromString } from "./index";
 
+/**
+ * Supported CLI commands
+ */
 type Command = "create" | "preview" | "validate" | "help" | "version";
 
+/**
+ * Command descriptions for help text
+ */
 const commands: Record<Command, string> = {
   create: "Create file structure from a file",
   preview: "Preview file structure without creating files",
@@ -15,7 +21,20 @@ const commands: Record<Command, string> = {
   version: "Show version information",
 };
 
-function showHelp() {
+/**
+ * File/directory icons for preview mode
+ */
+const icons = {
+  file: "📄",
+  directory: "📁",
+  copy: "📄 (copy)",
+  move: "📄 (move)",
+} as const;
+
+/**
+ * Shows help information about available commands
+ */
+function showHelp(): void {
   console.log("File Architect CLI\n");
   console.log("Usage: file-architect <command> [options]\n");
   console.log("Commands:");
@@ -30,52 +49,79 @@ function showHelp() {
   );
 }
 
-function showVersion() {
+/**
+ * Shows version information
+ */
+function showVersion(): void {
   console.log(`file-architect-core version ${version}`);
 }
 
-async function previewStructure(input: string) {
+/**
+ * Calculates the indentation level of a line
+ *
+ * @param indentation The indentation string at the start of the line
+ * @returns The calculated indentation level
+ */
+function calculateIndentationLevel(indentation: string): number {
+  return indentation.includes("\t")
+    ? indentation.split("\t").length - 1
+    : Math.floor(indentation.length / 2);
+}
+
+/**
+ * Gets the operation type from a line
+ *
+ * @param line The line to analyze
+ * @returns The icon representing the operation type
+ */
+function getOperationType(line: string): string {
+  if (line.startsWith("[") && line.endsWith("]")) {
+    return icons.copy;
+  }
+  if (line.startsWith("(") && line.endsWith(")")) {
+    return icons.move;
+  }
+  return line.includes(".") ? icons.file : icons.directory;
+}
+
+/**
+ * Previews the structure without creating files
+ *
+ * @param input The structure definition string
+ */
+async function previewStructure(input: string): Promise<void> {
   const lines = input.split("\n").filter((line) => line.trim().length > 0);
   let currentIndentation = 0;
 
   for (const line of lines) {
     const indentation = line.match(/^\s+/)?.[0] || "";
-    const level = indentation.includes("\t")
-      ? indentation.split("\t").length - 1
-      : Math.floor(indentation.length / 2);
-
-    if (level > currentIndentation) {
-      currentIndentation = level;
-    } else if (level < currentIndentation) {
-      currentIndentation = level;
-    }
+    const level = calculateIndentationLevel(indentation);
+    currentIndentation = level;
 
     const prefix = "  ".repeat(level);
     const trimmedLine = line.trim();
+    const icon = getOperationType(trimmedLine);
 
-    if (trimmedLine.startsWith("[") && trimmedLine.endsWith("]")) {
-      console.log(`${prefix}📄 ${trimmedLine} (copy)`);
-    } else if (trimmedLine.startsWith("(") && trimmedLine.endsWith(")")) {
-      console.log(`${prefix}📄 ${trimmedLine} (move)`);
-    } else if (trimmedLine.includes(".")) {
-      console.log(`${prefix}📄 ${trimmedLine}`);
-    } else {
-      console.log(`${prefix}📁 ${trimmedLine}`);
-    }
+    console.log(`${prefix}${icon} ${trimmedLine}`);
   }
 }
 
-async function validateStructure(input: string) {
+/**
+ * Validates the structure syntax
+ *
+ * @param input The structure definition string
+ * @returns True if the structure is valid, false otherwise
+ */
+async function validateStructure(input: string): Promise<boolean> {
   try {
     const lines = input.split("\n").filter((line) => line.trim().length > 0);
     let currentIndentation = 0;
 
     for (const line of lines) {
       const indentation = line.match(/^\s+/)?.[0] || "";
-      const level = indentation.includes("\t")
-        ? indentation.split("\t").length - 1
-        : Math.floor(indentation.length / 2);
+      const level = calculateIndentationLevel(indentation);
 
+      // Check for invalid indentation jumps
       if (level > currentIndentation + 1) {
         throw new Error(`Invalid indentation at line: ${line}`);
       }
@@ -83,7 +129,7 @@ async function validateStructure(input: string) {
       currentIndentation = level;
       const trimmedLine = line.trim();
 
-      // Validate file/folder operations syntax
+      // Validate operation syntax
       if (trimmedLine.startsWith("[") && !trimmedLine.endsWith("]")) {
         throw new Error(`Invalid copy operation syntax at line: ${line}`);
       }
@@ -100,6 +146,12 @@ async function validateStructure(input: string) {
   }
 }
 
+/**
+ * Reads input from a file or stdin
+ *
+ * @param source The source to read from ('-' for stdin)
+ * @returns The input content as a string
+ */
 async function readInput(source: string): Promise<string> {
   if (source === "-") {
     const chunks = [];
@@ -108,20 +160,16 @@ async function readInput(source: string): Promise<string> {
     }
     return Buffer.concat(chunks).toString("utf8");
   }
-
-  try {
-    return await fs.readFile(path.resolve(source), "utf-8");
-  } catch (error) {
-    if ((error as NodeJS.ErrnoException).code === "ENOENT") {
-      throw new Error(`Input file not found: ${source}`);
-    }
-    throw error;
-  }
+  return fs.readFile(path.resolve(source), "utf-8");
 }
 
-async function main() {
+/**
+ * Main CLI function
+ */
+async function main(): Promise<void> {
   const [command, inputFile, outputDir = process.cwd()] = process.argv.slice(2);
 
+  // Handle help and version commands
   if (!command || command === "help") {
     showHelp();
     process.exit(0);
@@ -132,6 +180,7 @@ async function main() {
     process.exit(0);
   }
 
+  // Validate input file argument
   if (!inputFile) {
     console.error("Error: Input file is required");
     showHelp();
@@ -143,9 +192,8 @@ async function main() {
 
     switch (command as Command) {
       case "create":
-        // Create output directory if it doesn't exist
         await fs.mkdir(path.resolve(outputDir), { recursive: true });
-        await createStructureFromString(input, path.resolve(outputDir));
+        createStructureFromString(input, path.resolve(outputDir));
         console.log(`✨ Structure created in ${outputDir}`);
         break;
 
@@ -169,4 +217,5 @@ async function main() {
   }
 }
 
+// Start the CLI
 main();

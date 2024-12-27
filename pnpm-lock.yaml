@@ -11,6 +11,9 @@ importers:
       '@types/node':
         specifier: ^22.10.2
         version: 22.10.2
+      file-architect-core:
+        specifier: 'link:'
+        version: 'link:'
       typescript:
         specifier: ^5.7.2
         version: 5.7.2

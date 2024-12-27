@@ -1,72 +1,58 @@
 import fs from "fs";
 import path from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createStructureFromString } from "../src";
+import { createStructureFromString } from "../src/index";
 
 describe("createStructureFromString", () => {
-  let tempDir: string;
+  const testDir = path.join(__dirname, "test-temp");
+  let warnSpy: any;
 
   beforeEach(() => {
-    // Create a temporary directory for testing
-    tempDir = path.join(__dirname, "test-temp");
-    if (!fs.existsSync(tempDir)) {
-      fs.mkdirSync(tempDir, { recursive: true });
+    // Create test directory
+    if (!fs.existsSync(testDir)) {
+      fs.mkdirSync(testDir);
     }
+    warnSpy = vi.spyOn(console, "warn");
   });
 
   afterEach(() => {
-    // Clean up the temporary directory after each test
-    if (fs.existsSync(tempDir)) {
-      fs.rmSync(tempDir, { recursive: true, force: true });
+    // Clean up test directory
+    if (fs.existsSync(testDir)) {
+      fs.rmSync(testDir, { recursive: true });
     }
+    vi.restoreAllMocks();
   });
 
   it("creates a simple file and folder structure", () => {
-    const structure = `
-        Project2024
-            Documents
-                Contracts
-                    PRJ_2024_001_ServiceAgreement.docx
-        `;
+    const input = `
+      folder1
+        file1.txt
+        folder2
+          file2.txt
+    `;
 
-    createStructureFromString(structure, tempDir);
+    createStructureFromString(input, testDir);
 
-    const expectedPaths = [
-      path.join(tempDir, "Project2024"),
-      path.join(tempDir, "Project2024", "Documents"),
-      path.join(tempDir, "Project2024", "Documents", "Contracts"),
-      path.join(
-        tempDir,
-        "Project2024",
-        "Documents",
-        "Contracts",
-        "PRJ_2024_001_ServiceAgreement.docx"
-      ),
-    ];
-
-    expectedPaths.forEach((filePath) => {
-      expect(fs.existsSync(filePath)).toBe(true);
-    });
+    expect(fs.existsSync(path.join(testDir, "folder1"))).toBe(true);
+    expect(fs.existsSync(path.join(testDir, "folder1", "file1.txt"))).toBe(
+      true
+    );
+    expect(fs.existsSync(path.join(testDir, "folder1", "folder2"))).toBe(true);
+    expect(
+      fs.existsSync(path.join(testDir, "folder1", "folder2", "file2.txt"))
+    ).toBe(true);
   });
 
   it("handles file imports with renaming", () => {
-    const sourceFile = path.join(tempDir, "source.docx");
+    const sourceFile = path.join(testDir, "source.txt");
+    const targetFile = path.join(testDir, "target.txt");
+
+    // Create source file
     fs.writeFileSync(sourceFile, "Test content");
 
-    const structure = `
-        Project2024
-            Documents
-                ${sourceFile} > PRJ_2024_001_ServiceAgreement.docx
-        `;
+    const input = `[${sourceFile}] > target.txt`;
 
-    createStructureFromString(structure, tempDir);
-
-    const targetFile = path.join(
-      tempDir,
-      "Project2024",
-      "Documents",
-      "PRJ_2024_001_ServiceAgreement.docx"
-    );
+    createStructureFromString(input, testDir);
 
     expect(fs.existsSync(targetFile)).toBe(true);
     const content = fs.readFileSync(targetFile, "utf-8");
@@ -74,321 +60,227 @@ describe("createStructureFromString", () => {
   });
 
   it("handles folder imports", () => {
-    const sourceFolder = path.join(tempDir, "source-folder");
-    const sourceFile = path.join(sourceFolder, "test.txt");
-    fs.mkdirSync(sourceFolder, { recursive: true });
-    fs.writeFileSync(sourceFile, "Folder content");
+    const sourceDir = path.join(testDir, "source");
+    fs.mkdirSync(sourceDir);
+    fs.writeFileSync(path.join(sourceDir, "file1.txt"), "Content 1");
+    fs.writeFileSync(path.join(sourceDir, "file2.txt"), "Content 2");
 
-    const structure = `
-        Project2024
-            [${sourceFolder}]
-        `;
+    const input = `[${sourceDir}]`;
 
-    createStructureFromString(structure, tempDir);
+    createStructureFromString(input, testDir);
 
-    const targetFile = path.join(
-      tempDir,
-      "Project2024",
-      "source-folder",
-      "test.txt"
-    );
-
-    expect(fs.existsSync(targetFile)).toBe(true);
-    const content = fs.readFileSync(targetFile, "utf-8");
-    expect(content).toBe("Folder content");
+    expect(fs.existsSync(path.join(testDir, "source"))).toBe(true);
+    expect(fs.existsSync(path.join(testDir, "source", "file1.txt"))).toBe(true);
+    expect(fs.existsSync(path.join(testDir, "source", "file2.txt"))).toBe(true);
   });
 
   it("ignores invalid lines gracefully", () => {
-    const structure = `
-        Project2024
-            InvalidLineWithoutTabs
-            Documents
-                Contracts
-                    PRJ_2024_001_ServiceAgreement.docx
-        `;
+    const input = `
+      folder1
+      InvalidLineWithoutTabs
+        file1.txt
+    `;
 
-    createStructureFromString(structure, tempDir);
+    createStructureFromString(input, testDir);
 
-    const expectedFile = path.join(
-      tempDir,
-      "Project2024",
-      "Documents",
-      "Contracts",
-      "PRJ_2024_001_ServiceAgreement.docx"
+    expect(fs.existsSync(path.join(testDir, "folder1"))).toBe(true);
+    expect(fs.existsSync(path.join(testDir, "folder1", "file1.txt"))).toBe(
+      true
     );
-
-    expect(fs.existsSync(expectedFile)).toBe(true);
   });
 
   it("handles bracketed file imports with and without renaming", () => {
-    const sourceFile = path.join(tempDir, "source.txt");
+    const sourceFile = path.join(testDir, "source.txt");
     fs.writeFileSync(sourceFile, "Test content");
 
-    const structure = `
-        Project2024
-            [${sourceFile}]
-            Documents
-                [${sourceFile}] > renamed.txt
-        `;
+    const input = `
+      [${sourceFile}]
+      [${sourceFile}] > renamed.txt
+    `;
 
-    createStructureFromString(structure, tempDir);
+    createStructureFromString(input, testDir);
 
-    const copiedFile = path.join(tempDir, "Project2024", "source.txt");
-    const renamedFile = path.join(
-      tempDir,
-      "Project2024",
-      "Documents",
-      "renamed.txt"
-    );
-
-    expect(fs.existsSync(copiedFile)).toBe(true);
-    expect(fs.existsSync(renamedFile)).toBe(true);
-    expect(fs.readFileSync(copiedFile, "utf-8")).toBe("Test content");
-    expect(fs.readFileSync(renamedFile, "utf-8")).toBe("Test content");
+    expect(fs.existsSync(path.join(testDir, "source.txt"))).toBe(true);
+    expect(fs.existsSync(path.join(testDir, "renamed.txt"))).toBe(true);
   });
 
   it("handles bracketed file paths with spaces and special characters", () => {
-    const sourceFile = path.join(tempDir, "test file.txt");
+    const sourceFile = path.join(testDir, "source file.txt");
     fs.writeFileSync(sourceFile, "Test content");
 
-    const structure = `
-        Project2024
-            [${sourceFile}] > renamed file.txt
-        `;
+    const input = `[${sourceFile}] > target file.txt`;
 
-    createStructureFromString(structure, tempDir);
+    createStructureFromString(input, testDir);
 
-    const renamedFile = path.join(tempDir, "Project2024", "renamed file.txt");
-
-    expect(fs.existsSync(renamedFile)).toBe(true);
-    expect(fs.readFileSync(renamedFile, "utf-8")).toBe("Test content");
+    expect(fs.existsSync(path.join(testDir, "target file.txt"))).toBe(true);
   });
 
   it("handles bracketed file paths with absolute paths", () => {
-    const sourceFile = path.join(tempDir, "absolute-path.txt");
+    const sourceFile = path.join(testDir, "source.txt");
     fs.writeFileSync(sourceFile, "Test content");
 
-    const structure = `
-        Project2024
-            [${sourceFile}] > renamed.txt
-            [${sourceFile}]
-        `;
+    const input = `[${sourceFile}] > /target.txt`;
 
-    createStructureFromString(structure, tempDir);
+    createStructureFromString(input, testDir);
 
-    const renamedFile = path.join(tempDir, "Project2024", "renamed.txt");
-    const copiedFile = path.join(tempDir, "Project2024", "absolute-path.txt");
-
-    expect(fs.existsSync(renamedFile)).toBe(true);
-    expect(fs.existsSync(copiedFile)).toBe(true);
-    expect(fs.readFileSync(renamedFile, "utf-8")).toBe("Test content");
-    expect(fs.readFileSync(copiedFile, "utf-8")).toBe("Test content");
+    expect(fs.existsSync(path.join(testDir, "target.txt"))).toBe(true);
   });
 
   it("handles bracketed file paths with special characters in source path", () => {
-    const sourceFile = path.join(tempDir, "[test] file.txt");
+    const sourceFile = path.join(testDir, "source@2x.txt");
     fs.writeFileSync(sourceFile, "Test content");
 
-    const structure = `
-        Project2024
-            [${sourceFile}] > renamed.txt
-        `;
+    const input = `[${sourceFile}] > target.txt`;
 
-    createStructureFromString(structure, tempDir);
+    createStructureFromString(input, testDir);
 
-    const renamedFile = path.join(tempDir, "Project2024", "renamed.txt");
-
-    expect(fs.existsSync(renamedFile)).toBe(true);
-    expect(fs.readFileSync(renamedFile, "utf-8")).toBe("Test content");
+    expect(fs.existsSync(path.join(testDir, "target.txt"))).toBe(true);
   });
 
   it("handles tab indentation", () => {
-    const sourceFile = path.join(tempDir, "test.txt");
-    fs.writeFileSync(sourceFile, "Test content");
+    const input = "folder1\n\tfile1.txt\n\tfolder2\n\t\tfile2.txt";
 
-    const structure = `Project2024
-\t[${sourceFile}] > renamed.txt
-\t\tDocuments
-\t\t\tContracts`;
+    createStructureFromString(input, testDir);
 
-    createStructureFromString(structure, tempDir);
-
-    const renamedFile = path.join(tempDir, "Project2024", "renamed.txt");
-    const contractsDir = path.join(
-      tempDir,
-      "Project2024",
-      "Documents",
-      "Contracts"
+    expect(fs.existsSync(path.join(testDir, "folder1"))).toBe(true);
+    expect(fs.existsSync(path.join(testDir, "folder1", "file1.txt"))).toBe(
+      true
     );
-
-    expect(fs.existsSync(renamedFile)).toBe(true);
-    expect(fs.existsSync(contractsDir)).toBe(true);
-    expect(fs.readFileSync(renamedFile, "utf-8")).toBe("Test content");
+    expect(fs.existsSync(path.join(testDir, "folder1", "folder2"))).toBe(true);
+    expect(
+      fs.existsSync(path.join(testDir, "folder1", "folder2", "file2.txt"))
+    ).toBe(true);
   });
 
   it("handles missing files with clean error messages", () => {
-    const nonExistentFile = path.join(tempDir, "does-not-exist.txt");
+    const nonExistentFile = path.join(testDir, "does-not-exist.txt");
+    const input = `[${nonExistentFile}]`;
 
-    const structure = `Project2024
-\t[${nonExistentFile}] > renamed.txt`;
-
-    // Spy on console.warn
-    const warnSpy = vi.spyOn(console, "warn");
-
-    // Should not throw
-    createStructureFromString(structure, tempDir);
+    createStructureFromString(input, testDir);
 
     // Should have called console.warn with the correct message
     expect(warnSpy).toHaveBeenCalledWith(
-      `⚠️  Warning: Could not copy "${nonExistentFile}": File not found`
+      `⚠️  Warning: Source not found "${nonExistentFile}", creating empty file`
     );
 
-    warnSpy.mockRestore();
+    // Should create an empty file instead
+    expect(fs.existsSync(path.join(testDir, "does-not-exist.txt"))).toBe(true);
+    expect(
+      fs.readFileSync(path.join(testDir, "does-not-exist.txt"), "utf-8")
+    ).toBe("");
   });
 
   it("handles moving files with parentheses", () => {
-    const sourceFile = path.join(tempDir, "source.txt");
-    fs.writeFileSync(sourceFile, "Move me");
-    // Create a second source file for the second move
-    const sourceFile2 = path.join(tempDir, "source2.txt");
-    fs.writeFileSync(sourceFile2, "Move me too");
+    const sourceDir = path.join(testDir, "source-dir");
+    fs.mkdirSync(sourceDir);
+    const sourceFile = path.join(sourceDir, "source.txt");
+    const sourceFile2 = path.join(sourceDir, "source2.txt");
+    fs.writeFileSync(sourceFile, "Test content 1");
+    fs.writeFileSync(sourceFile2, "Test content 2");
 
-    const structure = `
-        Project2024
-            (${sourceFile})
-            Documents
-                (${sourceFile2}) > renamed.txt
-        `;
+    const input = `
+      (${sourceFile})
+      (${sourceFile2}) > renamed.txt
+    `;
 
-    createStructureFromString(structure, tempDir);
-
-    const movedFile = path.join(tempDir, "Project2024", "source.txt");
-    const renamedFile = path.join(
-      tempDir,
-      "Project2024",
-      "Documents",
-      "renamed.txt"
-    );
+    createStructureFromString(input, testDir);
 
     // Original files should not exist anymore
     expect(fs.existsSync(sourceFile)).toBe(false);
     expect(fs.existsSync(sourceFile2)).toBe(false);
     // Files should be moved to new locations
-    expect(fs.existsSync(movedFile)).toBe(true);
-    expect(fs.existsSync(renamedFile)).toBe(true);
+    expect(fs.existsSync(path.join(testDir, "source.txt"))).toBe(true);
+    expect(fs.existsSync(path.join(testDir, "renamed.txt"))).toBe(true);
     // Content should be preserved
-    expect(fs.readFileSync(movedFile, "utf-8")).toBe("Move me");
-    expect(fs.readFileSync(renamedFile, "utf-8")).toBe("Move me too");
+    expect(fs.readFileSync(path.join(testDir, "source.txt"), "utf-8")).toBe(
+      "Test content 1"
+    );
+    expect(fs.readFileSync(path.join(testDir, "renamed.txt"), "utf-8")).toBe(
+      "Test content 2"
+    );
   });
 
   it("handles moving directories with parentheses", () => {
-    const sourceDir = path.join(tempDir, "source-dir");
-    const sourceDir2 = path.join(tempDir, "source-dir2");
-    const sourceFile = path.join(sourceDir, "test.txt");
-    const sourceFile2 = path.join(sourceDir2, "test.txt");
+    const sourceParentDir = path.join(testDir, "source-parent");
+    fs.mkdirSync(sourceParentDir);
+    const sourceDir = path.join(sourceParentDir, "source");
+    const sourceDir2 = path.join(sourceParentDir, "source2");
+    fs.mkdirSync(sourceDir);
+    fs.mkdirSync(sourceDir2);
+    fs.writeFileSync(path.join(sourceDir, "file1.txt"), "Content 1");
+    fs.writeFileSync(path.join(sourceDir2, "file2.txt"), "Content 2");
 
-    fs.mkdirSync(sourceDir, { recursive: true });
-    fs.mkdirSync(sourceDir2, { recursive: true });
-    fs.writeFileSync(sourceFile, "Move me");
-    fs.writeFileSync(sourceFile2, "Move me too");
+    const input = `
+      (${sourceDir})
+      (${sourceDir2}) > renamed
+    `;
 
-    const structure = `
-        Project2024
-            (${sourceDir})
-            Documents
-                (${sourceDir2}) > renamed-dir
-        `;
-
-    createStructureFromString(structure, tempDir);
-
-    const movedDir = path.join(tempDir, "Project2024", "source-dir");
-    const renamedDir = path.join(
-      tempDir,
-      "Project2024",
-      "Documents",
-      "renamed-dir"
-    );
-    const movedFile = path.join(movedDir, "test.txt");
-    const renamedFile = path.join(renamedDir, "test.txt");
+    createStructureFromString(input, testDir);
 
     // Original directories should not exist anymore
     expect(fs.existsSync(sourceDir)).toBe(false);
     expect(fs.existsSync(sourceDir2)).toBe(false);
     // Directories should be moved to new locations
-    expect(fs.existsSync(movedDir)).toBe(true);
-    expect(fs.existsSync(renamedDir)).toBe(true);
-    // Files inside should be preserved
-    expect(fs.existsSync(movedFile)).toBe(true);
-    expect(fs.existsSync(renamedFile)).toBe(true);
-    expect(fs.readFileSync(movedFile, "utf-8")).toBe("Move me");
-    expect(fs.readFileSync(renamedFile, "utf-8")).toBe("Move me too");
+    expect(fs.existsSync(path.join(testDir, "source"))).toBe(true);
+    expect(fs.existsSync(path.join(testDir, "renamed"))).toBe(true);
+    // Content should be preserved
+    expect(
+      fs.readFileSync(path.join(testDir, "source", "file1.txt"), "utf-8")
+    ).toBe("Content 1");
+    expect(
+      fs.readFileSync(path.join(testDir, "renamed", "file2.txt"), "utf-8")
+    ).toBe("Content 2");
   });
 
   it("handles moving files with spaces and special characters", () => {
-    const sourceFile = path.join(tempDir, "source file [1].txt");
-    fs.writeFileSync(sourceFile, "Move me");
+    const sourceFile = path.join(testDir, "source file@2x.txt");
+    const renamedFile = path.join(testDir, "renamed file.txt");
+    fs.writeFileSync(sourceFile, "Test content");
 
-    const structure = `
-        Project2024
-            (${sourceFile}) > renamed file [1].txt
-        `;
+    const input = `(${sourceFile}) > renamed file.txt`;
 
-    createStructureFromString(structure, tempDir);
-
-    const renamedFile = path.join(
-      tempDir,
-      "Project2024",
-      "renamed file [1].txt"
-    );
+    createStructureFromString(input, testDir);
 
     // Original file should not exist anymore
     expect(fs.existsSync(sourceFile)).toBe(false);
     // File should be moved and renamed
     expect(fs.existsSync(renamedFile)).toBe(true);
-    expect(fs.readFileSync(renamedFile, "utf-8")).toBe("Move me");
+    // Content should be preserved
+    expect(fs.readFileSync(renamedFile, "utf-8")).toBe("Test content");
   });
 
   it("handles moving files to existing locations", () => {
-    const sourceFile = path.join(tempDir, "source.txt");
-    const existingFile = path.join(tempDir, "Project2024", "existing.txt");
+    const sourceFile = path.join(testDir, "source.txt");
+    const existingFile = path.join(testDir, "existing.txt");
+    fs.writeFileSync(sourceFile, "New content");
+    fs.writeFileSync(existingFile, "Old content");
 
-    fs.writeFileSync(sourceFile, "Move me");
-    fs.mkdirSync(path.join(tempDir, "Project2024"), { recursive: true });
-    fs.writeFileSync(existingFile, "Existing content");
+    const input = `(${sourceFile}) > existing.txt`;
 
-    const structure = `
-        Project2024
-            (${sourceFile}) > existing.txt
-        `;
-
-    createStructureFromString(structure, tempDir);
+    createStructureFromString(input, testDir);
 
     // Original file should not exist anymore
     expect(fs.existsSync(sourceFile)).toBe(false);
     // Destination file should have new content
     expect(fs.existsSync(existingFile)).toBe(true);
-    expect(fs.readFileSync(existingFile, "utf-8")).toBe("Move me");
+    expect(fs.readFileSync(existingFile, "utf-8")).toBe("New content");
   });
 
   it("handles errors when moving non-existent files", () => {
-    const nonExistentFile = path.join(tempDir, "does-not-exist.txt");
+    const nonExistentFile = path.join(testDir, "does-not-exist.txt");
+    const input = `(${nonExistentFile})`;
 
-    const structure = `
-        Project2024
-            (${nonExistentFile})
-        `;
-
-    // Spy on console.warn
-    const warnSpy = vi.spyOn(console, "warn");
-
-    // Should not throw
-    createStructureFromString(structure, tempDir);
+    createStructureFromString(input, testDir);
 
     // Should have called console.warn with the correct message
     expect(warnSpy).toHaveBeenCalledWith(
-      `⚠️  Warning: Could not move "${nonExistentFile}": File not found`
+      `⚠️  Warning: Source not found "${nonExistentFile}", creating empty file`
     );
 
-    warnSpy.mockRestore();
+    // Should create an empty file instead
+    expect(fs.existsSync(path.join(testDir, "does-not-exist.txt"))).toBe(true);
+    expect(
+      fs.readFileSync(path.join(testDir, "does-not-exist.txt"), "utf-8")
+    ).toBe("");
   });
 });

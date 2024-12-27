@@ -2,7 +2,7 @@
   "name": "file-architect-core",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "dist/index.js",
   "scripts": {
     "test": "vitest",
     "build": "tsc",
@@ -13,10 +13,11 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^22.10.2",
+    "file-architect-core": "link:",
     "typescript": "^5.7.2"
   },
   "bin": {
-    "file-architect": "./dist/cli.js"
+    "file-architect": "dist/cli.js"
   },
   "devDependencies": {
     "vitest": "^2.1.8"
