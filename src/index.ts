@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import fs from "fs";
 import os from "os";
 import path from "path";
@@ -25,6 +26,14 @@ interface FileOperation {
 }
 
 /**
+ * Options for structure creation
+ */
+interface CreateOptions {
+  /** Whether to output verbose logs */
+  verbose?: boolean;
+}
+
+/**
  * Creates a file or directory structure from a tab-indented string.
  * The string format supports:
  * - Regular files and directories
@@ -34,11 +43,19 @@ interface FileOperation {
  *
  * @param input The tab-indented string describing the structure
  * @param rootDir The root directory to create the structure in
+ * @param options Additional options for structure creation
  */
 export function createStructureFromString(
   input: string,
-  rootDir: string
+  rootDir: string,
+  options: CreateOptions = {}
 ): void {
+  const { verbose = false } = options;
+
+  if (verbose) {
+    console.log(chalk.blue(`📁 Creating structure in ${rootDir}`));
+  }
+
   // Create the root directory if it doesn't exist
   if (!fs.existsSync(rootDir)) {
     fs.mkdirSync(rootDir, { recursive: true });
@@ -57,23 +74,31 @@ export function createStructureFromString(
       const currentDir = stack[stack.length - 1];
       const targetPath = path.join(currentDir, operation.name);
 
+      if (verbose) {
+        console.log(
+          chalk.blue(`🔄 ${operation.type.toUpperCase()}: ${line.trim()}`)
+        );
+      }
+
       try {
-        const newPath = executeOperation(operation, targetPath);
+        const newPath = executeOperation(operation, targetPath, { verbose });
         if (operation.type === "directory" && newPath) {
           stack.push(newPath);
         }
       } catch (error: any) {
         hasWarnings = true;
-        console.warn(`⚠️  Warning: ${error.message}`);
+        console.warn(chalk.yellow(`⚠️  Warning: ${error.message}`));
       }
     } catch (error: any) {
       hasWarnings = true;
-      console.warn(`⚠️  Warning: ${error.message}`);
+      console.warn(chalk.yellow(`⚠️  Warning: ${error.message}`));
     }
   }
 
   if (hasWarnings) {
-    console.log("\n⚠️  Structure created with warnings");
+    console.log(chalk.yellow("\n⚠️  Structure created with warnings"));
+  } else if (verbose) {
+    console.log(chalk.green("\n✨ Structure created successfully"));
   }
 }
 
@@ -145,41 +170,48 @@ function parseOperation(line: string): FileOperation {
  *
  * @param operation The operation to execute
  * @param targetPath The target path for the operation
+ * @param options Additional options for execution
  * @returns The path of the created directory for directory operations
  */
 function executeOperation(
   operation: FileOperation,
-  targetPath: string
+  targetPath: string,
+  options: CreateOptions = {}
 ): string | void {
+  const { verbose = false } = options;
+
   try {
     const destinationDir = path.dirname(targetPath);
     if (!fs.existsSync(destinationDir)) {
       fs.mkdirSync(destinationDir, { recursive: true });
+      if (verbose) {
+        console.log(`📁 Created directory: ${destinationDir}`);
+      }
     }
 
     switch (operation.type) {
       case "file":
-        createEmptyFile(targetPath);
+        createEmptyFile(targetPath, { verbose });
         break;
 
       case "directory":
-        createDirectory(targetPath);
+        createDirectory(targetPath, { verbose });
         return targetPath;
 
       case "copy":
         if (!operation.sourcePath) {
-          createEmptyFile(targetPath);
+          createEmptyFile(targetPath, { verbose });
           break;
         }
-        copyFile(operation.sourcePath, targetPath);
+        copyFile(operation.sourcePath, targetPath, { verbose });
         break;
 
       case "move":
         if (!operation.sourcePath) {
-          createEmptyFile(targetPath);
+          createEmptyFile(targetPath, { verbose });
           break;
         }
-        moveFile(operation.sourcePath, targetPath);
+        moveFile(operation.sourcePath, targetPath, { verbose });
         break;
     }
   } catch (error: any) {
@@ -187,7 +219,7 @@ function executeOperation(
       `⚠️  Warning: Operation failed, creating empty file: ${error.message}`
     );
     try {
-      createEmptyFile(targetPath);
+      createEmptyFile(targetPath, { verbose });
     } catch (err: any) {
       console.warn(`⚠️  Warning: Could not create empty file: ${err.message}`);
     }
@@ -198,14 +230,22 @@ function executeOperation(
  * Creates an empty file, creating parent directories if needed.
  *
  * @param filePath The path of the file to create
+ * @param options Additional options
  */
-function createEmptyFile(filePath: string): void {
+function createEmptyFile(filePath: string, options: CreateOptions = {}): void {
+  const { verbose = false } = options;
+
   const dir = path.dirname(filePath);
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir, { recursive: true });
   }
   if (!fs.existsSync(filePath)) {
     fs.writeFileSync(filePath, "");
+    if (verbose) {
+      console.log(chalk.green(`📄 Created ${filePath}`));
+    }
+  } else if (verbose) {
+    console.log(chalk.yellow(`⚠️  File already exists: ${filePath}`));
   }
 }
 
@@ -213,10 +253,18 @@ function createEmptyFile(filePath: string): void {
  * Creates a directory if it doesn't exist.
  *
  * @param dirPath The path of the directory to create
+ * @param options Additional options
  */
-function createDirectory(dirPath: string): void {
+function createDirectory(dirPath: string, options: CreateOptions = {}): void {
+  const { verbose = false } = options;
+
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
+    if (verbose) {
+      console.log(chalk.green(`📁 Created ${dirPath}`));
+    }
+  } else if (verbose) {
+    console.log(chalk.yellow(`⚠️  Directory already exists: ${dirPath}`));
   }
 }
 
@@ -238,31 +286,52 @@ function resolveTildePath(filePath: string): string {
  *
  * @param sourcePath The source path to copy from
  * @param targetPath The target path to copy to
+ * @param options Additional options
  */
-function copyFile(sourcePath: string, targetPath: string): void {
+function copyFile(
+  sourcePath: string,
+  targetPath: string,
+  options: CreateOptions = {}
+): void {
+  const { verbose = false } = options;
+
   const resolvedSource = path.isAbsolute(sourcePath)
     ? sourcePath
     : path.resolve(process.cwd(), sourcePath);
 
   if (!fs.existsSync(resolvedSource)) {
     console.warn(
-      `⚠️  Warning: Source not found "${sourcePath}", creating empty file`
+      chalk.yellow(
+        `⚠️  Warning: Source not found "${sourcePath}", creating empty file`
+      )
     );
-    createEmptyFile(targetPath);
+    createEmptyFile(targetPath, { verbose });
     return;
   }
 
   try {
     if (fs.statSync(resolvedSource).isDirectory()) {
-      copyDirectorySync(resolvedSource, targetPath);
+      if (verbose) {
+        console.log(
+          chalk.blue(
+            `📋 Copying directory from ${resolvedSource} to ${targetPath}`
+          )
+        );
+      }
+      copyDirectorySync(resolvedSource, targetPath, { verbose });
     } else {
       fs.copyFileSync(resolvedSource, targetPath);
+      if (verbose) {
+        console.log(chalk.green(`✅ Copied ${sourcePath} to ${targetPath}`));
+      }
     }
   } catch (error) {
     console.warn(
-      `⚠️  Warning: Failed to copy "${sourcePath}", creating empty file`
+      chalk.yellow(
+        `⚠️  Warning: Failed to copy "${sourcePath}", creating empty file`
+      )
     );
-    createEmptyFile(targetPath);
+    createEmptyFile(targetPath, { verbose });
   }
 }
 
@@ -271,18 +340,26 @@ function copyFile(sourcePath: string, targetPath: string): void {
  *
  * @param sourcePath The source path to move from
  * @param targetPath The target path to move to
+ * @param options Additional options
  */
-function moveFile(sourcePath: string, targetPath: string): void {
+function moveFile(
+  sourcePath: string,
+  targetPath: string,
+  options: CreateOptions = {}
+): void {
+  const { verbose = false } = options;
+
   const resolvedSource = path.isAbsolute(sourcePath)
     ? sourcePath
     : path.resolve(process.cwd(), sourcePath);
 
-  // Create empty file if source doesn't exist
   if (!fs.existsSync(resolvedSource)) {
     console.warn(
-      `⚠️  Warning: Source not found "${sourcePath}", creating empty file`
+      chalk.yellow(
+        `⚠️  Warning: Source not found "${sourcePath}", creating empty file`
+      )
     );
-    createEmptyFile(targetPath);
+    createEmptyFile(targetPath, { verbose });
     return;
   }
 
@@ -296,32 +373,56 @@ function moveFile(sourcePath: string, targetPath: string): void {
   if (fs.existsSync(targetPath)) {
     if (fs.statSync(targetPath).isDirectory()) {
       fs.rmSync(targetPath, { recursive: true });
+      if (verbose) {
+        console.log(
+          chalk.yellow(`⚠️  Replaced existing directory: ${targetPath}`)
+        );
+      }
     } else {
       fs.unlinkSync(targetPath);
+      if (verbose) {
+        console.log(chalk.yellow(`⚠️  Replaced existing file: ${targetPath}`));
+      }
     }
   }
 
-  // Try to move the file
   try {
     if (fs.statSync(resolvedSource).isDirectory()) {
-      // For directories, we need to copy then delete
-      copyDirectorySync(resolvedSource, targetPath);
+      if (verbose) {
+        console.log(
+          chalk.blue(
+            `✂️  Moving directory from ${resolvedSource} to ${targetPath}`
+          )
+        );
+      }
+      copyDirectorySync(resolvedSource, targetPath, { verbose: false });
       fs.rmSync(resolvedSource, { recursive: true });
+      if (verbose) {
+        console.log(chalk.green(`✅ Moved directory successfully`));
+      }
     } else {
-      // For files, try rename first, then fallback to copy+delete
+      if (verbose) {
+        console.log(
+          chalk.blue(`✂️  Moving file from ${resolvedSource} to ${targetPath}`)
+        );
+      }
       try {
         fs.renameSync(resolvedSource, targetPath);
       } catch {
         fs.copyFileSync(resolvedSource, targetPath);
         fs.unlinkSync(resolvedSource);
       }
+      if (verbose) {
+        console.log(chalk.green(`✅ Moved file successfully`));
+      }
     }
   } catch (error) {
-    // If all else fails, create an empty file
     console.warn(
-      `⚠️  Warning: Failed to move "${sourcePath}", creating empty file`
+      chalk.yellow(
+        `⚠️  Warning: Failed to move "${sourcePath}", creating empty file`
+      )
     );
-    createEmptyFile(targetPath);
+    createEmptyFile(targetPath, { verbose });
   }
 }
 
@@ -330,8 +431,15 @@ function moveFile(sourcePath: string, targetPath: string): void {
  *
  * @param source The source directory to copy from
  * @param destination The destination directory to copy to
+ * @param options Additional options
  */
-function copyDirectorySync(source: string, destination: string): void {
+function copyDirectorySync(
+  source: string,
+  destination: string,
+  options: CreateOptions = {}
+): void {
+  const { verbose = false } = options;
+
   if (!fs.existsSync(destination)) {
     fs.mkdirSync(destination, { recursive: true });
   }
@@ -342,9 +450,12 @@ function copyDirectorySync(source: string, destination: string): void {
     const destPath = path.join(destination, entry.name);
 
     if (entry.isDirectory()) {
-      copyDirectorySync(sourcePath, destPath);
+      copyDirectorySync(sourcePath, destPath, { verbose });
     } else {
       fs.copyFileSync(sourcePath, destPath);
+      if (verbose) {
+        console.log(chalk.green(`  ✓ ${entry.name}`));
+      }
     }
   }
 }

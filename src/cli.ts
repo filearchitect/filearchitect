@@ -1,5 +1,6 @@
 #!/usr/bin/env node
 
+import chalk from "chalk";
 import fs from "fs/promises";
 import path from "path";
 import { version } from "../package.json";
@@ -35,17 +36,26 @@ const icons = {
  * Shows help information about available commands
  */
 function showHelp(): void {
-  console.log("File Architect CLI\n");
+  console.log(chalk.bold("File Architect CLI\n"));
   console.log("Usage: file-architect <command> [options]\n");
-  console.log("Commands:");
+  console.log(chalk.bold("Commands:"));
   Object.entries(commands).forEach(([cmd, desc]) => {
-    console.log(`  ${cmd.padEnd(15)} ${desc}`);
+    console.log(`  ${chalk.cyan(cmd.padEnd(15))} ${desc}`);
   });
-  console.log("\nExamples:");
-  console.log("  file-architect create structure.txt");
-  console.log("  file-architect preview structure.txt");
+  console.log(chalk.bold("\nOptions:"));
   console.log(
-    "  echo 'project\\n  src\\n    index.js' | file-architect create -"
+    `  ${chalk.cyan("--verbose")}         Show detailed logs of all operations`
+  );
+  console.log(chalk.bold("\nExamples:"));
+  console.log(`  ${chalk.gray("file-architect create structure.txt")}`);
+  console.log(`  ${chalk.gray("file-architect preview structure.txt")}`);
+  console.log(
+    `  ${chalk.gray("file-architect create structure.txt --verbose")}`
+  );
+  console.log(
+    `  ${chalk.gray(
+      "echo 'project\\n  src\\n    index.js' | file-architect create -"
+    )}`
   );
 }
 
@@ -53,7 +63,7 @@ function showHelp(): void {
  * Shows version information
  */
 function showVersion(): void {
-  console.log(`file-architect-core version ${version}`);
+  console.log(chalk.cyan(`file-architect-core version ${version}`));
 }
 
 /**
@@ -102,7 +112,7 @@ async function previewStructure(input: string): Promise<void> {
     const trimmedLine = line.trim();
     const icon = getOperationType(trimmedLine);
 
-    console.log(`${prefix}${icon} ${trimmedLine}`);
+    console.log(chalk.blue(`${prefix}${icon} ${trimmedLine}`));
   }
 }
 
@@ -147,10 +157,13 @@ async function validateStructure(input: string): Promise<boolean> {
       }
     }
 
-    console.log("✅ Structure file is valid");
+    console.log(chalk.green("✅ Structure file is valid"));
     return true;
   } catch (error) {
-    console.error("❌ Validation failed:", (error as Error).message);
+    console.error(
+      chalk.red("❌ Validation failed:"),
+      chalk.yellow((error as Error).message)
+    );
     return false;
   }
 }
@@ -176,7 +189,16 @@ async function readInput(source: string): Promise<string> {
  * Main CLI function
  */
 async function main(): Promise<void> {
-  const [command, inputFile, outputDir = process.cwd()] = process.argv.slice(2);
+  const args = process.argv.slice(2);
+  const verboseIndex = args.indexOf("--verbose");
+  const verbose = verboseIndex !== -1;
+
+  // Remove --verbose from args if present
+  if (verbose) {
+    args.splice(verboseIndex, 1);
+  }
+
+  const [command, inputFile, outputDir = process.cwd()] = args;
 
   // Handle help and version commands
   if (!command || command === "help") {
@@ -191,7 +213,7 @@ async function main(): Promise<void> {
 
   // Validate input file argument
   if (!inputFile) {
-    console.error("Error: Input file is required");
+    console.error(chalk.red("Error: Input file is required"));
     showHelp();
     process.exit(1);
   }
@@ -202,8 +224,10 @@ async function main(): Promise<void> {
     switch (command as Command) {
       case "create":
         await fs.mkdir(path.resolve(outputDir), { recursive: true });
-        createStructureFromString(input, path.resolve(outputDir));
-        console.log(`✨ Structure created in ${outputDir}`);
+        createStructureFromString(input, path.resolve(outputDir), { verbose });
+        if (!verbose) {
+          console.log(chalk.green(`✨ Structure created in ${outputDir}`));
+        }
         break;
 
       case "preview":
@@ -216,12 +240,12 @@ async function main(): Promise<void> {
         break;
 
       default:
-        console.error(`Unknown command: ${command}`);
+        console.error(chalk.red(`Unknown command: ${command}`));
         showHelp();
         process.exit(1);
     }
   } catch (error) {
-    console.error(`Error: ${(error as Error).message}`);
+    console.error(chalk.red(`Error: ${(error as Error).message}`));
     process.exit(1);
   }
 }

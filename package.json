@@ -13,6 +13,7 @@
   "license": "ISC",
   "dependencies": {
     "@types/node": "^22.10.2",
+    "chalk": "4",
     "file-architect-core": "link:",
     "typescript": "^5.7.2"
   },
