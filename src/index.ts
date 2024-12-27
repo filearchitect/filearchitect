@@ -1,4 +1,5 @@
 import fs from "fs";
+import os from "os";
 import path from "path";
 import process from "process";
 
@@ -113,7 +114,7 @@ function parseOperation(line: string): FileOperation {
   // Move operation (with parentheses)
   const moveMatch = line.match(/^\((.+?)\)(?:\s*>\s*(.+))?$/);
   if (moveMatch) {
-    const sourcePath = moveMatch[1].trim();
+    const sourcePath = resolveTildePath(moveMatch[1].trim());
     return {
       type: "move",
       sourcePath,
@@ -124,10 +125,11 @@ function parseOperation(line: string): FileOperation {
   // Copy operation (with or without rename)
   const copyMatch = line.match(/^\[(.+?)\](?:\s*>\s*(.+))?$/);
   if (copyMatch) {
+    const sourcePath = resolveTildePath(copyMatch[1].trim());
     return {
       type: "copy",
-      sourcePath: copyMatch[1].trim(),
-      name: copyMatch[2]?.trim() || path.basename(copyMatch[1].trim()),
+      sourcePath,
+      name: copyMatch[2]?.trim() || path.basename(sourcePath),
     };
   }
 
@@ -216,6 +218,19 @@ function createDirectory(dirPath: string): void {
   if (!fs.existsSync(dirPath)) {
     fs.mkdirSync(dirPath, { recursive: true });
   }
+}
+
+/**
+ * Resolves a path that may contain a tilde (~) to represent the home directory
+ *
+ * @param filePath The path that may contain a tilde
+ * @returns The resolved absolute path
+ */
+function resolveTildePath(filePath: string): string {
+  if (filePath.startsWith("~")) {
+    return path.join(os.homedir(), filePath.slice(1));
+  }
+  return filePath;
 }
 
 /**

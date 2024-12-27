@@ -75,10 +75,10 @@ function calculateIndentationLevel(indentation: string): number {
  * @returns The icon representing the operation type
  */
 function getOperationType(line: string): string {
-  if (line.startsWith("[") && line.endsWith("]")) {
+  if (line.match(/^\[(.+?)\](?:\s*>\s*(.+))?$/)) {
     return icons.copy;
   }
-  if (line.startsWith("(") && line.endsWith(")")) {
+  if (line.match(/^\((.+?)\)(?:\s*>\s*(.+))?$/)) {
     return icons.move;
   }
   return line.includes(".") ? icons.file : icons.directory;
@@ -130,11 +130,20 @@ async function validateStructure(input: string): Promise<boolean> {
       const trimmedLine = line.trim();
 
       // Validate operation syntax
-      if (trimmedLine.startsWith("[") && !trimmedLine.endsWith("]")) {
-        throw new Error(`Invalid copy operation syntax at line: ${line}`);
-      }
-      if (trimmedLine.startsWith("(") && !trimmedLine.endsWith(")")) {
-        throw new Error(`Invalid move operation syntax at line: ${line}`);
+      if (trimmedLine.startsWith("[")) {
+        // Copy operation
+        if (!trimmedLine.match(/^\[(.+?)\](?:\s*>\s*(.+))?$/)) {
+          throw new Error(
+            `Invalid copy operation syntax at line: ${trimmedLine}`
+          );
+        }
+      } else if (trimmedLine.startsWith("(")) {
+        // Move operation
+        if (!trimmedLine.match(/^\((.+?)\)(?:\s*>\s*(.+))?$/)) {
+          throw new Error(
+            `Invalid move operation syntax at line: ${trimmedLine}`
+          );
+        }
       }
     }
 
