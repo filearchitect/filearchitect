@@ -69,7 +69,6 @@ await createStructure(structure, "./output");
 
 - `create <file>` - Create file structure from a file
 - `preview <file>` - Preview file structure without creating files
-- `validate <file>` - Validate structure file syntax
 - `help` - Show help information
 - `version` - Show version information
 

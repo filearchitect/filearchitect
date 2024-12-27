@@ -19,6 +19,11 @@ export function createStructureFromString(
   input: string,
   rootDir: string
 ): void {
+  // Create the root directory if it doesn't exist
+  if (!fs.existsSync(rootDir)) {
+    fs.mkdirSync(rootDir, { recursive: true });
+  }
+
   const lines = input.split("\n").filter((line) => line.trim().length > 0);
   const stack: string[] = [rootDir];
 
@@ -173,18 +178,27 @@ function createDirectory(dirPath: string): void {
  */
 function processImport(sourcePath: string, destinationPath: string): void {
   try {
+    // Check if source exists first
+    if (!fs.existsSync(sourcePath)) {
+      console.warn(
+        `⚠️  Warning: Could not copy "${sourcePath}": File not found`
+      );
+      return;
+    }
+
     const sourceStats = fs.statSync(sourcePath);
     if (sourceStats.isDirectory()) {
       copyDirectorySync(sourcePath, destinationPath);
     } else {
+      // Create the destination directory if it doesn't exist
+      const destinationDir = path.dirname(destinationPath);
+      if (!fs.existsSync(destinationDir)) {
+        fs.mkdirSync(destinationDir, { recursive: true });
+      }
       fs.copyFileSync(sourcePath, destinationPath);
     }
   } catch (error: any) {
-    if (error.code === "ENOENT") {
-      throw new Error(
-        `Error processing file "${sourcePath}": ENOENT: no such file or directory`
-      );
-    }
+    // Handle other errors by throwing them
     throw error;
   }
 }
@@ -217,6 +231,14 @@ function copyDirectorySync(source: string, destination: string): void {
  */
 function moveFile(sourcePath: string, destinationPath: string): void {
   try {
+    // Check if source exists first
+    if (!fs.existsSync(sourcePath)) {
+      console.warn(
+        `⚠️  Warning: Could not move "${sourcePath}": File not found`
+      );
+      return;
+    }
+
     const sourceStats = fs.statSync(sourcePath);
 
     // Create the destination directory if it doesn't exist
@@ -237,11 +259,7 @@ function moveFile(sourcePath: string, destinationPath: string): void {
     // Move the file or directory
     fs.renameSync(sourcePath, destinationPath);
   } catch (error: any) {
-    if (error.code === "ENOENT") {
-      throw new Error(
-        `Error moving file "${sourcePath}": ENOENT: no such file or directory`
-      );
-    }
+    // Handle other errors by throwing them
     throw error;
   }
 }

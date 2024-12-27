@@ -1,7 +1,7 @@
 import fs from "fs";
 import path from "path";
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
-import { createStructureFromString } from "../src/index";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import { createStructureFromString } from "../src";
 
 describe("createStructureFromString", () => {
   let tempDir: string;
@@ -232,9 +232,18 @@ describe("createStructureFromString", () => {
     const structure = `Project2024
 \t[${nonExistentFile}] > renamed.txt`;
 
-    expect(() => createStructureFromString(structure, tempDir)).toThrow(
-      `Error processing file "${nonExistentFile}": ENOENT: no such file or directory`
+    // Spy on console.warn
+    const warnSpy = vi.spyOn(console, "warn");
+
+    // Should not throw
+    createStructureFromString(structure, tempDir);
+
+    // Should have called console.warn with the correct message
+    expect(warnSpy).toHaveBeenCalledWith(
+      `⚠️  Warning: Could not copy "${nonExistentFile}": File not found`
     );
+
+    warnSpy.mockRestore();
   });
 
   it("handles moving files with parentheses", () => {
@@ -369,8 +378,17 @@ describe("createStructureFromString", () => {
             (${nonExistentFile})
         `;
 
-    expect(() => createStructureFromString(structure, tempDir)).toThrow(
-      `Error moving file "${nonExistentFile}": ENOENT: no such file or directory`
+    // Spy on console.warn
+    const warnSpy = vi.spyOn(console, "warn");
+
+    // Should not throw
+    createStructureFromString(structure, tempDir);
+
+    // Should have called console.warn with the correct message
+    expect(warnSpy).toHaveBeenCalledWith(
+      `⚠️  Warning: Could not move "${nonExistentFile}": File not found`
     );
+
+    warnSpy.mockRestore();
   });
 });
