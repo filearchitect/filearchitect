@@ -166,11 +166,7 @@ This project is licensed under the MIT License - see the LICENSE file for detail
 
 - Website: [filearchitect.com](https://filearchitect.com)
 - Documentation: [filearchitect.com/docs](https://filearchitect.com/docs)
-- Issues: [GitHub Issues](https://github.com/yourusername/file-architect-core/issues)
-
-## Changelog
-
-See [CHANGELOG.md](./CHANGELOG.md) for a list of changes.
+- Issues: [GitHub Issues](https://github.com/seblavoie/file-architect-core/issues)
 
 ## Security
 
