@@ -1,0 +1,22 @@
+{
+  "name": "file-architect-core",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "vitest"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@types/node": "^22.10.2",
+    "typescript": "^5.7.2"
+  },
+  "bin": {
+    "file-architect": "./dist/cli.js"
+  },
+  "devDependencies": {
+    "vitest": "^2.1.8"
+  }
+}
