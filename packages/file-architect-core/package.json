@@ -7,15 +7,15 @@
   "browser": "dist/browser.js",
   "types": "dist/index.d.ts",
   "bin": {
-    "file-architect": "./dist/cli.js"
+    "file-architect": "dist/cli.js"
   },
   "scripts": {
-    "build": "tsc",
+    "build": "tsc && chmod +x dist/cli.js",
     "dev": "tsc --watch",
     "test": "vitest",
     "test:watch": "vitest watch",
-    "prepublishOnly": "npm run build",
-    "postinstall": "chmod +x ./dist/cli.js"
+    "prepublishOnly": "pnpm build",
+    "postinstall": "pnpm build"
   },
   "exports": {
     ".": {

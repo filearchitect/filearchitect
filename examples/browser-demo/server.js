@@ -155,7 +155,22 @@ const server = createServer(async (req, res) => {
   }
 });
 
-const PORT = 3456;
-server.listen(PORT, () => {
-  console.log(`Server running at http://localhost:${PORT}`);
-});
+// Try different ports if the default one is in use
+const tryPort = (port) => {
+  server
+    .listen(port, () => {
+      console.log(`Server running at http://localhost:${port}`);
+    })
+    .on("error", (err) => {
+      if (err.code === "EADDRINUSE") {
+        console.log(`Port ${port} is in use, trying ${port + 1}...`);
+        tryPort(port + 1);
+      } else {
+        console.error("Server error:", err);
+        process.exit(1);
+      }
+    });
+};
+
+// Start with port 3456
+tryPort(3456);
