@@ -1,5 +1,9 @@
 {
   "name": "@filearchitect/cli",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "0.1.1",
   "description": "CLI tool to create file and directory structures from text descriptions",
   "type": "commonjs",
@@ -44,8 +48,5 @@
   "dependencies": {
     "@filearchitect/core": "workspace:../core",
     "chalk": "^4.1.2"
-  },
-  "publishConfig": {
-    "access": "public"
   }
 }

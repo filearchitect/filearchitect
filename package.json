@@ -1,6 +1,6 @@
 {
   "name": "@filearchitect/monorepo",
-  "private": true,
+  "private": false,
   "version": "0.1.1",
   "description": "File Architect monorepo",
   "scripts": {
@@ -11,10 +11,13 @@
     "cli": "node packages/core/dist/cli.js",
     "clean": "pnpm -r exec rm -rf dist node_modules",
     "version": "pnpm -r version",
-    "publish": "pnpm build && cd packages/core && npm publish"
+    "publish": "pnpm build && pnpm publish -r"
   },
   "engines": {
     "node": ">=18",
     "pnpm": ">=8"
+  },
+  "publishConfig": {
+    "access": "public"
   }
 }

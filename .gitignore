@@ -1,5 +1,23 @@
+# Build output
 dist/
-structure.txt
-output/
+*.js
+*.js.map
+*.d.ts
+
+# Keep TypeScript files
+!*.ts
+!*.tsx
+
+# Dependencies
 node_modules/
+
+# IDE
+.vscode/
+.idea/
+
+# Misc
 .DS_Store
+*.log
+
+output/
+structure.txt

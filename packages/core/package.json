@@ -1,5 +1,9 @@
 {
   "name": "@filearchitect/core",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "version": "0.1.1",
   "description": "Create file and directory structures from text descriptions",
   "type": "module",
@@ -54,8 +58,5 @@
   },
   "dependencies": {
     "chalk": "^4.1.2"
-  },
-  "publishConfig": {
-    "access": "public"
   }
 }
