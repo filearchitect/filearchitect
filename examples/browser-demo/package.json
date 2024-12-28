@@ -1,13 +1,13 @@
 {
   "name": "@file-architect/browser-demo",
   "private": true,
-  "version": "0.0.0",
+  "version": "0.1.1",
   "type": "module",
   "scripts": {
     "web": "node server.js",
     "dev": "node server.js"
   },
   "dependencies": {
-    "@file-architect/core": "workspace:*"
+    "file-architect-core": "workspace:*"
   }
 }
