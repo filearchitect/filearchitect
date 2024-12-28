@@ -1,55 +1,13 @@
 {
-  "name": "file-architect-core",
-  "version": "0.1.0",
-  "description": "A CLI tool and library to create file structures from text descriptions, with support for copying and moving files.",
-  "main": "dist/index.js",
-  "types": "dist/index.d.ts",
-  "bin": {
-    "file-architect": "dist/cli.js"
-  },
+  "name": "file-architect",
+  "private": true,
+  "version": "0.0.0",
+  "description": "File Architect monorepo",
   "scripts": {
-    "test": "vitest",
-    "build": "tsc",
-    "dev": "tsc --watch",
-    "prepublishOnly": "npm run build"
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "keywords": [
-    "file-structure",
-    "directory-structure",
-    "cli",
-    "file-management",
-    "scaffolding",
-    "boilerplate",
-    "project-structure",
-    "file-organization"
-  ],
-  "author": {
-    "name": "Sebastien Lavoie",
-    "url": "https://filearchitect.com"
-  },
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/seblavoie/file-architect-core.git"
-  },
-  "bugs": {
-    "url": "https://github.com/seblavoie/file-architect-core/issues"
-  },
-  "homepage": "https://filearchitect.com",
-  "dependencies": {
-    "chalk": "4"
-  },
-  "devDependencies": {
-    "@types/node": "^22.10.2",
-    "typescript": "^5.7.2",
-    "vitest": "^2.1.8"
-  },
-  "engines": {
-    "node": ">=14"
+    "build": "pnpm -r build",
+    "test": "pnpm -r test",
+    "demo": "pnpm --filter file-architect-browser-demo web",
+    "dev": "pnpm --parallel -r dev",
+    "cli": "node packages/file-architect-core/dist/cli.js"
   }
 }

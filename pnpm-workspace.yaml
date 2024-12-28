@@ -1,0 +1,9 @@
+packages:
+  # Core packages
+  - "packages/*"
+  # Examples and demos
+  - "examples/*"
+  # Exclude test directories and build artifacts
+  - "!**/test/**"
+  - "!**/dist/**"
+  - "!**/node_modules/**"
