@@ -10,7 +10,7 @@ importers:
 
   examples/browser-demo:
     dependencies:
-      file-architect-core:
+      '@file-architect/core':
         specifier: workspace:*
         version: link:../../packages/file-architect-core
 

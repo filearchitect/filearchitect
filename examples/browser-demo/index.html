@@ -10,91 +10,49 @@
         max-width: 800px;
         margin: 0 auto;
         padding: 2rem;
-        line-height: 1.6;
+        line-height: 1.5;
       }
       button {
-        background: #3b82f6;
-        color: white;
-        border: none;
-        padding: 0.75rem 1.5rem;
-        border-radius: 0.375rem;
+        padding: 0.5rem 1rem;
         font-size: 1rem;
         cursor: pointer;
-        transition: background-color 0.2s;
       }
-      button:hover {
-        background: #2563eb;
-      }
-      pre {
-        background: #f1f5f9;
-        padding: 1rem;
-        border-radius: 0.375rem;
-        overflow: auto;
-      }
-      .output {
+      #output {
         margin-top: 1rem;
         padding: 1rem;
-        border: 1px solid #e2e8f0;
-        border-radius: 0.375rem;
-      }
-      .success {
-        color: #059669;
-      }
-      .error {
-        color: #dc2626;
+        background: #f5f5f5;
+        border-radius: 4px;
+        white-space: pre-wrap;
       }
     </style>
   </head>
   <body>
     <h1>File Architect Demo</h1>
-    <p>Click the button below to create a sample project structure:</p>
+    <p>
+      This demo will create a project structure based on the structure.txt file.
+    </p>
     <button id="createButton">Create Project Structure</button>
-    <div id="output" class="output"></div>
+    <div id="output"></div>
 
-    <h2>Project Structure to Create:</h2>
-    <pre>
-test-project/
-  ├── src/
-  │   └── index.js
-  └── README.md</pre
-    >
-
-    <script src="/browser-bundle.js"></script>
     <script>
-      const createProject = async function () {
-        const output = document.getElementById("output");
-        output.innerHTML = "Creating project structure...";
+      const output = document.getElementById("output");
+      const createButton = document.getElementById("createButton");
 
+      createButton.addEventListener("click", async () => {
         try {
-          const structure = `
-                    test-project
-                        src
-                            README.md
-                            [/Users/sebastienlavoie/Documents/FA_setup/test123.json] > test123_renamed.json
-                `;
+          output.textContent = "Creating project structure...";
+          const response = await fetch("/create");
+          const data = await response.json();
 
-          await FileArchitect.createStructureFromString(structure, "./output", {
-            verbose: true,
-            fs: new FileArchitect.BrowserFileSystem(),
-          });
-
-          output.innerHTML = `
-                    <span class="success">✨ Project created successfully!</span><br>
-                    Check the <code>output/test-project</code> directory.
-                `;
+          if (data.success) {
+            output.textContent = `✨ Project structure created successfully in:\n${data.outputDir}`;
+          } else {
+            output.textContent = `Error: ${data.error}`;
+          }
         } catch (error) {
-          output.innerHTML = `
-                    <span class="error">❌ Error creating project:</span><br>
-                    ${error.message}
-                `;
-          console.error("Error:", error);
+          output.textContent = `Error: ${error.message}`;
         }
-      };
-
-      // Add click event listener
-      document
-        .getElementById("createButton")
-        .addEventListener("click", createProject);
+      });
     </script>
   </body>
 </html>
