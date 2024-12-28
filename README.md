@@ -56,7 +56,3 @@ file-architect create structure.txt output-dir
 cd packages/cli
 node dist/cli.js create structure.txt output-dir
 ```
-
-## License
-
-MIT © Sebastien Lavoie
