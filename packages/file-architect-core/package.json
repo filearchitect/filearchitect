@@ -1,6 +1,6 @@
 {
-  "name": "@file-architect/core",
-  "version": "0.1.0",
+  "name": "file-architect-core",
+  "version": "0.1.1",
   "description": "Create file and directory structures from text descriptions",
   "type": "commonjs",
   "main": "dist/index.js",
