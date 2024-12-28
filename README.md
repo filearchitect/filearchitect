@@ -1,59 +1,62 @@
 # File Architect
 
-A monorepo containing tools and packages for creating file and directory structures from text descriptions.
+Create file and directory structures from text descriptions.
 
 ## Packages
 
-- [file-architect-core](packages/file-architect-core/README.md) - The core library and CLI tool
-- [browser-demo](examples/browser-demo/README.md) - A web-based demo showing how to use the library in a browser
+- [@filearchitect/core](packages/core/README.md): Core library for creating file structures
+- [@filearchitect/cli](packages/cli/README.md): Command-line interface
+- [Browser Demo](examples/browser-demo/README.md): Web-based demo application
 
 ## Development
+
+This is a monorepo using pnpm workspaces. To get started:
 
 ```bash
 # Install dependencies
 pnpm install
 
-# Run tests
-pnpm test
-
 # Build all packages
 pnpm build
 
-# Run development mode (watches all packages)
-pnpm dev
+# Run tests
+pnpm test
 
-# Run the browser demo
+# Start the browser demo
 pnpm demo
 
-# Use the CLI
+# Use the CLI locally
+pnpm cli create structure.txt output-dir
+
+# Development mode (watches all packages)
+pnpm dev
+```
+
+### Local CLI Development
+
+You can use the CLI locally in three ways:
+
+1. Using the root package script:
+
+```bash
 pnpm cli create structure.txt output-dir
 ```
 
-## Project Structure
+2. Link the CLI globally:
 
-```
-file-architect/
-├── packages/
-│   └── file-architect-core/     # The main package
-│       ├── src/                 # Source code
-│       ├── dist/                # Compiled code
-│       └── README.md            # Package documentation
-├── examples/
-│   └── browser-demo/           # Browser demo
-│       ├── index.html          # Demo interface
-│       ├── server.js           # Demo server
-│       └── README.md           # Demo documentation
-└── README.md                   # This file
+```bash
+cd packages/cli
+pnpm link --global
+file-architect create structure.txt output-dir
 ```
 
-## Contributing
+3. Run directly from the CLI package:
 
-1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add amazing feature'`)
-4. Push to the branch (`git push origin feature/amazing-feature`)
-5. Open a Pull Request
+```bash
+cd packages/cli
+node dist/cli.js create structure.txt output-dir
+```
 
 ## License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+MIT © Sebastien Lavoie

@@ -10,11 +10,31 @@ importers:
 
   examples/browser-demo:
     dependencies:
-      '@file-architect/core':
-        specifier: workspace:*
-        version: link:../../packages/file-architect-core
+      '@filearchitect/core':
+        specifier: workspace:../../packages/core
+        version: link:../../packages/core
+    devDependencies:
+      vite:
+        specifier: ^5.0.8
+        version: 5.4.11(@types/node@20.17.10)
 
-  packages/file-architect-core:
+  packages/cli:
+    dependencies:
+      '@filearchitect/core':
+        specifier: workspace:../core
+        version: link:../core
+      chalk:
+        specifier: ^4.1.2
+        version: 4.1.2
+    devDependencies:
+      '@types/node':
+        specifier: ^20.11.24
+        version: 20.17.10
+      typescript:
+        specifier: ^5.3.3
+        version: 5.7.2
+
+  packages/core:
     dependencies:
       chalk:
         specifier: ^4.1.2

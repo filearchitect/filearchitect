@@ -1,17 +1,17 @@
 {
-  "name": "@file-architect/monorepo",
+  "name": "@filearchitect/monorepo",
   "private": true,
   "version": "0.1.1",
   "description": "File Architect monorepo",
   "scripts": {
     "build": "pnpm -r build",
     "test": "pnpm -r test",
-    "demo": "pnpm --filter @file-architect/browser-demo web",
+    "demo": "pnpm --filter browser-demo dev",
     "dev": "pnpm --parallel -r dev",
-    "cli": "node packages/file-architect-core/dist/cli.js",
+    "cli": "node packages/core/dist/cli.js",
     "clean": "pnpm -r exec rm -rf dist node_modules",
     "version": "pnpm -r version",
-    "publish": "pnpm build && cd packages/file-architect-core && npm publish"
+    "publish": "pnpm build && cd packages/core && npm publish"
   },
   "engines": {
     "node": ">=18",
