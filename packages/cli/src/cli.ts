@@ -8,7 +8,7 @@ const help = `
 file-architect v${version}
 
 Usage:
-  file-architect create <input-file> <output-dir> [--verbose]
+  file-architect create <input-file> <output> [--verbose]
   file-architect validate <input-file>
 
 Options:
@@ -17,8 +17,8 @@ Options:
   -v, --version Show version
 
 Examples:
-  file-architect create structure.txt output-dir
-  echo "folder1\\n  file1.txt" | file-architect create - output-dir
+  file-architect create structure.txt output
+  echo "folder1\\n  file1.txt" | file-architect create - output
   file-architect validate structure.txt
 `;
 

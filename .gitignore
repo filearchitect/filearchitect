@@ -1,6 +1,5 @@
 dist/
 structure.txt
-output-dir/
+output/
 node_modules/
 .DS_Store
-examples/browser-demo/output/

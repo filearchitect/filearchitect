@@ -16,19 +16,44 @@ import { createStructureFromString } from "@filearchitect/core";
 // Create a directory structure
 await createStructureFromString(
   `
-folder1
-  file1.txt
-  folder2
-    file2.txt
+src/
+  components/
+    Button.tsx
+    Card.tsx
+  styles/
+    global.css
+  utils/
+    helpers.ts
 `,
-  "./output-dir"
+  "./output"
 );
 
-// Validate a structure string
+// Copy files
 await createStructureFromString(
   `
-folder1
-  file1.txt
+config/
+  [~/configs/base.json] > base.json   # Copy file
+  [~/templates/react/] > template/    # Copy directory
+`,
+  "./output"
+);
+
+// Move files
+await createStructureFromString(
+  `
+src/
+  (~/old-project/components/) > components/  # Move directory
+  (~/old-project/config.json) > config.json  # Move file
+`,
+  "./output"
+);
+
+// Validate without creating
+await createStructureFromString(
+  `
+src/
+  components/
+    Button.tsx
 `,
   "/tmp/validate",
   { validate: true }
@@ -48,6 +73,31 @@ Creates a directory structure from a text description.
 - `options`: Optional configuration
   - `verbose`: Show detailed output (default: false)
   - `validate`: Only validate the structure without creating files (default: false)
+  - `fs`: Custom filesystem implementation (default: NodeFileSystem)
+
+## Syntax Guide
+
+| Syntax              | Description          | Example                         |
+| ------------------- | -------------------- | ------------------------------- |
+| `name`              | Create an empty file | `file.txt`                      |
+| `name/`             | Create a directory   | `src/`                          |
+| `[source] > target` | Copy file/directory  | `[~/config.json] > config.json` |
+| `(source) > target` | Move file/directory  | `(~/old.txt) > new.txt`         |
+
+## Custom Filesystem Support
+
+You can provide your own filesystem implementation for different environments:
+
+```typescript
+import { createStructureFromString, FileSystem } from "@filearchitect/core";
+
+class CustomFileSystem implements FileSystem {
+  // Implement the FileSystem interface
+}
+
+const fs = new CustomFileSystem();
+await createStructureFromString(input, outputDir, { fs });
+```
 
 ## CLI Tool
 
