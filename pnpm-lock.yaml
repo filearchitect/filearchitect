@@ -21,7 +21,7 @@ importers:
   packages/cli:
     dependencies:
       '@filearchitect/core':
-        specifier: workspace:../core
+        specifier: workspace:^
         version: link:../core
       chalk:
         specifier: ^4.1.2
