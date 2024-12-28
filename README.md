@@ -1,129 +1,166 @@
 # File Architect Core
 
-File Architect is a CLI and library that helps you create a file structure from a text file. It supports creating files and directories, copying existing files, and moving files with a simple, intuitive syntax.
-
-Don't want to use code? There is also a mac app available at [filearchitect.com](https://filearchitect.com).
-
-Learn more about the syntax [here](https://filearchitect.com/docs).
+A flexible and powerful library for creating file and directory structures from a simple text description.
 
 ## Features
 
-- 📝 Create files and directories from a text description
-- 📋 Copy existing files and directories
-- ✂️ Move files and directories
-- 🔄 Rename files during copy/move operations
-- 🌳 Support for nested structures with indentation
-- 🔍 Preview mode to visualize structure before creating
-- ✅ Syntax validation
-- ⚠️ Graceful error handling with warnings
-- 🔄 Works with both absolute and relative paths
-- 🏠 Supports ~ for home directory paths
+- Create files and directories with a simple indented structure
+- Copy files and directories with `[source] > target` syntax
+- Move files and directories with `(source) > target` syntax
+- Support for spaces and special characters in file names
+- Support for absolute and relative paths
+- Support for home directory (`~`) in paths
+- Filesystem abstraction layer for different environments (Node.js, Tauri, etc.)
+- Verbose mode for detailed operation logging
 
 ## Installation
 
 ```bash
-# Global installation (recommended for CLI usage)
-npm install -g file-architect-core
-
-# Local installation (for using as a library)
 npm install file-architect-core
 ```
 
-## Quick Syntax Guide
+## Usage
 
-| Syntax                                      | Action                   | Example                                                                                  | Description                            |
-| ------------------------------------------- | ------------------------ | ---------------------------------------------------------------------------------------- | -------------------------------------- |
-| Plain text                                  | Creates a folder         | `project`                                                                                | Creates a directory named "project"    |
-| Text with extension                         | Creates a file           | `index.js`                                                                               | Creates an empty file named "index.js" |
-| Bracketed file path                         | Copies existing file     | `[/Users/You/logo.png]`                                                                  | Copies the file at the specified path  |
-| Bracketed file path with name replacement   | Copies and renames file  | `[/Users/You/logo.png] > new-logo.png`                                                   | Copies and renames the file            |
-| Bracketed folder path                       | Copies entire folder     | `[path/to/folder]`                                                                       | Copies the entire directory            |
-| Parentheses file path                       | Moves existing file      | `(/Users/You/logo.png)`                                                                  | Moves the file to the current location |
-| Parentheses file path with name replacement | Moves existing file      | `(/Users/You/logo.png) > new-logo.png`                                                   | Moves and renames the file             |
-| Tab indentation                             | Creates nested structure | parent<div class="border-l-2  border-gray-300" style="padding: 0 0 0 .8rem;">child</div> | Creates nested directories/files       |
-
-### Path Resolution
-
-File Architect supports several ways to specify paths:
-
-- Absolute paths: `/Users/you/file.txt`
-- Relative paths: `./file.txt` or `../file.txt`
-- Home directory paths: `~/file.txt` (expands to your home directory)
-
-For example:
-
-```bash
-# Using home directory path
-[~/Documents/logo.png] > assets/logo.png
-
-# Using absolute path
-[/Users/you/Documents/logo.png] > assets/logo.png
-
-# Using relative path
-[./logo.png] > assets/logo.png
-```
-
-## CLI Usage
+### CLI Usage
 
 ```bash
 # Create structure from a file
-file-architect create structure.txt [output-dir]
+file-architect create structure.txt output-dir
 
 # Create structure from stdin
-echo "project\n  src\n    index.js" | file-architect create - [output-dir]
+echo "folder1\n  file1.txt" | file-architect create - output-dir
 
-# Preview structure without creating files
-file-architect preview structure.txt
-
-# Validate structure syntax
+# Validate structure file
 file-architect validate structure.txt
-
-# Show help information
-file-architect help
-
-# Show version information
-file-architect version
 ```
 
-### CLI Commands
-
-- `create <file> [output-dir]` - Create file structure from a file
-- `preview <file>` - Preview file structure without creating files
-- `validate <file>` - Validate structure syntax
-- `help` - Show help information
-- `version` - Show version information
-
-## Library Usage
+### Library Usage
 
 ```typescript
 import { createStructureFromString } from "file-architect-core";
 
-// Create structure from a string
 const structure = `
-project
-  src
-    index.js
-    components
-      Button.tsx
-      [/path/to/existing/Component.tsx]
-  tests
-    index.test.js
-  assets
-    (path/to/existing/logo.png) > logo.png
+folder1
+  file1.txt
+  folder2
+    file2.txt
+  [~/Desktop/config.json] > config.json
+  (~/old-files/data.txt) > data.txt
 `;
 
-// Create the structure in the specified directory
-createStructureFromString(structure, "./output");
+await createStructureFromString(structure, "./output");
 ```
 
-## Error Handling
+### Filesystem Adapters
 
-File Architect is designed to be resilient and user-friendly:
+The library supports different filesystem implementations through adapters. By default, it uses Node.js's filesystem, but you can provide your own implementation:
 
-- If a source file for copy/move doesn't exist, it creates an empty file and logs a warning
-- If a destination already exists, it's overwritten
-- Invalid lines in the structure file are ignored with warnings
-- Syntax errors are reported with clear error messages
+#### Using with Node.js (default)
+
+```typescript
+import { createStructureFromString } from "file-architect-core";
+
+// Uses Node's fs by default
+await createStructureFromString(structure, "./output");
+```
+
+#### Using with Tauri
+
+```typescript
+import {
+  createStructureFromString,
+  TauriFileSystem,
+} from "file-architect-core";
+import { fs } from "@tauri-apps/api";
+
+// Use Tauri's filesystem
+const tauriFs = new TauriFileSystem(fs);
+await createStructureFromString(structure, "./output", { fs: tauriFs });
+```
+
+#### Creating a Custom Adapter
+
+You can create your own filesystem adapter by implementing the `FileSystem` interface:
+
+```typescript
+import { FileSystem } from "file-architect-core";
+
+class CustomFileSystem implements FileSystem {
+  async exists(path: string): Promise<boolean> {
+    // Your implementation
+  }
+
+  async mkdir(path: string, options: { recursive: boolean }): Promise<void> {
+    // Your implementation
+  }
+
+  async writeFile(path: string, data: string): Promise<void> {
+    // Your implementation
+  }
+
+  async readFile(path: string): Promise<string> {
+    // Your implementation
+  }
+
+  async copyFile(src: string, dest: string): Promise<void> {
+    // Your implementation
+  }
+
+  async stat(path: string): Promise<{ isDirectory(): boolean }> {
+    // Your implementation
+  }
+
+  async readdir(
+    path: string,
+    options: { withFileTypes: true }
+  ): Promise<any[]> {
+    // Your implementation
+  }
+
+  async rm(path: string, options: { recursive: boolean }): Promise<void> {
+    // Your implementation
+  }
+
+  async unlink(path: string): Promise<void> {
+    // Your implementation
+  }
+
+  async rename(oldPath: string, newPath: string): Promise<void> {
+    // Your implementation
+  }
+}
+
+// Use your custom filesystem
+const customFs = new CustomFileSystem();
+await createStructureFromString(structure, "./output", { fs: customFs });
+```
+
+## Syntax Guide
+
+| Syntax              | Description              | Example                           |
+| ------------------- | ------------------------ | --------------------------------- |
+| `name`              | Create an empty file     | `file.txt`                        |
+| `name/`             | Create a directory       | `folder/`                         |
+| `[source]`          | Copy a file or directory | `[~/config.json]`                 |
+| `[source] > target` | Copy and rename          | `[~/config.json] > settings.json` |
+| `(source)`          | Move a file or directory | `(~/old-file.txt)`                |
+| `(source) > target` | Move and rename          | `(~/old-file.txt) > new-file.txt` |
+
+## Options
+
+When using the library, you can provide additional options:
+
+```typescript
+interface CreateOptions {
+  verbose?: boolean; // Enable verbose logging
+  fs?: FileSystem; // Custom filesystem implementation
+}
+
+await createStructureFromString(structure, "./output", {
+  verbose: true,
+  fs: customFs,
+});
+```
 
 ## Development
 
@@ -131,43 +168,32 @@ File Architect is designed to be resilient and user-friendly:
 # Install dependencies
 npm install
 
-# Run in development mode with watch
-npm run dev
-
 # Run tests
 npm test
 
-# Build for production
+# Build
 npm run build
+
+# Lint
+npm run lint
 ```
 
 ## Contributing
 
-We welcome contributions! Here's how you can help:
-
 1. Fork the repository
 2. Create your feature branch (`git checkout -b feature/amazing-feature`)
-3. Commit your changes (`git commit -m 'Add some amazing feature'`)
+3. Commit your changes (`git commit -m 'Add amazing feature'`)
 4. Push to the branch (`git push origin feature/amazing-feature`)
 5. Open a Pull Request
 
-Please make sure to:
-
-- Update tests as appropriate
-- Follow the existing code style
-- Update documentation if needed
-- Add comments for complex logic
-
 ## License
 
-This project is licensed under the MIT License - see the LICENSE file for details.
-
-## Support
-
-- Website: [filearchitect.com](https://filearchitect.com)
-- Documentation: [filearchitect.com/docs](https://filearchitect.com/docs)
-- Issues: [GitHub Issues](https://github.com/seblavoie/file-architect-core/issues)
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
 
 ## Security
 
-If you discover any security-related issues, please email security@filearchitect.com instead of using the issue tracker.
+If you discover any security-related issues, please email [security contact] instead of using the issue tracker.
+
+## Changelog
+
+See [CHANGELOG.md](CHANGELOG.md) for a list of changes.
