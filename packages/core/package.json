@@ -2,7 +2,7 @@
   "name": "@filearchitect/core",
   "version": "0.1.1",
   "description": "Create file and directory structures from text descriptions",
-  "type": "commonjs",
+  "type": "module",
   "main": "dist/index.js",
   "browser": "dist/browser.js",
   "types": "dist/index.d.ts",
@@ -15,6 +15,7 @@
   },
   "exports": {
     ".": {
+      "types": "./dist/index.d.ts",
       "browser": "./dist/browser.js",
       "default": "./dist/index.js"
     },
