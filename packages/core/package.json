@@ -1,21 +1,17 @@
 {
-  "name": "file-architect-core",
+  "name": "@filearchitect/core",
   "version": "0.1.1",
   "description": "Create file and directory structures from text descriptions",
   "type": "commonjs",
   "main": "dist/index.js",
   "browser": "dist/browser.js",
   "types": "dist/index.d.ts",
-  "bin": {
-    "file-architect": "dist/cli.js"
-  },
   "scripts": {
-    "build": "tsc && chmod +x dist/cli.js",
+    "build": "tsc",
     "dev": "tsc --watch",
     "test": "vitest",
     "test:watch": "vitest watch",
-    "prepublishOnly": "pnpm build",
-    "postinstall": "pnpm build"
+    "prepublishOnly": "pnpm build"
   },
   "exports": {
     ".": {
@@ -37,7 +33,6 @@
     "directory",
     "structure",
     "generator",
-    "cli",
     "filesystem",
     "scaffolding"
   ],

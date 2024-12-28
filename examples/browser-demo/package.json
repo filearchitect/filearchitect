@@ -1,13 +1,17 @@
 {
-  "name": "@file-architect/browser-demo",
+  "name": "browser-demo",
   "private": true,
-  "version": "0.1.1",
+  "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "web": "node server.js",
-    "dev": "node server.js"
+    "dev": "node server.js",
+    "build": "vite build",
+    "preview": "vite preview"
   },
   "dependencies": {
-    "file-architect-core": "workspace:*"
+    "@filearchitect/core": "workspace:../../packages/core"
+  },
+  "devDependencies": {
+    "vite": "^5.0.8"
   }
 }

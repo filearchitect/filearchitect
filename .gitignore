@@ -3,3 +3,4 @@ structure.txt
 output-dir/
 node_modules/
 .DS_Store
+examples/browser-demo/output/

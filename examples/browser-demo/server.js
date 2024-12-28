@@ -1,28 +1,56 @@
-import {
-  createStructureFromString,
-  NodeFileSystem,
-} from "@file-architect/core";
+import { createStructureFromString, NodeFileSystem } from "@filearchitect/core";
 import { readFile } from "fs/promises";
 import { createServer } from "http";
-import { dirname, join } from "path";
+import { dirname, extname, join } from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const fs = new NodeFileSystem();
 
+// MIME types for static files
+const MIME_TYPES = {
+  ".html": "text/html",
+  ".js": "text/javascript",
+  ".css": "text/css",
+  ".json": "application/json",
+  ".txt": "text/plain",
+};
+
 const server = createServer(async (req, res) => {
+  console.log(`${new Date().toISOString()} - ${req.method} ${req.url}`);
+
+  // Enable CORS
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Methods", "GET, POST, OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+
+  // Handle preflight requests
+  if (req.method === "OPTIONS") {
+    res.writeHead(204);
+    res.end();
+    return;
+  }
+
   try {
-    if (req.url === "/") {
+    const url = new URL(req.url, `http://${req.headers.host}`);
+    const pathname = decodeURIComponent(url.pathname);
+
+    console.log(`Processing request for path: ${pathname}`);
+
+    if (pathname === "/" || pathname === "/index.html") {
+      console.log("Serving index.html");
       const content = await readFile(join(__dirname, "index.html"), "utf-8");
       res.writeHead(200, { "Content-Type": "text/html" });
       res.end(content);
-    } else if (req.url === "/create") {
+    } else if (pathname === "/create") {
+      console.log("Processing /create request");
       // Read the structure file
-      const structure = await readFile(
-        join(__dirname, "structure.txt"),
-        "utf-8"
-      );
+      const structurePath = join(__dirname, "structure.txt");
+      console.log(`Reading structure from: ${structurePath}`);
+      const structure = await readFile(structurePath, "utf-8");
+
       const outputDir = join(__dirname, "output");
+      console.log(`Creating structure in: ${outputDir}`);
 
       // Create the structure using our package
       await createStructureFromString(structure, outputDir, {
@@ -30,35 +58,53 @@ const server = createServer(async (req, res) => {
         fs,
       });
 
+      console.log("Structure created successfully");
       res.writeHead(200, { "Content-Type": "application/json" });
-      res.end(JSON.stringify({ success: true, outputDir }));
+      res.end(
+        JSON.stringify({
+          success: true,
+          outputDir,
+          message: "Structure created successfully",
+        })
+      );
     } else {
-      res.writeHead(404);
-      res.end("Not found");
+      // Try to serve static files
+      try {
+        const filePath = join(__dirname, pathname);
+        console.log(`Attempting to serve static file: ${filePath}`);
+        const content = await readFile(filePath);
+        const ext = extname(filePath).toLowerCase();
+        const contentType = MIME_TYPES[ext] || "application/octet-stream";
+
+        res.writeHead(200, { "Content-Type": contentType });
+        res.end(content);
+      } catch (err) {
+        console.log(`404 - File not found: ${pathname}`);
+        res.writeHead(404, { "Content-Type": "application/json" });
+        res.end(
+          JSON.stringify({
+            success: false,
+            error: "Not found",
+            path: pathname,
+          })
+        );
+      }
     }
   } catch (error) {
     console.error("Server error:", error);
-    res.writeHead(500);
-    res.end(JSON.stringify({ error: error.message }));
+    res.writeHead(500, { "Content-Type": "application/json" });
+    res.end(
+      JSON.stringify({
+        success: false,
+        error: error.message,
+        stack: process.env.NODE_ENV === "development" ? error.stack : undefined,
+      })
+    );
   }
 });
 
-// Try different ports if the default one is in use
-const tryPort = (port) => {
-  server
-    .listen(port, () => {
-      console.log(`Server running at http://localhost:${port}`);
-    })
-    .on("error", (err) => {
-      if (err.code === "EADDRINUSE") {
-        console.log(`Port ${port} is in use, trying ${port + 1}...`);
-        tryPort(port + 1);
-      } else {
-        console.error("Server error:", err);
-        process.exit(1);
-      }
-    });
-};
-
-// Start with port 3456
-tryPort(3456);
+const port = 3456;
+server.listen(port, () => {
+  console.log(`Server running at http://localhost:${port}`);
+  console.log(`Current directory: ${__dirname}`);
+});

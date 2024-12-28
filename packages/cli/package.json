@@ -1,0 +1,51 @@
+{
+  "name": "@filearchitect/cli",
+  "version": "0.1.1",
+  "description": "CLI tool to create file and directory structures from text descriptions",
+  "type": "commonjs",
+  "main": "dist/cli.js",
+  "types": "dist/cli.d.ts",
+  "bin": {
+    "file-architect": "dist/cli.js"
+  },
+  "scripts": {
+    "build": "tsc && chmod +x dist/cli.js",
+    "dev": "tsc --watch",
+    "prepublishOnly": "pnpm build"
+  },
+  "files": [
+    "dist",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "file",
+    "directory",
+    "structure",
+    "generator",
+    "cli",
+    "filesystem",
+    "scaffolding"
+  ],
+  "author": "Sebastien Lavoie",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/filearchitect/file-architect-core.git"
+  },
+  "bugs": {
+    "url": "https://github.com/filearchitect/file-architect-core/issues"
+  },
+  "homepage": "https://filearchitect.com",
+  "devDependencies": {
+    "@types/node": "^20.11.24",
+    "typescript": "^5.3.3"
+  },
+  "dependencies": {
+    "@filearchitect/core": "workspace:../core",
+    "chalk": "^4.1.2"
+  },
+  "publishConfig": {
+    "access": "public"
+  }
+}

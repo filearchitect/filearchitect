@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-const { createStructureFromString } = require("./index");
-const { readFile } = require("fs/promises");
-const { version } = require("../package.json");
+import { createStructureFromString } from "@filearchitect/core";
+import { readFile } from "fs/promises";
+import { version } from "../package.json";
 
 const help = `
 file-architect v${version}
