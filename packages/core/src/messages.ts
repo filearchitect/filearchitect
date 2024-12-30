@@ -1,67 +1,142 @@
-import { MESSAGES } from "./constants";
-
 export interface LogOptions {
   verbose?: boolean;
 }
 
-// Messages that should always be shown, regardless of verbose setting
-const ALWAYS_SHOW_MESSAGES = new Set(
-  [
-    // Important file operations
-    MESSAGES.CREATED_FILE(""),
-    MESSAGES.CREATED_DIR(""),
+interface MessageConfig {
+  emoji: string;
+  template: (...args: any[]) => string;
+  alwaysShow: boolean;
+}
 
-    // Warnings and errors
-    MESSAGES.SOURCE_NOT_FOUND(""),
-    MESSAGES.OPERATION_FAILED(""),
-    MESSAGES.CREATE_EMPTY_FAILED(""),
-    MESSAGES.MOVE_FAILED(""),
-    MESSAGES.COPY_FAILED(""),
-    MESSAGES.STRUCTURE_WARNINGS(),
-  ].map((msg) => msg.split(" ")[1])
-); // Get the message type without the emoji
+// Message definitions with their configuration
+export const Messages = {
+  // File operations
+  CREATED_FILE: {
+    emoji: "📄",
+    template: (path: string) => `Created ${path}`,
+    alwaysShow: true,
+  },
+  CREATED_DIR: {
+    emoji: "📁",
+    template: (path: string) => `Created ${path}`,
+    alwaysShow: true,
+  },
+  DIR_EXISTS: {
+    emoji: "📁",
+    template: (path: string) => `Directory already exists: ${path}`,
+    alwaysShow: false,
+  },
 
-// Messages that should only be shown in verbose mode
-const VERBOSE_ONLY_MESSAGES = new Set(
-  [
-    // Success messages
-    MESSAGES.COPIED_FILE("", ""),
-    MESSAGES.MOVED_SUCCESS(),
-    MESSAGES.STRUCTURE_SUCCESS(),
+  // Copy operations
+  COPYING_DIR: {
+    emoji: "📋",
+    template: (src: string, dest: string) =>
+      `Copying directory from ${src} to ${dest}`,
+    alwaysShow: false,
+  },
+  COPIED_FILE: {
+    emoji: "📋",
+    template: (src: string, dest: string) => `Copied ${src} to ${dest}`,
+    alwaysShow: false,
+  },
 
-    // Directory operations
-    MESSAGES.COPYING_DIR("", ""),
-    MESSAGES.MOVING_DIR("", ""),
-    MESSAGES.MOVING_FILE("", ""),
-    MESSAGES.DIR_EXISTS(""),
-  ].map((msg) => msg.split(" ")[1])
-);
+  // Move operations
+  MOVING_DIR: {
+    emoji: "✂️",
+    template: (src: string, dest: string) =>
+      `Moving directory from ${src} to ${dest}`,
+    alwaysShow: false,
+  },
+  MOVING_FILE: {
+    emoji: "✂️",
+    template: (src: string, dest: string) =>
+      `Moving file from ${src} to ${dest}`,
+    alwaysShow: false,
+  },
+  MOVED_SUCCESS: {
+    emoji: "✅",
+    template: () => "Moved successfully",
+    alwaysShow: false,
+  },
 
-export function logMessage(message: string, options: LogOptions = {}): void {
+  // Warnings and errors
+  SOURCE_NOT_FOUND: {
+    emoji: "⚠️",
+    template: (path: string) =>
+      `Warning: Source not found "${path}", creating empty file`,
+    alwaysShow: true,
+  },
+  OPERATION_FAILED: {
+    emoji: "⚠️",
+    template: (error: string) =>
+      `Warning: Operation failed, creating empty file: ${error}`,
+    alwaysShow: true,
+  },
+  CREATE_EMPTY_FAILED: {
+    emoji: "⚠️",
+    template: (error: string) =>
+      `Warning: Could not create empty file: ${error}`,
+    alwaysShow: true,
+  },
+  MOVE_FAILED: {
+    emoji: "⚠️",
+    template: (error: string) =>
+      `Warning: Failed to move file, falling back to copy: ${error}`,
+    alwaysShow: true,
+  },
+  COPY_FAILED: {
+    emoji: "⚠️",
+    template: (path: string) =>
+      `Warning: Failed to copy "${path}", creating empty file`,
+    alwaysShow: true,
+  },
+
+  // Structure results
+  STRUCTURE_WARNINGS: {
+    emoji: "⚠️",
+    template: () => "\nStructure created with warnings",
+    alwaysShow: true,
+  },
+  STRUCTURE_SUCCESS: {
+    emoji: "✨",
+    template: () => "\nStructure created successfully",
+    alwaysShow: false,
+  },
+} as const;
+
+// Helper function to format a message with its emoji
+function formatMessage(config: MessageConfig, ...args: any[]): string {
+  return `${config.emoji} ${config.template(...args)}`;
+}
+
+export function logMessage(
+  type: keyof typeof Messages,
+  args: any[],
+  options: LogOptions = {}
+): void {
   const { verbose = false } = options;
-  const messageType = message.split(" ")[1]; // Get the message type without the emoji
+  const config = Messages[type];
 
-  if (
-    ALWAYS_SHOW_MESSAGES.has(messageType) ||
-    (verbose && VERBOSE_ONLY_MESSAGES.has(messageType))
-  ) {
-    console.log(message);
+  if (config.alwaysShow || verbose) {
+    console.log(formatMessage(config, ...args));
   }
 }
 
-export function logWarning(message: string): void {
-  console.warn(message);
+export function logWarning(type: keyof typeof Messages, args: any[]): void {
+  const config = Messages[type];
+  console.warn(formatMessage(config, ...args));
 }
 
-export function logSuccess(message: string, options: LogOptions = {}): void {
+export function logSuccess(
+  type: keyof typeof Messages,
+  args: any[],
+  options: LogOptions = {}
+): void {
   const { verbose = false } = options;
-  const messageType = message.split(" ")[1];
+  const config = Messages[type];
 
-  if (
-    ALWAYS_SHOW_MESSAGES.has(messageType) ||
-    (verbose && VERBOSE_ONLY_MESSAGES.has(messageType))
-  ) {
-    console.log(message);
+  if (config.alwaysShow || verbose) {
+    console.log(formatMessage(config, ...args));
   }
 }
 
@@ -80,10 +155,9 @@ export function logStructureResult(
   hasWarnings: boolean,
   options: LogOptions = {}
 ): void {
-  const { verbose = false } = options;
   if (hasWarnings) {
-    console.log(MESSAGES.STRUCTURE_WARNINGS());
-  } else if (verbose) {
-    console.log(MESSAGES.STRUCTURE_SUCCESS());
+    logMessage("STRUCTURE_WARNINGS", [], options);
+  } else {
+    logMessage("STRUCTURE_SUCCESS", [], options);
   }
 }

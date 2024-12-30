@@ -1,6 +1,5 @@
 import os from "os";
 import path from "path";
-import { EMOJIS, MESSAGES } from "./constants";
 import {
   logMessage,
   logOperation,
@@ -65,11 +64,11 @@ export async function createStructureFromString(
         }
       } catch (error: any) {
         hasWarnings = true;
-        logWarning(error.message);
+        logWarning("OPERATION_FAILED", [error.message]);
       }
     } catch (error: any) {
       hasWarnings = true;
-      logWarning(error.message);
+      logWarning("OPERATION_FAILED", [error.message]);
     }
   }
 
@@ -179,7 +178,7 @@ async function executeOperation(
     const destinationDir = path.dirname(targetPath);
     if (!(await filesystem.exists(destinationDir))) {
       await filesystem.mkdir(destinationDir, { recursive: true });
-      logMessage(MESSAGES.CREATED_DIR(destinationDir), { verbose });
+      logMessage("CREATED_DIR", [destinationDir], { verbose });
     }
 
     switch (operation.type) {
@@ -214,11 +213,11 @@ async function executeOperation(
         break;
     }
   } catch (error: any) {
-    logWarning(MESSAGES.OPERATION_FAILED(error.message));
+    logWarning("OPERATION_FAILED", [error.message]);
     try {
       await createEmptyFile(targetPath, { verbose, fs: filesystem });
     } catch (err: any) {
-      logWarning(MESSAGES.CREATE_EMPTY_FAILED(err.message));
+      logWarning("CREATE_EMPTY_FAILED", [err.message]);
     }
   }
 }
@@ -242,7 +241,7 @@ async function createEmptyFile(
 
   // Always write the file, even if it exists
   await filesystem.writeFile(filePath, "");
-  logMessage(MESSAGES.CREATED_FILE(filePath), { verbose });
+  logMessage("CREATED_FILE", [filePath], { verbose });
 }
 
 /**
@@ -259,9 +258,9 @@ async function createDirectory(
 
   if (!(await filesystem.exists(dirPath))) {
     await filesystem.mkdir(dirPath, { recursive: true });
-    logMessage(MESSAGES.CREATED_DIR(dirPath), { verbose });
+    logMessage("CREATED_DIR", [dirPath], { verbose });
   } else if (verbose) {
-    logMessage(MESSAGES.DIR_EXISTS(dirPath), { verbose });
+    logMessage("DIR_EXISTS", [dirPath], { verbose });
   }
 }
 
@@ -297,7 +296,7 @@ async function copyFile(
     : path.resolve(process.cwd(), sourcePath);
 
   if (!(await filesystem.exists(resolvedSource))) {
-    logWarning(MESSAGES.SOURCE_NOT_FOUND(sourcePath));
+    logWarning("SOURCE_NOT_FOUND", [sourcePath]);
     await createEmptyFile(targetPath, { verbose, fs: filesystem });
     return;
   }
@@ -310,17 +309,17 @@ async function copyFile(
   try {
     const stat = await filesystem.stat(resolvedSource);
     if (stat.isDirectory()) {
-      logMessage(MESSAGES.COPYING_DIR(resolvedSource, targetPath), { verbose });
+      logMessage("COPYING_DIR", [resolvedSource, targetPath], { verbose });
       await copyDirectorySync(resolvedSource, targetPath, {
         verbose,
         fs: filesystem,
       });
     } else {
       await filesystem.copyFile(resolvedSource, targetPath);
-      logSuccess(MESSAGES.COPIED_FILE(sourcePath, targetPath), { verbose });
+      logSuccess("COPIED_FILE", [sourcePath, targetPath], { verbose });
     }
   } catch (error) {
-    logWarning(MESSAGES.COPY_FAILED(sourcePath));
+    logWarning("COPY_FAILED", [sourcePath]);
     await createEmptyFile(targetPath, { verbose, fs: filesystem });
   }
 }
@@ -344,7 +343,7 @@ async function moveFile(
     : path.resolve(process.cwd(), sourcePath);
 
   if (!(await filesystem.exists(resolvedSource))) {
-    logWarning(MESSAGES.SOURCE_NOT_FOUND(sourcePath));
+    logWarning("SOURCE_NOT_FOUND", [sourcePath]);
     await createEmptyFile(targetPath, { verbose, fs: filesystem });
     return;
   }
@@ -357,27 +356,27 @@ async function moveFile(
   try {
     const stat = await filesystem.stat(resolvedSource);
     if (stat.isDirectory()) {
-      logMessage(MESSAGES.MOVING_DIR(resolvedSource, targetPath), { verbose });
+      logMessage("MOVING_DIR", [resolvedSource, targetPath], { verbose });
       await copyDirectorySync(resolvedSource, targetPath, {
         verbose: false,
         fs: filesystem,
       });
       await filesystem.rm(resolvedSource, { recursive: true });
-      logSuccess(MESSAGES.MOVED_SUCCESS(), { verbose });
+      logSuccess("MOVED_SUCCESS", [], { verbose });
     } else {
-      logMessage(MESSAGES.MOVING_FILE(resolvedSource, targetPath), { verbose });
+      logMessage("MOVING_FILE", [resolvedSource, targetPath], { verbose });
       try {
         // First try to copy the file to ensure we have the content
         await filesystem.copyFile(resolvedSource, targetPath);
         // Then try to remove the source file
         await filesystem.unlink(resolvedSource);
       } catch (error) {
-        logWarning(MESSAGES.MOVE_FAILED(error as string));
+        logWarning("MOVE_FAILED", [error as string]);
       }
-      logSuccess(MESSAGES.MOVED_SUCCESS(), { verbose });
+      logSuccess("MOVED_SUCCESS", [], { verbose });
     }
   } catch (error) {
-    logWarning(MESSAGES.COPY_FAILED(sourcePath));
+    logWarning("COPY_FAILED", [sourcePath]);
     await createEmptyFile(targetPath, { verbose, fs: filesystem });
   }
 }
@@ -412,7 +411,7 @@ async function copyDirectorySync(
       });
     } else {
       await filesystem.copyFile(sourcePath, destPath);
-      logMessage(`  ${EMOJIS.CHECK} ${entry.name}`, { verbose });
+      logMessage("COPIED_FILE", [entry.name], { verbose });
     }
   }
 }
