@@ -52,7 +52,7 @@ const messageFormatters: Record<MessageKey, (data: MessageData) => string> = {
   },
   "copy.success": (data) => {
     if (data.type !== "copyMove") throw new Error("Invalid message data");
-    return `✅ Successfully copied ${data.source} to ${data.target}`;
+    return `Copied ${data.source} to ${data.target}`;
   },
   "move.directory": (data) => {
     if (data.type !== "copyMove") throw new Error("Invalid message data");
@@ -64,7 +64,7 @@ const messageFormatters: Record<MessageKey, (data: MessageData) => string> = {
   },
   "move.success": (data) => {
     if (data.type !== "copyMove") throw new Error("Invalid message data");
-    return `✅ Successfully moved ${data.source} to ${data.target}`;
+    return `Moved ${data.source} to ${data.target}`;
   },
   "errors.sourceNotFound": (data) => {
     if (data.type !== "path") throw new Error("Invalid message data");

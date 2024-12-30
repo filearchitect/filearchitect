@@ -16,19 +16,19 @@ npm install @filearchitect/cli
 
 ```bash
 # Create a directory structure from a file
-file-architect create structure.txt output
+filearchitect create structure.txt output
 
 # Create a structure with verbose output
-file-architect create structure.txt output --verbose
+filearchitect create structure.txt output --verbose
 
 # Validate a structure file
-file-architect validate structure.txt
+filearchitect validate structure.txt
 
 # Show help
-file-architect --help
+filearchitect --help
 
 # Show version
-file-architect --version
+filearchitect --version
 ```
 
 ## Structure File Format
@@ -64,8 +64,8 @@ src/
 1. Clone and navigate to the repository:
 
 ```bash
-git clone https://github.com/filearchitect/file-architect.git
-cd file-architect
+git clone https://github.com/filearchitect/filearchitect.git
+cd filearchitect
 ```
 
 2. Install dependencies:
@@ -89,7 +89,7 @@ pnpm cli create structure.txt output
 # Link globally
 cd packages/cli
 pnpm link --global
-file-architect create structure.txt output
+filearchitect create structure.txt output
 
 # Run directly
 node dist/cli.js create structure.txt output

@@ -47,7 +47,7 @@ pnpm cli create structure.txt output-dir
 ```bash
 cd packages/cli
 pnpm link --global
-file-architect create structure.txt output-dir
+filearchitect create structure.txt output-dir
 ```
 
 3. Run directly from the CLI package:
