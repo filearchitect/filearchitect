@@ -171,3 +171,7 @@ export class NodeFileSystem implements FileSystem {
     }
   }
 }
+
+// Create and export a default instance
+const nodeFileSystem: FileSystem = new NodeFileSystem();
+export default nodeFileSystem;

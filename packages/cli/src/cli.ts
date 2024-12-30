@@ -1,6 +1,5 @@
 #!/usr/bin/env node
-import { createStructureFromString } from "@filearchitect/core";
-import { NodeFileSystem } from "@filearchitect/core/node-filesystem";
+import core, { NodeFileSystem } from "@filearchitect/core";
 import { Command } from "commander";
 import { readFile } from "fs/promises";
 
@@ -21,7 +20,7 @@ program
     async (file: string, output: string, options: { verbose: boolean }) => {
       try {
         const structure = await readFile(file, "utf-8");
-        await createStructureFromString(structure, output, {
+        await core.createStructureFromString(structure, output, {
           verbose: options.verbose,
           fs: new NodeFileSystem(),
         });

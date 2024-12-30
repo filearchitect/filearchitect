@@ -1,204 +1,185 @@
-import {
-  createCopyMoveMessage,
-  createPathMessage,
-  logMessage,
-  logWarning,
-} from "./messages";
-import { getParentDirectory, joinPaths, resolveSourcePath } from "./path-utils";
-import { CreateOptions } from "./types";
+import path from "path";
+import { MESSAGES } from "./constants";
+import { logMessage, logSuccess, logWarning } from "./messages";
+import { FileSystem } from "./types";
 
 /**
  * Creates an empty file, creating parent directories if needed.
+ *
+ * @param filePath The path of the file to create
+ * @param options Additional options
  */
 export async function createEmptyFile(
   filePath: string,
-  options: CreateOptions = {}
+  options: { verbose?: boolean; fs: FileSystem } = {} as any
 ): Promise<void> {
   const { verbose = false, fs: filesystem } = options;
-  if (!filesystem) {
-    throw new Error("Filesystem implementation is required");
+
+  const dir = path.dirname(filePath);
+  if (!(await filesystem.exists(dir))) {
+    await filesystem.mkdir(dir, { recursive: true });
   }
 
-  const dir = getParentDirectory(filePath);
-  await ensureDirectory(dir, { verbose, fs: filesystem });
+  // Always write the file, even if it exists
   await filesystem.writeFile(filePath, "");
-  logMessage("files.created", createPathMessage(filePath), verbose);
+  logMessage(MESSAGES.CREATED_FILE(filePath), { verbose });
 }
 
 /**
  * Creates a directory if it doesn't exist.
+ *
+ * @param dirPath The path of the directory to create
+ * @param options Additional options
  */
 export async function createDirectory(
   dirPath: string,
-  options: CreateOptions = {}
+  options: { verbose?: boolean; fs: FileSystem } = {} as any
 ): Promise<void> {
   const { verbose = false, fs: filesystem } = options;
-  if (!filesystem) {
-    throw new Error("Filesystem implementation is required");
-  }
 
   if (!(await filesystem.exists(dirPath))) {
     await filesystem.mkdir(dirPath, { recursive: true });
-    logMessage("files.dirCreated", createPathMessage(dirPath), verbose);
+    logMessage(MESSAGES.CREATED_DIR(dirPath), { verbose });
   } else if (verbose) {
-    logWarning("files.exists", createPathMessage(dirPath), verbose);
+    logMessage(MESSAGES.DIR_EXISTS(dirPath), { verbose });
   }
 }
 
 /**
- * Ensures a directory exists, creating it if necessary.
- */
-export async function ensureDirectory(
-  dirPath: string,
-  options: CreateOptions = {}
-): Promise<void> {
-  const { verbose = false, fs: filesystem } = options;
-  if (!filesystem) {
-    throw new Error("Filesystem implementation is required");
-  }
-
-  if (!(await filesystem.exists(dirPath))) {
-    await filesystem.mkdir(dirPath, { recursive: true });
-    logMessage("files.dirCreated", createPathMessage(dirPath), verbose);
-  }
-}
-
-/**
- * Copies a file or directory recursively.
+ * Copies a file or directory, creating an empty file if source doesn't exist.
+ *
+ * @param sourcePath The source path to copy from
+ * @param targetPath The target path to copy to
+ * @param options Additional options
  */
 export async function copyFile(
   sourcePath: string,
   targetPath: string,
-  options: CreateOptions = {}
+  options: { verbose?: boolean; fs: FileSystem } = {} as any
 ): Promise<void> {
   const { verbose = false, fs: filesystem } = options;
-  if (!filesystem) {
-    throw new Error("Filesystem implementation is required");
-  }
 
-  const resolvedSource = resolveSourcePath(sourcePath);
+  const resolvedSource = path.isAbsolute(sourcePath)
+    ? sourcePath
+    : path.resolve(process.cwd(), sourcePath);
 
   if (!(await filesystem.exists(resolvedSource))) {
-    logWarning("errors.sourceNotFound", createPathMessage(sourcePath), verbose);
+    logWarning(MESSAGES.SOURCE_NOT_FOUND(sourcePath));
     await createEmptyFile(targetPath, { verbose, fs: filesystem });
     return;
+  }
+
+  const destinationDir = path.dirname(targetPath);
+  if (!(await filesystem.exists(destinationDir))) {
+    await filesystem.mkdir(destinationDir, { recursive: true });
   }
 
   try {
     const stat = await filesystem.stat(resolvedSource);
     if (stat.isDirectory()) {
-      logMessage(
-        "copy.directory",
-        createCopyMoveMessage(resolvedSource, targetPath),
-        verbose
-      );
-      await copyDirectoryRecursive(resolvedSource, targetPath, options);
+      logMessage(MESSAGES.COPYING_DIR(resolvedSource, targetPath), { verbose });
+      await copyDirectorySync(resolvedSource, targetPath, {
+        verbose,
+        fs: filesystem,
+      });
     } else {
-      await ensureDirectory(getParentDirectory(targetPath), options);
       await filesystem.copyFile(resolvedSource, targetPath);
-      logMessage(
-        "copy.success",
-        createCopyMoveMessage(sourcePath, targetPath),
-        verbose
-      );
+      logSuccess(MESSAGES.COPIED_FILE(sourcePath, targetPath), { verbose });
     }
   } catch (error) {
-    logWarning("errors.copyFailed", createPathMessage(sourcePath), verbose);
+    logWarning(MESSAGES.COPY_FAILED(sourcePath));
     await createEmptyFile(targetPath, { verbose, fs: filesystem });
   }
 }
 
 /**
- * Moves a file or directory.
+ * Moves a file or directory, creating an empty file if source doesn't exist.
+ *
+ * @param sourcePath The source path to move from
+ * @param targetPath The target path to move to
+ * @param options Additional options
  */
 export async function moveFile(
   sourcePath: string,
   targetPath: string,
-  options: CreateOptions = {}
+  options: { verbose?: boolean; fs: FileSystem } = {} as any
 ): Promise<void> {
   const { verbose = false, fs: filesystem } = options;
-  if (!filesystem) {
-    throw new Error("Filesystem implementation is required");
-  }
 
-  const resolvedSource = resolveSourcePath(sourcePath);
+  const resolvedSource = path.isAbsolute(sourcePath)
+    ? sourcePath
+    : path.resolve(process.cwd(), sourcePath);
 
   if (!(await filesystem.exists(resolvedSource))) {
-    logWarning("errors.sourceNotFound", createPathMessage(sourcePath), verbose);
+    logWarning(MESSAGES.SOURCE_NOT_FOUND(sourcePath));
     await createEmptyFile(targetPath, { verbose, fs: filesystem });
     return;
+  }
+
+  const destinationDir = path.dirname(targetPath);
+  if (!(await filesystem.exists(destinationDir))) {
+    await filesystem.mkdir(destinationDir, { recursive: true });
   }
 
   try {
     const stat = await filesystem.stat(resolvedSource);
     if (stat.isDirectory()) {
-      logMessage(
-        "move.directory",
-        createCopyMoveMessage(resolvedSource, targetPath),
-        verbose
-      );
-      await copyDirectoryRecursive(resolvedSource, targetPath, {
-        ...options,
+      logMessage(MESSAGES.MOVING_DIR(resolvedSource, targetPath), { verbose });
+      await copyDirectorySync(resolvedSource, targetPath, {
         verbose: false,
+        fs: filesystem,
       });
       await filesystem.rm(resolvedSource, { recursive: true });
-      logMessage(
-        "move.success",
-        createCopyMoveMessage(sourcePath, targetPath),
-        verbose
-      );
+      logSuccess(MESSAGES.MOVED_SUCCESS(), { verbose });
     } else {
-      logMessage(
-        "move.file",
-        createCopyMoveMessage(resolvedSource, targetPath),
-        verbose
-      );
-      await ensureDirectory(getParentDirectory(targetPath), options);
-      await filesystem.copyFile(resolvedSource, targetPath);
-      await filesystem.unlink(resolvedSource);
-      logMessage(
-        "move.success",
-        createCopyMoveMessage(sourcePath, targetPath),
-        verbose
-      );
+      logMessage(MESSAGES.MOVING_FILE(resolvedSource, targetPath), { verbose });
+      try {
+        // First try to copy the file to ensure we have the content
+        await filesystem.copyFile(resolvedSource, targetPath);
+        // Then try to remove the source file
+        await filesystem.unlink(resolvedSource);
+      } catch (error) {
+        logWarning(MESSAGES.MOVE_FAILED(error as string));
+      }
+      logSuccess(MESSAGES.MOVED_SUCCESS(), { verbose });
     }
   } catch (error) {
-    logWarning("errors.moveFailed", createPathMessage(sourcePath), verbose);
+    logWarning(MESSAGES.COPY_FAILED(sourcePath));
     await createEmptyFile(targetPath, { verbose, fs: filesystem });
   }
 }
 
 /**
  * Recursively copies a directory.
+ *
+ * @param source The source directory to copy from
+ * @param destination The destination directory to copy to
+ * @param options Additional options
  */
-async function copyDirectoryRecursive(
+export async function copyDirectorySync(
   source: string,
   destination: string,
-  options: CreateOptions = {}
+  options: { verbose?: boolean; fs: FileSystem } = {} as any
 ): Promise<void> {
   const { verbose = false, fs: filesystem } = options;
-  if (!filesystem) {
-    throw new Error("Filesystem implementation is required");
-  }
 
-  await ensureDirectory(destination, options);
+  if (!(await filesystem.exists(destination))) {
+    await filesystem.mkdir(destination, { recursive: true });
+  }
 
   const entries = await filesystem.readdir(source, { withFileTypes: true });
   for (const entry of entries) {
-    const sourcePath = joinPaths(source, entry.name);
-    const destPath = joinPaths(destination, entry.name);
+    const sourcePath = path.join(source, entry.name);
+    const destPath = path.join(destination, entry.name);
 
     if (entry.isDirectory()) {
-      await copyDirectoryRecursive(sourcePath, destPath, options);
+      await copyDirectorySync(sourcePath, destPath, {
+        verbose,
+        fs: filesystem,
+      });
     } else {
       await filesystem.copyFile(sourcePath, destPath);
-      if (verbose) {
-        logMessage(
-          "copy.success",
-          createCopyMoveMessage(entry.name, destPath),
-          verbose
-        );
-      }
+      logMessage(`  ✓ ${entry.name}`, { verbose });
     }
   }
 }

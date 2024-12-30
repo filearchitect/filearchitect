@@ -1,148 +1,89 @@
-import chalk from "chalk";
+import { MESSAGES } from "./constants";
 
-type MessageKey =
-  | "files.created"
-  | "files.dirCreated"
-  | "files.exists"
-  | "copy.directory"
-  | "copy.success"
-  | "move.directory"
-  | "move.file"
-  | "move.success"
-  | "errors.sourceNotFound"
-  | "errors.operationFailed"
-  | "errors.createFailed"
-  | "errors.moveFailed"
-  | "errors.copyFailed";
-
-type PathMessage = {
-  type: "path";
-  path: string;
-};
-
-type CopyMoveMessage = {
-  type: "copyMove";
-  source: string;
-  target: string;
-};
-
-type ErrorMessage = {
-  type: "error";
-  message: string;
-};
-
-type MessageData = PathMessage | CopyMoveMessage | ErrorMessage;
-
-const messageFormatters: Record<MessageKey, (data: MessageData) => string> = {
-  "files.created": (data) => {
-    if (data.type !== "path") throw new Error("Invalid message data");
-    return `Created ${data.path}`;
-  },
-  "files.dirCreated": (data) => {
-    if (data.type !== "path") throw new Error("Invalid message data");
-    return `Created directory ${data.path}`;
-  },
-  "files.exists": (data) => {
-    if (data.type !== "path") throw new Error("Invalid message data");
-    return `Already exists: ${data.path}`;
-  },
-  "copy.directory": (data) => {
-    if (data.type !== "copyMove") throw new Error("Invalid message data");
-    return `Copying directory from ${data.source} to ${data.target}`;
-  },
-  "copy.success": (data) => {
-    if (data.type !== "copyMove") throw new Error("Invalid message data");
-    return `Copied ${data.source} to ${data.target}`;
-  },
-  "move.directory": (data) => {
-    if (data.type !== "copyMove") throw new Error("Invalid message data");
-    return `Moving directory from ${data.source} to ${data.target}`;
-  },
-  "move.file": (data) => {
-    if (data.type !== "copyMove") throw new Error("Invalid message data");
-    return `Moving file from ${data.source} to ${data.target}`;
-  },
-  "move.success": (data) => {
-    if (data.type !== "copyMove") throw new Error("Invalid message data");
-    return `Moved ${data.source} to ${data.target}`;
-  },
-  "errors.sourceNotFound": (data) => {
-    if (data.type !== "path") throw new Error("Invalid message data");
-    return `Source not found "${data.path}", creating empty file`;
-  },
-  "errors.operationFailed": (data) => {
-    if (data.type !== "error") throw new Error("Invalid message data");
-    return `Operation failed: ${data.message}`;
-  },
-  "errors.createFailed": (data) => {
-    if (data.type !== "error") throw new Error("Invalid message data");
-    return `Failed to create file: ${data.message}`;
-  },
-  "errors.moveFailed": (data) => {
-    if (data.type !== "path") throw new Error("Invalid message data");
-    return `Failed to move "${data.path}", creating empty file`;
-  },
-  "errors.copyFailed": (data) => {
-    if (data.type !== "path") throw new Error("Invalid message data");
-    return `Failed to copy "${data.path}", creating empty file`;
-  },
-};
-
-export function createPathMessage(path: string): PathMessage {
-  return { type: "path", path };
+export interface LogOptions {
+  verbose?: boolean;
 }
 
-export function createCopyMoveMessage(
-  source: string,
-  target: string
-): CopyMoveMessage {
-  return { type: "copyMove", source, target };
-}
+// Messages that should always be shown, regardless of verbose setting
+const ALWAYS_SHOW_MESSAGES = new Set(
+  [
+    // Important file operations
+    MESSAGES.CREATED_FILE(""),
+    MESSAGES.CREATED_DIR(""),
 
-export function createErrorMessage(message: string): ErrorMessage {
-  return { type: "error", message };
-}
+    // Warnings and errors
+    MESSAGES.SOURCE_NOT_FOUND(""),
+    MESSAGES.OPERATION_FAILED(""),
+    MESSAGES.CREATE_EMPTY_FAILED(""),
+    MESSAGES.MOVE_FAILED(""),
+    MESSAGES.COPY_FAILED(""),
+    MESSAGES.STRUCTURE_WARNINGS(),
+  ].map((msg) => msg.split(" ")[1])
+); // Get the message type without the emoji
 
-export function logMessage(
-  key: MessageKey,
-  data: MessageData,
-  verbose: boolean = false
-): void {
-  if (verbose) {
-    const message = messageFormatters[key](data);
-    console.log(chalk.blue(message));
+// Messages that should only be shown in verbose mode
+const VERBOSE_ONLY_MESSAGES = new Set(
+  [
+    // Success messages
+    MESSAGES.COPIED_FILE("", ""),
+    MESSAGES.MOVED_SUCCESS(),
+    MESSAGES.STRUCTURE_SUCCESS(),
+
+    // Directory operations
+    MESSAGES.COPYING_DIR("", ""),
+    MESSAGES.MOVING_DIR("", ""),
+    MESSAGES.MOVING_FILE("", ""),
+    MESSAGES.DIR_EXISTS(""),
+  ].map((msg) => msg.split(" ")[1])
+);
+
+export function logMessage(message: string, options: LogOptions = {}): void {
+  const { verbose = false } = options;
+  const messageType = message.split(" ")[1]; // Get the message type without the emoji
+
+  if (
+    ALWAYS_SHOW_MESSAGES.has(messageType) ||
+    (verbose && VERBOSE_ONLY_MESSAGES.has(messageType))
+  ) {
+    console.log(message);
   }
 }
 
-export function logWarning(
-  key: MessageKey,
-  data: MessageData,
-  verbose: boolean = false
-): void {
-  if (verbose) {
-    const message = messageFormatters[key](data);
-    console.warn(chalk.yellow(`Warning: ${message}`));
+export function logWarning(message: string): void {
+  console.warn(message);
+}
+
+export function logSuccess(message: string, options: LogOptions = {}): void {
+  const { verbose = false } = options;
+  const messageType = message.split(" ")[1];
+
+  if (
+    ALWAYS_SHOW_MESSAGES.has(messageType) ||
+    (verbose && VERBOSE_ONLY_MESSAGES.has(messageType))
+  ) {
+    console.log(message);
   }
 }
 
-export function logSuccess(
-  key: MessageKey,
-  data: MessageData,
-  verbose: boolean = false
+export function logOperation(
+  type: string,
+  line: string,
+  options: LogOptions = {}
 ): void {
+  const { verbose = false } = options;
   if (verbose) {
-    const message = messageFormatters[key](data);
-    console.log(chalk.green(message));
+    console.log("🔄 " + type.toUpperCase() + ": " + line.trim());
   }
 }
 
-export function logError(
-  key: MessageKey,
-  data: MessageData,
-  verbose: boolean = false
+export function logStructureResult(
+  hasWarnings: boolean,
+  options: LogOptions = {}
 ): void {
-  if (verbose) {
-    const message = messageFormatters[key](data);
-    console.error(chalk.red(`Error: ${message}`));
+  const { verbose = false } = options;
+  if (hasWarnings) {
+    console.log(MESSAGES.STRUCTURE_WARNINGS());
+  } else if (verbose) {
+    console.log(MESSAGES.STRUCTURE_SUCCESS());
   }
 }

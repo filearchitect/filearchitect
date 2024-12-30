@@ -1,31 +1,21 @@
 {
   "name": "@filearchitect/core",
-  "version": "1.0.0",
-  "description": "Core library for creating file structures from text descriptions",
+  "version": "0.1.2",
+  "description": "Core functionality for FileArchitect",
   "type": "module",
-  "main": "./dist/index.js",
-  "types": "./dist/index.d.ts",
-  "exports": {
-    ".": {
-      "types": "./dist/index.d.ts",
-      "import": "./dist/index.js"
-    },
-    "./node-filesystem": {
-      "types": "./dist/node-filesystem.d.ts",
-      "import": "./dist/node-filesystem.js"
-    }
-  },
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "tsc",
     "test": "vitest",
-    "lint": "eslint src"
+    "test:watch": "vitest watch"
   },
-  "dependencies": {
-    "chalk": "^5.0.0"
-  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
   "devDependencies": {
-    "@types/node": "^20.0.0",
-    "typescript": "^5.0.0",
-    "vitest": "^1.0.0"
+    "@types/node": "^20.10.5",
+    "typescript": "^5.3.3",
+    "vitest": "^1.0.4"
   }
 }
