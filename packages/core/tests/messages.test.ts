@@ -44,11 +44,13 @@ describe("Message Logging", () => {
     );
   });
 
-  it("should not log success message when not verbose", () => {
+  it("should log copy message even when not verbose", () => {
     logSuccess("COPIED_FILE", ["/src/file.txt", "/dest/file.txt"], {
       verbose: false,
     });
-    expect(logSpy).not.toHaveBeenCalled();
+    expect(logSpy).toHaveBeenCalledWith(
+      expect.stringContaining("Copied /src/file.txt to /dest/file.txt")
+    );
   });
 
   it("should log operation failed message", () => {

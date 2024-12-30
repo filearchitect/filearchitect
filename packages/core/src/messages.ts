@@ -12,12 +12,12 @@ interface MessageConfig {
 export const Messages = {
   // File operations
   CREATED_FILE: {
-    emoji: "📄",
+    emoji: "",
     template: (path: string) => `Created ${path}`,
     alwaysShow: true,
   },
   CREATED_DIR: {
-    emoji: "📁",
+    emoji: "",
     template: (path: string) => `Created ${path}`,
     alwaysShow: true,
   },
@@ -29,15 +29,15 @@ export const Messages = {
 
   // Copy operations
   COPYING_DIR: {
-    emoji: "📋",
+    emoji: "",
     template: (src: string, dest: string) =>
       `Copying directory from ${src} to ${dest}`,
-    alwaysShow: false,
+    alwaysShow: true,
   },
   COPIED_FILE: {
-    emoji: "📋",
+    emoji: "",
     template: (src: string, dest: string) => `Copied ${src} to ${dest}`,
-    alwaysShow: false,
+    alwaysShow: true,
   },
 
   // Move operations
@@ -45,13 +45,13 @@ export const Messages = {
     emoji: "✂️",
     template: (src: string, dest: string) =>
       `Moving directory from ${src} to ${dest}`,
-    alwaysShow: false,
+    alwaysShow: true,
   },
   MOVING_FILE: {
     emoji: "✂️",
     template: (src: string, dest: string) =>
       `Moving file from ${src} to ${dest}`,
-    alwaysShow: false,
+    alwaysShow: true,
   },
   MOVED_SUCCESS: {
     emoji: "✅",
