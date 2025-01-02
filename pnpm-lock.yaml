@@ -18,9 +18,12 @@ importers:
   examples/browser-demo:
     dependencies:
       '@filearchitect/core':
-        specifier: workspace:../../packages/core
+        specifier: workspace:*
         version: link:../../packages/core
     devDependencies:
+      typescript:
+        specifier: ^5.3.3
+        version: 5.7.2
       vite:
         specifier: ^5.0.8
         version: 5.4.11(@types/node@20.17.10)
@@ -40,9 +43,6 @@ importers:
       typescript:
         specifier: ^5.3.3
         version: 5.7.2
-      vitest:
-        specifier: ^1.2.2
-        version: 1.6.0(@types/node@20.17.10)
 
   packages/core:
     dependencies:

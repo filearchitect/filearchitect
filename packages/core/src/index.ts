@@ -8,11 +8,13 @@ import {
   logSuccess,
   logWarning,
   OperationLog,
-} from "./messages";
-import { NodeFileSystem } from "./node-filesystem";
-import { FileSystem } from "./types";
+} from "./browser-messages.js";
+import { NodeFileSystem } from "./node-filesystem.js";
+import { BrowserFileSystem } from "./browser-filesystem.js";
+import { FileSystem } from "./types.js";
 
-export { NodeFileSystem };
+export { collector, FileSystem, NodeFileSystem, BrowserFileSystem };
+export type { OperationLog };
 
 /**
  * Creates a file or directory structure from a tab-indented string.
@@ -440,4 +442,3 @@ const core = {
 };
 
 export { core };
-export type { OperationLog };

@@ -1,11 +1,11 @@
 import fs from "fs";
-import { FSError } from "./errors";
+import { FSError } from "./errors.js";
 import {
   DirectoryEntry,
   FileStat,
   FileSystem,
   FileSystemOptions,
-} from "./types";
+} from "./types.js";
 
 /**
  * Node.js filesystem implementation

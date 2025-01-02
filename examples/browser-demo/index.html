@@ -3,57 +3,60 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>File Architect Demo</title>
+    <title>FileArchitect Browser Demo</title>
     <style>
       body {
-        font-family: system-ui, -apple-system, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto,
+          Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue", sans-serif;
         max-width: 800px;
         margin: 0 auto;
-        padding: 2rem;
-        line-height: 1.5;
+        padding: 20px;
+      }
+      textarea {
+        width: 100%;
+        height: 200px;
+        font-family: monospace;
+        margin: 10px 0;
+        padding: 10px;
       }
       button {
-        padding: 0.5rem 1rem;
-        font-size: 1rem;
+        padding: 10px 20px;
+        font-size: 16px;
         cursor: pointer;
       }
-      #output {
-        margin-top: 1rem;
-        padding: 1rem;
+      pre {
         background: #f5f5f5;
+        padding: 20px;
         border-radius: 4px;
-        white-space: pre-wrap;
+        overflow-x: auto;
       }
     </style>
   </head>
   <body>
-    <h1>File Architect Demo</h1>
+    <h1>FileArchitect Browser Demo</h1>
+
+    <h2>Enter File Structure</h2>
     <p>
-      This demo will create a project structure based on the structure.txt file.
+      Use indentation to define the structure. Add a trailing slash (/) for
+      directories.
     </p>
-    <button id="createButton">Create Project Structure</button>
-    <div id="output"></div>
+    <textarea id="structure">
+src/
+    index.ts
+    components/
+      Button.tsx
+      Input.tsx</textarea
+    >
 
-    <script>
-      const output = document.getElementById("output");
-      const createButton = document.getElementById("createButton");
+    <div>
+      <button id="create">Create Structure</button>
+      <button id="test">Run Tests</button>
+    </div>
 
-      createButton.addEventListener("click", async () => {
-        try {
-          output.textContent = "Creating project structure...";
-          const response = await fetch("/create");
-          const data = await response.json();
+    <h2>Output</h2>
+    <pre id="output"></pre>
 
-          if (data.success) {
-            output.textContent = `✨ Project structure created successfully in:\n${data.outputDir}`;
-          } else {
-            output.textContent = `Error: ${data.error}`;
-          }
-        } catch (error) {
-          output.textContent = `Error: ${error.message}`;
-          console.error("Error details:", error);
-        }
-      });
-    </script>
+    <script type="module" src="/test.ts"></script>
+    <script type="module" src="/index.ts"></script>
   </body>
 </html>

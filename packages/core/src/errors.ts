@@ -1,4 +1,4 @@
-import { FileSystemError } from "./types";
+import { FileSystemError } from "./types.js";
 
 export class FSError extends Error implements FileSystemError {
   code?: string;

@@ -4,14 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "node server.js",
-    "build": "vite build",
-    "preview": "vite preview"
+    "dev": "vite"
   },
   "dependencies": {
-    "@filearchitect/core": "workspace:../../packages/core"
+    "@filearchitect/core": "workspace:*"
   },
   "devDependencies": {
+    "typescript": "^5.3.3",
     "vite": "^5.0.8"
   }
 }
