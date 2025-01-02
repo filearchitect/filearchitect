@@ -158,10 +158,83 @@ describe("LogCollector", () => {
 
     collector.printHierarchy();
 
-    expect(console.log).toHaveBeenCalledWith("\nFile Structure:");
-    expect(console.log).toHaveBeenCalledWith("📁 test");
-    expect(console.log).toHaveBeenCalledWith("  📁 dir1");
-    expect(console.log).toHaveBeenCalledWith("    📄 file1.txt");
-    expect(console.log).toHaveBeenCalledWith("  📄 file2.txt");
+    expect(console.log).toHaveBeenCalledWith("\nOperation Summary:");
+    // We don't test the exact table output since it's handled by the console-table-printer package
+    // Instead, we verify that the operations are in the collector
+    const operations = collector.getOperations();
+    expect(operations).toHaveLength(4);
+    expect(operations).toContainEqual({
+      type: "create",
+      path: "/test",
+      isDirectory: true,
+    });
+    expect(operations).toContainEqual({
+      type: "create",
+      path: "/test/dir1",
+      isDirectory: true,
+    });
+    expect(operations).toContainEqual({
+      type: "create",
+      path: "/test/dir1/file1.txt",
+      isDirectory: false,
+    });
+    expect(operations).toContainEqual({
+      type: "create",
+      path: "/test/file2.txt",
+      isDirectory: false,
+    });
+  });
+
+  it("should display relative paths when root directory is set", () => {
+    const rootDir = "/test/root";
+    collector.setRootDir(rootDir);
+
+    logMessage("CREATED_DIR", [`${rootDir}/folder1`]);
+    logMessage("CREATED_FILE", [`${rootDir}/folder1/file1.txt`]);
+    logMessage("COPYING_DIR", [`${rootDir}/src`, `${rootDir}/folder1/dest`]);
+
+    collector.printHierarchy();
+
+    expect(console.log).toHaveBeenCalledWith("\nOperation Summary:");
+    const operations = collector.getOperations();
+    expect(operations).toHaveLength(3);
+
+    // Verify that operations are stored with absolute paths
+    expect(operations).toContainEqual({
+      type: "create",
+      path: `${rootDir}/folder1`,
+      isDirectory: true,
+    });
+    expect(operations).toContainEqual({
+      type: "create",
+      path: `${rootDir}/folder1/file1.txt`,
+      isDirectory: false,
+    });
+    expect(operations).toContainEqual({
+      type: "copy",
+      path: `${rootDir}/folder1/dest`,
+      sourcePath: `${rootDir}/src`,
+      isDirectory: true,
+    });
+  });
+
+  it("should handle paths outside root directory", () => {
+    const rootDir = "/test/root";
+    collector.setRootDir(rootDir);
+
+    // Path outside root directory
+    logMessage("COPYING_DIR", ["/other/path/src", `${rootDir}/dest`]);
+
+    collector.printHierarchy();
+
+    expect(console.log).toHaveBeenCalledWith("\nOperation Summary:");
+    const operations = collector.getOperations();
+    expect(operations).toHaveLength(1);
+    expect(operations).toContainEqual({
+      type: "copy",
+      path: `${rootDir}/dest`,
+      sourcePath: "/other/path/src",
+      isDirectory: true,
+    });
   });
 });

@@ -6,7 +6,14 @@ settings:
 
 importers:
 
-  .: {}
+  .:
+    devDependencies:
+      typescript:
+        specifier: ^5.3.3
+        version: 5.7.2
+      vitest:
+        specifier: ^1.2.2
+        version: 1.6.0(@types/node@20.17.10)
 
   examples/browser-demo:
     dependencies:
@@ -24,36 +31,33 @@ importers:
         specifier: workspace:*
         version: link:../core
       commander:
-        specifier: ^11.0.0
-        version: 11.1.0
+        specifier: ^12.0.0
+        version: 12.1.0
     devDependencies:
-      '@types/commander':
-        specifier: ^2.12.2
-        version: 2.12.5
       '@types/node':
-        specifier: ^20.0.0
+        specifier: ^20.11.16
         version: 20.17.10
       typescript:
-        specifier: ^5.0.0
+        specifier: ^5.3.3
         version: 5.7.2
       vitest:
-        specifier: ^1.0.0
+        specifier: ^1.2.2
         version: 1.6.0(@types/node@20.17.10)
 
   packages/core:
     dependencies:
-      chalk:
-        specifier: ^5.0.0
-        version: 5.4.1
+      console-table-printer:
+        specifier: ^2.12.1
+        version: 2.12.1
     devDependencies:
       '@types/node':
-        specifier: ^20.0.0
+        specifier: ^20.11.16
         version: 20.17.10
       typescript:
-        specifier: ^5.0.0
+        specifier: ^5.3.3
         version: 5.7.2
       vitest:
-        specifier: ^1.0.0
+        specifier: ^1.2.2
         version: 1.6.0(@types/node@20.17.10)
 
 packages:
@@ -301,10 +305,6 @@ packages:
   '@sinclair/typebox@0.27.8':
     resolution: {integrity: sha512-+Fj43pSMwJs4KRrH/938Uf+uAELIgVBmQzg/q1YG10djyfA3TnrU8N8XzqCh/okZdszqBQTZf96idMfE5lnwTA==}
 
-  '@types/commander@2.12.5':
-    resolution: {integrity: sha512-YXGZ/rz+s57VbzcvEV9fUoXeJlBt5HaKu5iUheiIWNsJs23bz6AnRuRiZBRVBLYyPnixNvVnuzM5pSaxr8Yp/g==}
-    deprecated: This is a stub types definition. commander provides its own type definitions, so you do not need this installed.
-
   '@types/estree@1.0.6':
     resolution: {integrity: sha512-AYnb1nQyY49te+VRAVgmzfcgjYS91mY5P0TKUDCLEM+gNnA+3T6rWITXRLYCpahpqSQbN5cE+gHpnPyXjHWxcw==}
 
@@ -350,19 +350,18 @@ packages:
     resolution: {integrity: sha512-RITGBfijLkBddZvnn8jdqoTypxvqbOLYQkGGxXzeFjVHvudaPw0HNFD9x928/eUwYWd2dPCugVqspGALTZZQKw==}
     engines: {node: '>=4'}
 
-  chalk@5.4.1:
-    resolution: {integrity: sha512-zgVZuo2WcZgfUEmsn6eO3kINexW8RAE4maiQ8QNs8CtpPCSyMiYsULR3HQYkm3w8FIA3SberyMJMSldGsW+U3w==}
-    engines: {node: ^12.17.0 || ^14.13 || >=16.0.0}
-
   check-error@1.0.3:
     resolution: {integrity: sha512-iKEoDYaRmd1mxM90a2OEfWhjsjPpYPuQ+lMYsoxB126+t8fw7ySEO48nmDg5COTjxDI65/Y2OWpeEHk3ZOe8zg==}
 
-  commander@11.1.0:
-    resolution: {integrity: sha512-yPVavfyCcRhmorC7rWlkHn15b4wDVgVmBA7kV4QVBsF7kv/9TKJAbAXVTxvTnwP8HHKjRCJDClKbciiYS7p0DQ==}
-    engines: {node: '>=16'}
+  commander@12.1.0:
+    resolution: {integrity: sha512-Vw8qHK3bZM9y/P10u3Vib8o/DdkvA2OtPtZvD871QKjy74Wj1WSKFILMPRPSdUSx5RFK1arlJzEtA4PkFgnbuA==}
+    engines: {node: '>=18'}
 
   confbox@0.1.8:
     resolution: {integrity: sha512-RMtmw0iFkeR4YV+fUOSucriAQNb9g8zFR52MWCtl+cCZOFRNL6zeB395vPzFhEjjn4fMxXudmELnl/KF/WrK6w==}
+
+  console-table-printer@2.12.1:
+    resolution: {integrity: sha512-wKGOQRRvdnd89pCeH96e2Fn4wkbenSP6LMHfjfyNLMbGuHEFbMqQNuxXqd0oXG9caIOQ1FTvc5Uijp9/4jujnQ==}
 
   cross-spawn@7.0.6:
     resolution: {integrity: sha512-uV2QOWP2nWzsy2aMp8aRibhi9dlzF5Hgh5SHaB9OiTGEyDTiJJyx0uy51QXdyWbtAHNua4XJzUKca3OzKUd3vA==}
@@ -513,6 +512,9 @@ packages:
   signal-exit@4.1.0:
     resolution: {integrity: sha512-bzyZ1e88w9O1iNJbKnOlvYTrWPDl46O1bG0D3XInv+9tkPrxrN8jUUTiFlDkkmKWgn1M6CfIA13SuGqOa9Korw==}
     engines: {node: '>=14'}
+
+  simple-wcswidth@1.0.1:
+    resolution: {integrity: sha512-xMO/8eNREtaROt7tJvWJqHBDTMFN4eiQ5I4JRMuilwfnFcV5W9u7RUkueNkdw0jPqGMX36iCywelS5yilTuOxg==}
 
   source-map-js@1.2.1:
     resolution: {integrity: sha512-UXWMKhLOwVKb728IUtQPXxfYU+usdybtUrK/8uGE8CQMvrhOpwvzDBwj0QhSL7MQc7vIsISBG8VQ8+IDQxpfQA==}
@@ -768,10 +770,6 @@ snapshots:
 
   '@sinclair/typebox@0.27.8': {}
 
-  '@types/commander@2.12.5':
-    dependencies:
-      commander: 11.1.0
-
   '@types/estree@1.0.6': {}
 
   '@types/node@20.17.10':
@@ -829,15 +827,17 @@ snapshots:
       pathval: 1.1.1
       type-detect: 4.1.0
 
-  chalk@5.4.1: {}
-
   check-error@1.0.3:
     dependencies:
       get-func-name: 2.0.2
 
-  commander@11.1.0: {}
+  commander@12.1.0: {}
 
   confbox@0.1.8: {}
+
+  console-table-printer@2.12.1:
+    dependencies:
+      simple-wcswidth: 1.0.1
 
   cross-spawn@7.0.6:
     dependencies:
@@ -1016,6 +1016,8 @@ snapshots:
   siginfo@2.0.0: {}
 
   signal-exit@4.1.0: {}
+
+  simple-wcswidth@1.0.1: {}
 
   source-map-js@1.2.1: {}
 

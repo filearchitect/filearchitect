@@ -41,6 +41,9 @@ export async function createStructureFromString(
     await filesystem.mkdir(rootDir, { recursive: true });
   }
 
+  // Set the root directory in the collector for relative path display
+  collector.setRootDir(rootDir);
+
   const lines = input.split("\n").filter((line) => line.trim().length > 0);
   const stack: string[] = [rootDir];
   let hasWarnings = false;

@@ -1,3 +1,5 @@
+import { Table } from "console-table-printer";
+
 export interface LogOptions {
   verbose?: boolean;
 }
@@ -11,6 +13,7 @@ export interface OperationLog {
 
 export class LogCollector {
   private operations: OperationLog[] = [];
+  private rootDir: string = "";
 
   addOperation(operation: OperationLog): void {
     this.operations.push(operation);
@@ -22,69 +25,69 @@ export class LogCollector {
 
   clear(): void {
     this.operations = [];
+    this.rootDir = "";
+  }
+
+  setRootDir(rootDir: string): void {
+    this.rootDir = rootDir;
+  }
+
+  private getRelativePath(fullPath: string): string {
+    if (!this.rootDir || !fullPath.startsWith(this.rootDir)) {
+      return fullPath;
+    }
+    const relativePath = fullPath.slice(this.rootDir.length);
+    return relativePath.startsWith("/") ? relativePath.slice(1) : relativePath;
   }
 
   printHierarchy(): void {
-    const pathMap = new Map<
-      string,
-      { isDirectory: boolean; children: Set<string> }
-    >();
+    const operations = this.operations;
+    if (operations.length === 0) return;
 
-    // First pass: create all nodes
-    for (const op of this.operations) {
-      if (op.path && !pathMap.has(op.path)) {
-        pathMap.set(op.path, {
-          isDirectory: op.isDirectory,
-          children: new Set(),
-        });
-      }
-    }
-
-    // Second pass: build parent-child relationships
-    for (const path of pathMap.keys()) {
-      if (!path) continue;
-      const parent = path.split("/").slice(0, -1).join("/");
-      if (parent && pathMap.has(parent)) {
-        pathMap.get(parent)?.children.add(path);
-      }
-    }
-
-    // Find root nodes (those without parents in our map)
-    const roots = Array.from(pathMap.keys()).filter((path) => {
-      if (!path) return false;
-      const parent = path.split("/").slice(0, -1).join("/");
-      return !parent || !pathMap.has(parent);
+    const table = new Table({
+      columns: [
+        { name: "type", title: "Operation", alignment: "left" },
+        { name: "path", title: "Path", alignment: "left" },
+        { name: "sourcePath", title: "Source", alignment: "left" },
+      ],
+      charLength: { type: 10, path: 50, sourcePath: 50 },
     });
 
-    // Print the hierarchy
-    const printNode = (path: string, level: number = 0): void => {
-      const node = pathMap.get(path);
-      if (!node) return;
+    // Sort operations by path
+    const sortedOperations = [...operations].sort((a, b) => {
+      // Handle undefined paths
+      const pathA = a.path?.toLowerCase() ?? "";
+      const pathB = b.path?.toLowerCase() ?? "";
+      return pathA.localeCompare(pathB);
+    });
 
-      const indent = "  ".repeat(level);
-      const name = path.split("/").pop() || path;
-      const icon = node.isDirectory ? "📁" : "📄";
-      console.log(`${indent}${icon} ${name}`);
+    // Add rows to table
+    for (const op of sortedOperations) {
+      if (!op.path) continue; // Skip operations with undefined paths
 
-      // Sort children alphabetically, directories first
-      const sortedChildren = Array.from(node.children).sort((a, b) => {
-        const aIsDir = pathMap.get(a)?.isDirectory || false;
-        const bIsDir = pathMap.get(b)?.isDirectory || false;
-        if (aIsDir !== bIsDir) return bIsDir ? 1 : -1;
-        return a.localeCompare(b);
-      });
+      const row = {
+        type: op.isDirectory ? `${op.type} dir` : op.type,
+        path: this.getRelativePath(op.path),
+        sourcePath: op.sourcePath ? this.getRelativePath(op.sourcePath) : "",
+      };
 
-      for (const child of sortedChildren) {
-        printNode(child, level + 1);
-      }
-    };
+      // Add color based on operation type
+      const color =
+        op.type === "create"
+          ? "green"
+          : op.type === "copy"
+          ? "cyan"
+          : op.type === "move"
+          ? "yellow"
+          : op.type === "skip"
+          ? "gray"
+          : undefined;
 
-    if (roots.length > 0) {
-      console.log("\nFile Structure:");
-      for (const root of roots.sort()) {
-        printNode(root);
-      }
+      table.addRow(row, { color });
     }
+
+    console.log("\nOperation Summary:");
+    table.printTable();
   }
 }
 

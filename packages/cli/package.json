@@ -2,12 +2,16 @@
   "name": "@filearchitect/cli",
   "version": "0.1.2",
   "description": "CLI tool for creating file structures from text descriptions",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
   "bin": {
     "filearchitect": "./dist/cli.js"
   },
   "scripts": {
     "build": "tsc && chmod +x dist/cli.js",
-    "test": "vitest"
+    "test": "vitest run --config ./vitest.config.ts",
+    "test:watch": "vitest --config ./vitest.config.ts"
   },
   "dependencies": {
     "@filearchitect/core": "workspace:*",

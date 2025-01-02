@@ -1,14 +1,16 @@
 {
   "name": "@filearchitect/monorepo",
-  "private": false,
+  "private": true,
   "version": "0.1.2",
   "description": "File Architect monorepo",
+  "type": "module",
   "scripts": {
     "build": "pnpm -r build",
-    "test": "pnpm -r test",
+    "test": "vitest run --config ./vitest.config.ts",
+    "test:watch": "vitest --config ./vitest.config.ts",
     "demo": "pnpm --filter browser-demo dev",
     "dev": "pnpm --parallel -r dev",
-    "cli": "node packages/core/dist/cli.js",
+    "cli": "pnpm --filter @filearchitect/cli start --",
     "clean": "pnpm -r exec rm -rf dist node_modules",
     "version": "pnpm -r version",
     "publish": "pnpm build && pnpm publish -r --filter @filearchitect/core --filter @filearchitect/cli"
@@ -19,5 +21,9 @@
   },
   "publishConfig": {
     "access": "public"
+  },
+  "devDependencies": {
+    "typescript": "^5.3.3",
+    "vitest": "^1.2.2"
   }
 }

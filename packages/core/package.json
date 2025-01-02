@@ -17,15 +17,18 @@
   ],
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "test": "vitest run",
-    "test:watch": "vitest"
+    "test": "vitest run --config ./vitest.config.ts",
+    "test:watch": "vitest --config ./vitest.config.ts"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "@types/node": "^20.10.5",
+    "@types/node": "^20.11.16",
     "typescript": "^5.3.3",
-    "vitest": "^1.0.4"
+    "vitest": "^1.2.2"
+  },
+  "dependencies": {
+    "console-table-printer": "^2.12.1"
   }
 }
