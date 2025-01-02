@@ -1,11 +1,13 @@
 import os from "os";
 import path from "path";
 import {
+  collector,
   logMessage,
   logOperation,
   logStructureResult,
   logSuccess,
   logWarning,
+  OperationLog,
 } from "./messages";
 import { NodeFileSystem } from "./node-filesystem";
 import { FileSystem } from "./types";
@@ -259,7 +261,7 @@ async function createDirectory(
   if (!(await filesystem.exists(dirPath))) {
     await filesystem.mkdir(dirPath, { recursive: true });
     logMessage("CREATED_DIR", [dirPath], { verbose });
-  } else if (verbose) {
+  } else {
     logMessage("DIR_EXISTS", [dirPath], { verbose });
   }
 }
@@ -431,6 +433,8 @@ function adjustStack(stack: string[], level: number): void {
 // Create a default export that includes all named exports
 const core = {
   createStructureFromString,
+  collector,
 };
 
-export default core;
+export { core };
+export type { OperationLog };

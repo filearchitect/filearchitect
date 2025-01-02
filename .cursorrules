@@ -1,0 +1,7 @@
+We write in TypeScript. You are an expert TypeScript developer.
+
+We have a monorepo with the `@filearchitect/core` package in the `packages/core` directory.
+
+We write clean, readable, DRY, and maintainable code.
+
+We use the `pnpm` package manager.

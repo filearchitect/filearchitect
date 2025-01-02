@@ -1,7 +1,8 @@
 import fs from "fs";
 import path from "path";
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
-import { createStructureFromString, NodeFileSystem } from "../src/index";
+import type { OperationLog } from "../src/index";
+import { core, createStructureFromString, NodeFileSystem } from "../src/index";
 
 describe("createStructureFromString", () => {
   const testDir = path.join(__dirname, "test-temp");
@@ -36,6 +37,8 @@ describe("createStructureFromString", () => {
     await fs.promises.mkdir(testDir, { recursive: true });
     warnSpy = vi.spyOn(console, "warn");
     filesystem = new NodeFileSystem();
+    // Clear the collector before each test
+    core.collector.clear();
   });
 
   afterEach(async () => {
@@ -317,5 +320,150 @@ describe("createStructureFromString", () => {
     expect(
       await readFileContent(path.join(testDir, "does-not-exist.txt"))
     ).toBe("");
+  });
+
+  describe("Operation Logging", () => {
+    beforeEach(() => {
+      core.collector.clear();
+    });
+
+    it("tracks file and directory creation operations", async () => {
+      const input = `
+        folder1
+          file1.txt
+          folder2
+            file2.txt
+      `;
+
+      await createStructureFromString(input, testDir, { fs: filesystem });
+
+      const operations = core.collector.getOperations();
+      const expectedOperations: OperationLog[] = [
+        {
+          type: "create",
+          path: path.join(testDir, "folder1"),
+          isDirectory: true,
+        },
+        {
+          type: "create",
+          path: path.join(testDir, "folder1", "file1.txt"),
+          isDirectory: false,
+        },
+        {
+          type: "create",
+          path: path.join(testDir, "folder1", "folder2"),
+          isDirectory: true,
+        },
+        {
+          type: "create",
+          path: path.join(testDir, "folder1", "folder2", "file2.txt"),
+          isDirectory: false,
+        },
+      ];
+
+      expect(operations).toEqual(expectedOperations);
+    });
+
+    it("tracks file copy operations", async () => {
+      const sourceFile = path.join(testDir, "source.txt");
+      await writeFile(sourceFile, "Test content");
+      const input = `[${sourceFile}] > target.txt`;
+
+      await createStructureFromString(input, testDir, { fs: filesystem });
+
+      const operations = core.collector.getOperations();
+      const expectedOperations: OperationLog[] = [
+        {
+          type: "copy",
+          path: path.join(testDir, "target.txt"),
+          sourcePath: sourceFile,
+          isDirectory: false,
+        },
+      ];
+
+      expect(operations).toEqual(expectedOperations);
+    });
+
+    it("tracks file move operations", async () => {
+      const sourceFile = path.join(testDir, "source.txt");
+      await writeFile(sourceFile, "Test content");
+      const input = `(${sourceFile}) > target.txt`;
+
+      await createStructureFromString(input, testDir, { fs: filesystem });
+
+      const operations = core.collector.getOperations();
+      const expectedOperations: OperationLog[] = [
+        {
+          type: "move",
+          path: path.join(testDir, "target.txt"),
+          sourcePath: sourceFile,
+          isDirectory: false,
+        },
+      ];
+
+      expect(operations).toEqual(expectedOperations);
+    });
+
+    it("tracks skipped directory operations", async () => {
+      const existingDir = path.join(testDir, "existing");
+      await fs.promises.mkdir(existingDir);
+
+      const input = `existing`;
+
+      await createStructureFromString(input, testDir, { fs: filesystem });
+
+      const operations = core.collector.getOperations();
+      const expectedOperations: OperationLog[] = [
+        {
+          type: "skip",
+          path: path.join(testDir, "existing"),
+          isDirectory: true,
+        },
+      ];
+
+      expect(operations).toEqual(expectedOperations);
+    });
+
+    it("tracks operations in complex scenarios", async () => {
+      const sourceFile = path.join(testDir, "source.txt");
+      await writeFile(sourceFile, "Test content");
+
+      const input = `
+        folder1
+          [${sourceFile}] > copied.txt
+          subfolder
+            (${sourceFile}) > moved.txt
+      `;
+
+      await createStructureFromString(input, testDir, { fs: filesystem });
+
+      const operations = core.collector.getOperations();
+      const expectedOperations: OperationLog[] = [
+        {
+          type: "create",
+          path: path.join(testDir, "folder1"),
+          isDirectory: true,
+        },
+        {
+          type: "copy",
+          path: path.join(testDir, "folder1", "copied.txt"),
+          sourcePath: sourceFile,
+          isDirectory: false,
+        },
+        {
+          type: "create",
+          path: path.join(testDir, "folder1", "subfolder"),
+          isDirectory: true,
+        },
+        {
+          type: "move",
+          path: path.join(testDir, "folder1", "subfolder", "moved.txt"),
+          sourcePath: sourceFile,
+          isDirectory: false,
+        },
+      ];
+
+      expect(operations).toEqual(expectedOperations);
+    });
   });
 });

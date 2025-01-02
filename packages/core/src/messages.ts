@@ -2,6 +2,94 @@ export interface LogOptions {
   verbose?: boolean;
 }
 
+export interface OperationLog {
+  type: "create" | "copy" | "move" | "skip";
+  path: string;
+  sourcePath?: string;
+  isDirectory: boolean;
+}
+
+export class LogCollector {
+  private operations: OperationLog[] = [];
+
+  addOperation(operation: OperationLog): void {
+    this.operations.push(operation);
+  }
+
+  getOperations(): OperationLog[] {
+    return this.operations;
+  }
+
+  clear(): void {
+    this.operations = [];
+  }
+
+  printHierarchy(): void {
+    const pathMap = new Map<
+      string,
+      { isDirectory: boolean; children: Set<string> }
+    >();
+
+    // First pass: create all nodes
+    for (const op of this.operations) {
+      if (op.path && !pathMap.has(op.path)) {
+        pathMap.set(op.path, {
+          isDirectory: op.isDirectory,
+          children: new Set(),
+        });
+      }
+    }
+
+    // Second pass: build parent-child relationships
+    for (const path of pathMap.keys()) {
+      if (!path) continue;
+      const parent = path.split("/").slice(0, -1).join("/");
+      if (parent && pathMap.has(parent)) {
+        pathMap.get(parent)?.children.add(path);
+      }
+    }
+
+    // Find root nodes (those without parents in our map)
+    const roots = Array.from(pathMap.keys()).filter((path) => {
+      if (!path) return false;
+      const parent = path.split("/").slice(0, -1).join("/");
+      return !parent || !pathMap.has(parent);
+    });
+
+    // Print the hierarchy
+    const printNode = (path: string, level: number = 0): void => {
+      const node = pathMap.get(path);
+      if (!node) return;
+
+      const indent = "  ".repeat(level);
+      const name = path.split("/").pop() || path;
+      const icon = node.isDirectory ? "📁" : "📄";
+      console.log(`${indent}${icon} ${name}`);
+
+      // Sort children alphabetically, directories first
+      const sortedChildren = Array.from(node.children).sort((a, b) => {
+        const aIsDir = pathMap.get(a)?.isDirectory || false;
+        const bIsDir = pathMap.get(b)?.isDirectory || false;
+        if (aIsDir !== bIsDir) return bIsDir ? 1 : -1;
+        return a.localeCompare(b);
+      });
+
+      for (const child of sortedChildren) {
+        printNode(child, level + 1);
+      }
+    };
+
+    if (roots.length > 0) {
+      console.log("\nFile Structure:");
+      for (const root of roots.sort()) {
+        printNode(root);
+      }
+    }
+  }
+}
+
+export const collector = new LogCollector();
+
 interface MessageConfig {
   emoji: string;
   template: (...args: any[]) => string;
@@ -120,11 +208,72 @@ export function logMessage(
   if (config.alwaysShow || verbose) {
     console.log(formatMessage(config, ...args));
   }
+
+  // Track operations in the collector
+  switch (type) {
+    case "CREATED_FILE":
+      collector.addOperation({
+        type: "create",
+        path: args[0],
+        isDirectory: false,
+      });
+      break;
+    case "CREATED_DIR":
+      collector.addOperation({
+        type: "create",
+        path: args[0],
+        isDirectory: true,
+      });
+      break;
+    case "DIR_EXISTS":
+      collector.addOperation({
+        type: "skip",
+        path: args[0],
+        isDirectory: true,
+      });
+      break;
+    case "COPIED_FILE":
+      collector.addOperation({
+        type: "copy",
+        path: args[1],
+        sourcePath: args[0],
+        isDirectory: false,
+      });
+      break;
+    case "COPYING_DIR":
+      collector.addOperation({
+        type: "copy",
+        path: args[1],
+        sourcePath: args[0],
+        isDirectory: true,
+      });
+      break;
+    case "MOVING_FILE":
+    case "MOVING_DIR":
+      collector.addOperation({
+        type: "move",
+        path: args[1],
+        sourcePath: args[0],
+        isDirectory: type === "MOVING_DIR",
+      });
+      break;
+  }
 }
 
 export function logWarning(type: keyof typeof Messages, args: any[]): void {
   const config = Messages[type];
   console.warn(formatMessage(config, ...args));
+
+  // Track operations in warnings too
+  switch (type) {
+    case "SOURCE_NOT_FOUND":
+      collector.addOperation({
+        type: "create",
+        path: args[0],
+        isDirectory: false,
+      });
+      break;
+  }
 }
 
 export function logSuccess(
@@ -137,6 +286,18 @@ export function logSuccess(
 
   if (config.alwaysShow || verbose) {
     console.log(formatMessage(config, ...args));
+  }
+
+  // Track operations in success messages too
+  switch (type) {
+    case "COPIED_FILE":
+      collector.addOperation({
+        type: "copy",
+        path: args[1],
+        sourcePath: args[0],
+        isDirectory: false,
+      });
+      break;
   }
 }
 
@@ -160,4 +321,7 @@ export function logStructureResult(
   } else {
     logMessage("STRUCTURE_SUCCESS", [], options);
   }
+
+  // Print the hierarchy at the end
+  collector.printHierarchy();
 }
