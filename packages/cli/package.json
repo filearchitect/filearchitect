@@ -8,16 +8,15 @@
   },
   "scripts": {
     "build": "rm -rf dist && tsc",
-    "dev": "node --loader ts-node/esm src/cli.ts",
-    "start": "node dist/cli/src/cli.js",
-    "create": "node dist/cli/src/cli.js create"
+    "dev": "tsx src/cli.ts",
+    "start": "node dist/cli/src/cli.js"
   },
   "dependencies": {
     "@filearchitect/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.16",
-    "ts-node": "^10.9.2",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   }
 }
