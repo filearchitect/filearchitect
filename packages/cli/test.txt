@@ -1,0 +1,7 @@
+src/
+    components/
+        Button.tsx
+        Card.tsx
+    styles/
+        main.css
+    index.ts 

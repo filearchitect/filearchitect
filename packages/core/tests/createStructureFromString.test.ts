@@ -36,6 +36,7 @@ describe("createStructureFromString", () => {
     // Create test directory
     await fs.promises.mkdir(testDir, { recursive: true });
     warnSpy = vi.spyOn(console, "warn");
+    warnSpy.mockClear();
     filesystem = new NodeFileSystem();
     // Clear the collector before each test
     core.collector.clear();

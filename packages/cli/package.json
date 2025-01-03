@@ -4,18 +4,20 @@
   "description": "CLI for FileArchitect",
   "type": "module",
   "bin": {
-    "filearchitect": "./dist/cli.js"
+    "filearchitect": "dist/cli/src/cli.js"
   },
   "scripts": {
-    "build": "tsc && chmod +x dist/cli.js",
-    "start": "node dist/cli.js"
+    "build": "rm -rf dist && tsc",
+    "dev": "node --loader ts-node/esm src/cli.ts",
+    "start": "node dist/cli/src/cli.js",
+    "create": "node dist/cli/src/cli.js create"
   },
   "dependencies": {
-    "@filearchitect/core": "workspace:*",
-    "commander": "^12.0.0"
+    "@filearchitect/core": "workspace:*"
   },
   "devDependencies": {
     "@types/node": "^20.11.16",
+    "ts-node": "^10.9.2",
     "typescript": "^5.3.3"
   }
 }

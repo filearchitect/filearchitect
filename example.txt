@@ -1,0 +1,16 @@
+src
+  index.ts
+  components
+    App.tsx
+    Header.tsx
+    Footer.tsx
+  styles
+    main.css
+    components
+      header.css
+      footer.css
+  assets
+    images
+      logo.png
+    fonts
+      roboto.ttf 

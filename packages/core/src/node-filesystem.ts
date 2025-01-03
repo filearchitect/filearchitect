@@ -81,7 +81,26 @@ export class NodeFileSystem implements FileSystem {
 
   async stat(path: string): Promise<FileStat> {
     try {
-      return await fs.promises.stat(path);
+      const stats = await fs.promises.stat(path);
+      return {
+        isDirectory: () => stats.isDirectory(),
+        size: stats.size,
+      };
+    } catch (error: any) {
+      if (error.code === "ENOENT") {
+        throw FSError.notFound(path);
+      }
+      if (error.code === "EACCES") {
+        throw FSError.permissionDenied(path);
+      }
+      throw FSError.operationFailed(error.message, path);
+    }
+  }
+
+  async isDirectory(path: string): Promise<boolean> {
+    try {
+      const stats = await fs.promises.stat(path);
+      return stats.isDirectory();
     } catch (error: any) {
       if (error.code === "ENOENT") {
         throw FSError.notFound(path);

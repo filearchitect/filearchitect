@@ -3,21 +3,12 @@
     "target": "ESNext",
     "module": "NodeNext",
     "moduleResolution": "NodeNext",
-    "esModuleInterop": true,
+    "outDir": "dist",
     "strict": true,
     "skipLibCheck": true,
-    "outDir": "dist",
-    "composite": true,
+    "esModuleInterop": true,
     "declaration": true,
-    "declarationMap": true,
-    "sourceMap": true,
-    "rootDir": "src",
-    "baseUrl": ".",
-    "paths": {
-      "@filearchitect/core": ["../core/src/index.ts"]
-    }
+    "sourceMap": true
   },
-  "include": ["src/**/*.ts"],
-  "exclude": ["node_modules", "dist"],
-  "references": [{ "path": "../core" }]
+  "include": ["src"]
 }

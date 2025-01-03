@@ -13,6 +13,7 @@ export interface DirectoryEntry {
 
 export interface FileStat {
   isDirectory(): boolean;
+  size?: number;
 }
 
 export interface FileSystem {
@@ -29,6 +30,7 @@ export interface FileSystem {
   rm(path: string, options?: FileSystemOptions): void | Promise<void>;
   unlink(path: string): void | Promise<void>;
   rename(oldPath: string, newPath: string): void | Promise<void>;
+  isDirectory(path: string): Promise<boolean>;
 }
 
 /**
@@ -57,4 +59,10 @@ export interface OperationResult {
   success: boolean;
   error?: FileSystemError;
   path?: string;
+}
+
+import { LogOptions } from "./browser-messages.js";
+
+export interface CreateStructureOptions extends LogOptions {
+  fs: FileSystem;
 }
