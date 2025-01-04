@@ -47,8 +47,8 @@ Arguments:
   output-dir    Directory to create the structure in (default: current directory)
 
 Options:
-  --replace-folder <search:replace>    Replace occurrences of 'search' with 'replace' in file/directory names
-  --replace-file <search:replace>      Same as --replace-folder, kept for backwards compatibility
+  --replace-folder <search:replace>    Replace occurrences of 'search' with 'replace' in directory names
+  --replace-file <search:replace>      Replace occurrences of 'search' with 'replace' in file names
 `);
   process.exit(1);
 }
