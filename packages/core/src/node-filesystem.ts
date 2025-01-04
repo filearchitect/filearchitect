@@ -1,6 +1,6 @@
 import fs from "fs";
 import { FSError } from "./errors.js";
-import {
+import type {
   DirectoryEntry,
   FileStat,
   FileSystem,
