@@ -1,55 +1,22 @@
 {
   "name": "@filearchitect/cli",
-  "private": false,
-  "publishConfig": {
-    "access": "public",
-    "dependencies": {
-      "@filearchitect/core": "^0.1.1"
-    }
-  },
-  "version": "0.1.1",
-  "description": "CLI tool to create file and directory structures from text descriptions",
-  "type": "commonjs",
-  "main": "dist/cli.js",
-  "types": "dist/cli.d.ts",
+  "version": "0.1.2",
+  "description": "CLI for FileArchitect",
+  "type": "module",
   "bin": {
-    "file-architect": "dist/cli.js"
+    "filearchitect": "dist/cli/src/cli.js"
   },
   "scripts": {
-    "build": "tsc && chmod +x dist/cli.js",
-    "dev": "tsc --watch",
-    "prepublishOnly": "pnpm build"
-  },
-  "files": [
-    "dist",
-    "README.md",
-    "LICENSE"
-  ],
-  "keywords": [
-    "file",
-    "directory",
-    "structure",
-    "generator",
-    "cli",
-    "filesystem",
-    "scaffolding"
-  ],
-  "author": "Sebastien Lavoie",
-  "license": "MIT",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/filearchitect/file-architect-core.git"
-  },
-  "bugs": {
-    "url": "https://github.com/filearchitect/file-architect-core/issues"
-  },
-  "homepage": "https://filearchitect.com",
-  "devDependencies": {
-    "@types/node": "^20.11.24",
-    "typescript": "^5.3.3"
+    "build": "rm -rf dist && tsc",
+    "dev": "tsx src/cli.ts",
+    "start": "node dist/cli/src/cli.js"
   },
   "dependencies": {
-    "@filearchitect/core": "workspace:^",
-    "chalk": "^4.1.2"
+    "@filearchitect/core": "workspace:*"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.16",
+    "tsx": "^4.7.0",
+    "typescript": "^5.3.3"
   }
 }

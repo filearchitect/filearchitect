@@ -1,14 +1,18 @@
 {
   "compilerOptions": {
-    "target": "ES2020",
+    "target": "ESNext",
     "module": "ESNext",
-    "moduleResolution": "bundler",
+    "moduleResolution": "Bundler",
     "esModuleInterop": true,
     "strict": true,
-    "outDir": "./dist",
+    "skipLibCheck": true,
+    "outDir": "dist",
+    "composite": true,
     "declaration": true,
-    "resolveJsonModule": true
+    "declarationMap": true,
+    "sourceMap": true,
+    "rootDir": "src"
   },
-  "include": ["src"],
-  "exclude": ["node_modules", "dist"]
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist", "tests"]
 }

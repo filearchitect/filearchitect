@@ -1,88 +1,79 @@
 #!/usr/bin/env node
+import { readFile } from "node:fs/promises";
+import { resolve } from "node:path";
+import {
+  createStructureFromString,
+  NodeFileSystem,
+} from "../../core/src/index.js";
 
-import { createStructureFromString } from "@filearchitect/core";
-import { readFile } from "fs/promises";
-import { version } from "../package.json";
+// Parse command line arguments
+const args = process.argv.slice(2);
+let command: string | undefined;
+let inputFile: string | undefined;
+let outputDir = ".";
+let fileNameReplacements: { search: string; replace: string }[] = [];
 
-const help = `
-file-architect v${version}
+// Parse arguments
+for (let i = 0; i < args.length; i++) {
+  const arg = args[i];
+  if (i === 0) {
+    command = arg;
+  } else if (i === 1) {
+    inputFile = arg;
+  } else if (i === 2) {
+    outputDir = arg;
+  } else if (
+    (arg === "--replace-folder" || arg === "--replace-file") &&
+    i + 1 < args.length
+  ) {
+    const replacement = args[++i];
+    const [search, replace] = replacement.split(":");
+    if (search && replace) {
+      fileNameReplacements.push({ search, replace });
+    }
+  }
+}
+
+// Show usage if required arguments are missing
+if (!command || !inputFile || command !== "create") {
+  console.log(`
+FileArchitect - Create file structures from text descriptions
 
 Usage:
-  file-architect create <input-file> <output> [--verbose]
-  file-architect validate <input-file>
+  filearchitect create <input-file> [output-dir] [options]
+
+Arguments:
+  input-file    Text file containing the structure description
+  output-dir    Directory to create the structure in (default: current directory)
 
 Options:
-  --verbose    Show detailed output
-  -h, --help   Show this help message
-  -v, --version Show version
+  --replace-folder <search:replace>    Replace occurrences of 'search' with 'replace' in file/directory names
+  --replace-file <search:replace>      Same as --replace-folder, kept for backwards compatibility
+`);
+  process.exit(1);
+}
 
-Examples:
-  file-architect create structure.txt output
-  echo "folder1\\n  file1.txt" | file-architect create - output
-  file-architect validate structure.txt
-`;
-
+// Main function
 async function main() {
-  const args = process.argv.slice(2);
-
-  if (args.length === 0 || args.includes("-h") || args.includes("--help")) {
-    console.log(help);
-    process.exit(0);
-  }
-
-  if (args.includes("-v") || args.includes("--version")) {
-    console.log(version);
-    process.exit(0);
-  }
-
-  const command = args[0];
-  const inputFile = args[1];
-  const outputDir = args[2];
-  const verbose = args.includes("--verbose");
-
-  if (!inputFile) {
-    console.error("Error: Input file is required");
-    process.exit(1);
-  }
+  // At this point we know inputFile is defined due to the check above
+  const input = inputFile as string;
 
   try {
-    let input: string;
-    if (inputFile === "-") {
-      // Read from stdin
-      const chunks = [];
-      for await (const chunk of process.stdin) {
-        chunks.push(chunk);
-      }
-      input = Buffer.concat(chunks).toString();
-    } else {
-      input = await readFile(inputFile, "utf-8");
-    }
+    const structure = await readFile(input, "utf-8");
+    const absoluteOutput = resolve(outputDir);
 
-    if (command === "create") {
-      if (!outputDir) {
-        console.error("Error: Output directory is required");
-        process.exit(1);
-      }
-
-      await createStructureFromString(input, outputDir, { verbose });
-      if (verbose) {
-        console.log("✨ Structure created successfully");
-      }
-    } else if (command === "validate") {
-      // Just try to parse the input, if no error is thrown, it's valid
-      await createStructureFromString(input, "/tmp/validate", {
-        verbose: false,
-      });
-      console.log("✅ Structure is valid");
-    } else {
-      console.error(`Error: Unknown command "${command}"`);
-      process.exit(1);
-    }
-  } catch (error: unknown) {
+    // Create the structure
+    await createStructureFromString(structure, absoluteOutput, {
+      verbose: true,
+      isCLI: true,
+      fs: new NodeFileSystem(),
+      fileNameReplacements,
+    });
+  } catch (error) {
     if (error instanceof Error) {
       console.error("Error:", error.message);
     } else {
-      console.error("Error:", String(error));
+      console.error("An unknown error occurred");
     }
     process.exit(1);
   }
