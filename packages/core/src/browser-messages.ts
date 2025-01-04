@@ -216,6 +216,14 @@ export function logMessage(
   // Track operations in the collector
   switch (type) {
     case "CREATED_FILE":
+      // Skip if this is a rename operation
+      if (
+        collector
+          .getOperations()
+          .some((op) => op.type === "rename" && op.path === args[0])
+      ) {
+        break;
+      }
       collector.addOperation({
         type: "create",
         path: args[0],
@@ -223,6 +231,14 @@ export function logMessage(
       });
       break;
     case "CREATED_DIR":
+      // Skip if this is a rename operation
+      if (
+        collector
+          .getOperations()
+          .some((op) => op.type === "rename" && op.path === args[0])
+      ) {
+        break;
+      }
       collector.addOperation({
         type: "create",
         path: args[0],

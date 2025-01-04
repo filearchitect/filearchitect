@@ -254,6 +254,49 @@ async function executeOperation(
         isDirectory: operation.type === "directory",
         originalName: operation.originalName,
       });
+
+      switch (operation.type) {
+        case "file":
+          await createEmptyFile(targetPath, { verbose, isCLI, fs: filesystem });
+          break;
+
+        case "directory":
+          await createDirectory(targetPath, { verbose, isCLI, fs: filesystem });
+          return targetPath;
+
+        case "copy":
+          if (!operation.sourcePath) {
+            await createEmptyFile(targetPath, {
+              verbose,
+              isCLI,
+              fs: filesystem,
+            });
+            break;
+          }
+          await copyFile(operation.sourcePath, targetPath, {
+            verbose,
+            isCLI,
+            fs: filesystem,
+          });
+          break;
+
+        case "move":
+          if (!operation.sourcePath) {
+            await createEmptyFile(targetPath, {
+              verbose,
+              isCLI,
+              fs: filesystem,
+            });
+            break;
+          }
+          await moveFile(operation.sourcePath, targetPath, {
+            verbose,
+            isCLI,
+            fs: filesystem,
+          });
+          break;
+      }
+      return;
     }
 
     switch (operation.type) {
