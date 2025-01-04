@@ -193,29 +193,35 @@ function parseOperation(line: string): FileOperation {
   const moveMatch = line.match(/^\((.+?)\)(?:\s*>\s*(.+))?$/);
   if (moveMatch) {
     const sourcePath = resolveTildePath(moveMatch[1].trim());
-    return {
-      type: "move",
+    const result: FileOperation = {
+      type: "move" as OperationType,
       sourcePath,
       name: moveMatch[2]?.trim() || path.basename(sourcePath),
     };
+    return result;
   }
 
   // Copy operation (with or without rename)
   const copyMatch = line.match(/^\[(.+?)\](?:\s*>\s*(.+))?$/);
   if (copyMatch) {
     const sourcePath = resolveTildePath(copyMatch[1].trim());
-    return {
-      type: "copy",
+    const targetName = copyMatch[2]?.trim();
+    const result: FileOperation = {
+      type: "copy" as OperationType,
       sourcePath,
-      name: copyMatch[2]?.trim() || path.basename(sourcePath),
+      name: targetName || path.basename(sourcePath),
     };
+    return result;
   }
 
   // Regular file or directory
-  return {
-    type: path.extname(line) ? "file" : "directory",
+  const result: FileOperation = {
+    type: path.extname(line)
+      ? ("file" as OperationType)
+      : ("directory" as OperationType),
     name: line,
   };
+  return result;
 }
 
 /**
@@ -362,6 +368,7 @@ async function copyFile(
 ): Promise<void> {
   const { verbose = false, isCLI = false, fs: filesystem } = options;
 
+  // Always use absolute path for source
   const resolvedSource = path.isAbsolute(sourcePath)
     ? sourcePath
     : path.resolve(process.cwd(), sourcePath);
@@ -410,13 +417,18 @@ async function moveFile(
 ): Promise<void> {
   const { verbose = false, isCLI = false, fs: filesystem } = options;
 
-  if (!(await filesystem.exists(sourcePath))) {
+  // Always use absolute path for source
+  const resolvedSource = path.isAbsolute(sourcePath)
+    ? sourcePath
+    : path.resolve(process.cwd(), sourcePath);
+
+  if (!(await filesystem.exists(resolvedSource))) {
     logWarning("SOURCE_NOT_FOUND", [sourcePath], { isCLI });
     await createEmptyFile(targetPath, { verbose, isCLI, fs: filesystem });
     return;
   }
 
-  const isDirectory = await filesystem.isDirectory(sourcePath);
+  const isDirectory = await filesystem.isDirectory(resolvedSource);
   const destinationDir = path.dirname(targetPath);
   if (!(await filesystem.exists(destinationDir))) {
     await filesystem.mkdir(destinationDir, { recursive: true });
@@ -424,16 +436,19 @@ async function moveFile(
 
   try {
     if (isDirectory) {
-      logMessage("MOVING_DIR", [sourcePath, targetPath], { verbose });
-      await copyDirectorySync(sourcePath, targetPath, {
+      logMessage("MOVING_DIR", [resolvedSource, targetPath], { verbose });
+      // If source is a directory and no target name is specified, use the source directory name
+      const targetDir =
+        path.extname(targetPath) === "" ? targetPath : path.dirname(targetPath);
+      await copyDirectorySync(resolvedSource, targetDir, {
         verbose,
         isCLI,
         fs: filesystem,
       });
-      await filesystem.rm(sourcePath, { recursive: true });
+      await filesystem.rm(resolvedSource, { recursive: true });
     } else {
-      logMessage("MOVING_FILE", [sourcePath, targetPath], { verbose });
-      await filesystem.rename(sourcePath, targetPath);
+      logMessage("MOVING_FILE", [resolvedSource, targetPath], { verbose });
+      await filesystem.rename(resolvedSource, targetPath);
     }
     logSuccess("MOVED_SUCCESS", [], { verbose });
   } catch (error: any) {
@@ -456,24 +471,31 @@ async function copyDirectorySync(
 ): Promise<void> {
   const { verbose = false, isCLI = false, fs: filesystem } = options;
 
+  // Create the destination directory
   if (!(await filesystem.exists(destination))) {
     await filesystem.mkdir(destination, { recursive: true });
+    logMessage("CREATED_DIR", [destination], { verbose, isCLI });
   }
 
+  // Read all entries in the source directory
   const entries = await filesystem.readdir(source, { withFileTypes: true });
+
+  // Copy each entry
   for (const entry of entries) {
     const sourcePath = path.join(source, entry.name);
     const destPath = path.join(destination, entry.name);
 
     if (entry.isDirectory()) {
+      // Recursively copy subdirectories
       await copyDirectorySync(sourcePath, destPath, {
         verbose,
         isCLI,
         fs: filesystem,
       });
     } else {
+      // Copy files
       await filesystem.copyFile(sourcePath, destPath);
-      logMessage("COPIED_FILE", [entry.name], { verbose });
+      logMessage("COPIED_FILE", [entry.name], { verbose, isCLI });
     }
   }
 }
