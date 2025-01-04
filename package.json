@@ -1,6 +1,6 @@
 {
   "name": "@filearchitect/monorepo",
-  "private": false,
+  "private": true,
   "version": "0.1.4",
   "description": "File Architect monorepo",
   "type": "module",
