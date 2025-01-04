@@ -11,6 +11,38 @@ import {
 import { CreateStructureOptions, FileSystem } from "./types.js";
 
 /**
+ * Represents a file name replacement.
+ */
+interface FileNameReplacement {
+  /** The search string to replace */
+  search: string;
+  /** The replacement string */
+  replace: string;
+}
+
+/**
+ * Applies file name replacements to a given name.
+ *
+ * @param name The name to apply replacements to
+ * @param replacements The replacements to apply
+ * @returns The name with replacements applied
+ */
+function applyFileNameReplacements(
+  name: string,
+  replacements?: FileNameReplacement[]
+): string {
+  if (!replacements || replacements.length === 0) {
+    return name;
+  }
+
+  let result = name;
+  for (const { search, replace } of replacements) {
+    result = result.split(search).join(replace);
+  }
+  return result;
+}
+
+/**
  * Creates a file or directory structure from a tab-indented string.
  * The string format supports:
  * - Regular files and directories
@@ -27,7 +59,12 @@ export async function createStructureFromString(
   rootDir: string,
   options: CreateStructureOptions
 ): Promise<void> {
-  const { verbose = false, fs: filesystem, isCLI = false } = options;
+  const {
+    verbose = false,
+    fs: filesystem,
+    isCLI = false,
+    fileNameReplacements,
+  } = options;
   if (!filesystem) {
     throw new Error("Filesystem implementation is required");
   }
@@ -51,16 +88,29 @@ export async function createStructureFromString(
 
       adjustStack(stack, level);
       const currentDir = stack[stack.length - 1];
-      const targetPath = path.join(currentDir, operation.name);
+
+      // Store original name before replacements
+      const originalName = operation.name;
+
+      // Apply replacements to the operation name
+      const replacedName = applyFileNameReplacements(
+        operation.name,
+        fileNameReplacements
+      );
+      const targetPath = path.join(currentDir, replacedName);
 
       logOperation(operation.type, line, { verbose, isCLI });
 
       try {
-        const newPath = await executeOperation(operation, targetPath, {
-          verbose,
-          isCLI,
-          fs: filesystem,
-        });
+        const newPath = await executeOperation(
+          { ...operation, name: replacedName, originalName },
+          targetPath,
+          {
+            verbose,
+            isCLI,
+            fs: filesystem,
+          }
+        );
         if (operation.type === "directory" && newPath) {
           stack.push(newPath);
         }
@@ -124,6 +174,8 @@ interface FileOperation {
   name: string;
   /** The source path for copy or move operations */
   sourcePath?: string;
+  /** The original name before replacements */
+  originalName?: string;
 }
 
 /**
@@ -186,6 +238,16 @@ async function executeOperation(
     if (!(await filesystem.exists(destinationDir))) {
       await filesystem.mkdir(destinationDir, { recursive: true });
       logMessage("CREATED_DIR", [destinationDir], { verbose, isCLI });
+    }
+
+    // If the name was changed by replacements, log it as a rename
+    if (operation.originalName && operation.originalName !== operation.name) {
+      collector.addOperation({
+        type: "rename",
+        path: targetPath,
+        isDirectory: operation.type === "directory",
+        originalName: operation.originalName,
+      });
     }
 
     switch (operation.type) {

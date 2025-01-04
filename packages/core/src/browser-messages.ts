@@ -7,10 +7,11 @@ export interface LogOptions {
 }
 
 export interface OperationLog {
-  type: "create" | "copy" | "move" | "skip";
+  type: "create" | "copy" | "move" | "skip" | "rename";
   path: string;
   sourcePath?: string;
   isDirectory: boolean;
+  originalName?: string;
 }
 
 export class LogCollector {
@@ -55,7 +56,7 @@ export class LogCollector {
         columns: [
           { name: "type", title: "Operation", alignment: "left" },
           { name: "path", title: "Path", alignment: "left" },
-          { name: "sourcePath", title: "Source", alignment: "left" },
+          { name: "sourcePath", title: "Source/Original", alignment: "left" },
         ],
         charLength: { type: 10, path: 50, sourcePath: 50 },
       });
@@ -72,9 +73,19 @@ export class LogCollector {
         if (!op.path) continue;
 
         const row = {
-          type: op.isDirectory ? `${op.type} dir` : op.type,
+          type: op.isDirectory
+            ? `${
+                op.type === "rename"
+                  ? "created and renamed dir"
+                  : `${op.type} dir`
+              }`
+            : op.type === "rename"
+            ? "created and renamed"
+            : op.type,
           path: this.getRelativePath(op.path),
-          sourcePath: op.sourcePath ? this.getRelativePath(op.sourcePath) : "",
+          sourcePath:
+            op.originalName ||
+            (op.sourcePath ? this.getRelativePath(op.sourcePath) : ""),
         };
 
         // Add color based on operation type
@@ -85,6 +96,8 @@ export class LogCollector {
             ? "cyan"
             : op.type === "move"
             ? "yellow"
+            : op.type === "rename"
+            ? "magenta"
             : op.type === "skip"
             ? "gray"
             : undefined;

@@ -63,6 +63,12 @@ export interface OperationResult {
 
 import { LogOptions } from "./browser-messages.js";
 
+export interface FileNameReplacement {
+  search: string;
+  replace: string;
+}
+
 export interface CreateStructureOptions extends LogOptions {
   fs: FileSystem;
+  fileNameReplacements?: FileNameReplacement[];
 }
