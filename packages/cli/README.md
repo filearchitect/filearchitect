@@ -21,6 +21,12 @@ filearchitect create structure.txt output
 # Create a structure with verbose output
 filearchitect create structure.txt output --verbose
 
+# Create a structure with file name replacements
+filearchitect create structure.txt output --replace-file user:admin
+
+# Create a structure with folder name replacements
+filearchitect create structure.txt output --replace-folder api:rest
+
 # Validate a structure file
 filearchitect validate structure.txt
 
@@ -51,11 +57,18 @@ config/
 src/
   (~/old-project/components/) > components/  # Move directory
   (~/old-project/config.json) > config.json  # Move file
+
+# Replace in file/folder names
+src/
+  user-profile.tsx     # With --replace-file user:admin -> admin-profile.tsx
+  api/                 # With --replace-folder api:rest -> rest/
 ```
 
 ## Options
 
 - `--verbose`: Show detailed output during creation
+- `--replace-file <pattern>`: Replace text in file names (e.g. --replace-file user:admin)
+- `--replace-folder <pattern>`: Replace text in folder names (e.g. --replace-folder api:rest)
 - `-h, --help`: Show help message
 - `-v, --version`: Show version
 

@@ -7,12 +7,16 @@ settings:
 importers:
 
   .:
+    dependencies:
+      '@filearchitect/core':
+        specifier: ^0.1.4
+        version: 0.1.4
     devDependencies:
       typescript:
-        specifier: ^5.3.3
+        specifier: ^5.7.2
         version: 5.7.2
       vitest:
-        specifier: ^1.2.2
+        specifier: ^1.6.0
         version: 1.6.0(@types/node@20.17.10)
 
   examples/browser-demo:
@@ -343,6 +347,9 @@ packages:
     engines: {node: '>=18'}
     cpu: [x64]
     os: [win32]
+
+  '@filearchitect/core@0.1.4':
+    resolution: {integrity: sha512-dCAXEXV8RDwh55xGV6wA3depITov7tPjvkihghavOBXJJNGR9RYeVwn9w3acxtJ+T1vUdjaLFImlmQT37G7SHA==}
 
   '@jest/schemas@29.6.3':
     resolution: {integrity: sha512-mo5j5X+jIZmJQveBKeS/clAueipV7KgiX1vMgCxam1RNYiqE1w62n0/tJJnHtjW8ZHcQco5gY85jA3mi0L+nSA==}
@@ -932,6 +939,10 @@ snapshots:
 
   '@esbuild/win32-x64@0.23.1':
     optional: true
+
+  '@filearchitect/core@0.1.4':
+    dependencies:
+      console-table-printer: 2.12.1
 
   '@jest/schemas@29.6.3':
     dependencies:

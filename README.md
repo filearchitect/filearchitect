@@ -1,58 +1,195 @@
 # File Architect
 
-Create file and directory structures from text descriptions.
+Create file and directory structures from simple text descriptions. Perfect for scaffolding projects, creating templates, and organizing files.
+
+## Features
+
+- Create directory structures using a simple, indentation-based syntax
+- Copy files and directories from existing locations
+- Import (move) files from other projects
+- Available as both a CLI tool and a TypeScript/JavaScript library
+- Validate structures before creating them
+- Replace file and folder names dynamically
+
+## Quick Start
+
+### Using the CLI
+
+```bash
+# Install globally
+npm install -g @filearchitect/cli
+
+# Create a structure file
+echo "src
+	components
+		Button.tsx
+		Card.tsx
+	styles
+		global.css" > structure.txt
+
+# Create the structure
+filearchitect create structure.txt my-project
+```
+
+### Using the Library
+
+```bash
+npm install @filearchitect/core
+```
+
+```typescript
+import { createStructureFromString } from "@filearchitect/core";
+
+const structure = `
+src
+	components
+		Button.tsx
+		Card.tsx
+	styles
+		global.css
+`;
+
+await createStructureFromString(structure, "./my-project");
+```
+
+## Complete Example
+
+Create a complete project structure with file creation, copying, and importing (`project-structure.txt`):
+
+```txt
+# Create directories and files
+src
+	components
+		Button.tsx
+		Card.tsx
+		forms
+			LoginForm.tsx
+			SignupForm.tsx
+	styles
+		global.css
+		components.css
+	utils
+		api.ts
+		helpers.ts
+	types
+		index.d.ts
+
+# Copy configuration files
+config
+	[~/configs/base.json] > base.json
+	[~/templates/react] > template
+
+# Import existing files
+tests
+	(~/old-project/components/Button.test.tsx) > components/Button.test.tsx
+	(~/old-project/utils/helpers.test.ts) > utils/helpers.test.ts
+```
+
+This creates:
+
+```
+my-project/
+├── src/
+│   ├── components/
+│   │   ├── Button.tsx
+│   │   ├── Card.tsx
+│   │   └── forms/
+│   │       ├── LoginForm.tsx
+│   │       └── SignupForm.tsx
+│   ├── styles/
+│   │   ├── global.css
+│   │   └── components.css
+│   ├── utils/
+│   │   ├── api.ts
+│   │   └── helpers.ts
+│   └── types/
+│       └── index.d.ts
+├── config/
+│   ├── base.json          # Copied from ~/configs/base.json
+│   └── template/          # Copied from ~/templates/react
+└── tests/
+    ├── components/
+    │   └── Button.test.tsx  # Imported from ~/old-project/components/Button.test.tsx
+    └── utils/
+        └── helpers.test.ts  # Imported from ~/old-project/utils/helpers.test.ts
+```
+
+## Syntax Guide
+
+| Syntax              | Description                      | Example                         |
+| ------------------- | -------------------------------- | ------------------------------- |
+| `name.ext`          | Creates an empty file            | `file.txt`                      |
+| `name`              | Creates a directory              | `folder`                        |
+| `[source] > target` | Copies a file/directory          | `[~/config.json] > config.json` |
+| `(source) > target` | Moves (imports) a file/directory | `(~/old.txt) > new.txt`         |
+
+## CLI Usage
+
+```bash
+# Create a structure
+filearchitect create structure.txt output
+
+# Create with verbose output
+filearchitect create structure.txt output --verbose
+
+# Replace text in file names
+filearchitect create structure.txt output --replace-file user:admin
+
+# Replace text in folder names
+filearchitect create structure.txt output --replace-folder api:rest
+
+# Validate without creating
+filearchitect validate structure.txt
+```
+
+## Library Usage
+
+```typescript
+import { createStructureFromString } from "@filearchitect/core";
+
+// Create a structure
+await createStructureFromString(structureText, "./output");
+
+// Replace names
+await createStructureFromString(structureText, "./output", {
+  replaceInFiles: { user: "admin" },
+  replaceInFolders: { api: "rest" },
+});
+
+// Validate only
+await createStructureFromString(structureText, "./output", {
+  validate: true,
+});
+```
 
 ## Packages
 
-- [@filearchitect/core](packages/core/README.md): Core library for creating file structures
 - [@filearchitect/cli](packages/cli/README.md): Command-line interface
-- [Browser Demo](examples/browser-demo/README.md): Web-based demo application
+- [@filearchitect/core](packages/core/README.md): Core library for programmatic usage
 
-## Development
+## Contributing
 
-This is a monorepo using pnpm workspaces. To get started:
+1. Clone the repository:
 
 ```bash
-# Install dependencies
+git clone https://github.com/filearchitect/filearchitect.git
+cd filearchitect
+```
+
+2. Install dependencies:
+
+```bash
 pnpm install
+```
 
-# Build all packages
+3. Build the packages:
+
+```bash
 pnpm build
-
-# Run tests
-pnpm test
-
-# Start the browser demo
-pnpm demo
-
-# Use the CLI locally
-pnpm cli create structure.txt output-dir
-
-# Development mode (watches all packages)
-pnpm dev
 ```
 
-### Local CLI Development
-
-You can use the CLI locally in three ways:
-
-1. Using the root package script:
+4. Try it out:
 
 ```bash
-pnpm cli create structure.txt output-dir
-```
-
-2. Link the CLI globally:
-
-```bash
-cd packages/cli
-pnpm link --global
-filearchitect create structure.txt output-dir
-```
-
-3. Run directly from the CLI package:
-
-```bash
-cd packages/cli
-node dist/cli.js create structure.txt output-dir
+pnpm cli create structure.txt output
 ```

@@ -8,53 +8,124 @@ Core library for File Architect - create file and directory structures from text
 npm install @filearchitect/core
 ```
 
-## Usage
+## Basic Example
+
+Create a complete project structure with file creation, copying, and importing (`project-structure.txt`):
+
+```txt
+# Create directories and files
+src
+	components
+		Button.tsx
+		Card.tsx
+		forms
+			LoginForm.tsx
+			SignupForm.tsx
+	styles
+		global.css
+			components.css
+	utils
+		api.ts
+		helpers.ts
+	types
+		index.d.ts
+
+# Copy configuration files
+config
+	[~/configs/base.json] > base.json
+	[~/templates/react] > template
+
+# Import existing files
+tests
+	(~/old-project/components/Button.test.tsx) > components/Button.test.tsx
+	(~/old-project/utils/helpers.test.ts) > utils/helpers.test.ts
+```
 
 ```typescript
 import { createStructureFromString } from "@filearchitect/core";
 
-// Create a directory structure
-await createStructureFromString(
-  `
-src/
-  components/
-    Button.tsx
-    Card.tsx
-  styles/
-    global.css
-  utils/
-    helpers.ts
-`,
-  "./output"
-);
+const structureText = await fs.readFile("project-structure.txt", "utf-8");
+await createStructureFromString(structureText, "./my-project");
+```
 
-// Copy files
-await createStructureFromString(
-  `
-config/
-  [~/configs/base.json] > base.json   # Copy file
-  [~/templates/react/] > template/    # Copy directory
-`,
-  "./output"
-);
+This creates:
 
-// Move files
-await createStructureFromString(
-  `
-src/
-  (~/old-project/components/) > components/  # Move directory
-  (~/old-project/config.json) > config.json  # Move file
-`,
-  "./output"
-);
+```
+my-project/
+├── src/
+│   ├── components/
+│   │   ├── Button.tsx
+│   │   ├── Card.tsx
+│   │   └── forms/
+│   │       ├── LoginForm.tsx
+│   │       └── SignupForm.tsx
+│   ├── styles/
+│   │   ├── global.css
+│   │   └── components.css
+│   ├── utils/
+│   │   ├── api.ts
+│   │   └── helpers.ts
+│   └── types/
+│       └── index.d.ts
+├── config/
+│   ├── base.json          # Copied from ~/configs/base.json
+│   └── template/          # Copied from ~/templates/react
+└── tests/
+    ├── components/
+    │   └── Button.test.tsx  # Imported from ~/old-project/components/Button.test.tsx
+    └── utils/
+        └── helpers.test.ts  # Imported from ~/old-project/utils/helpers.test.ts
+```
 
-// Validate without creating
+## Syntax Guide
+
+| Syntax              | Description                      | Example                         |
+| ------------------- | -------------------------------- | ------------------------------- |
+| `name.ext`          | Creates an empty file            | `file.txt`                      |
+| `name`              | Creates a directory              | `folder`                        |
+| `[source] > target` | Copies a file/directory          | `[~/config.json] > config.json` |
+| `(source) > target` | Moves (imports) a file/directory | `(~/old.txt) > new.txt`         |
+
+## Features
+
+### Creating Files and Directories
+
+Simply write the path to create empty files and directories:
+
+```txt
+src
+	components
+		Button.tsx
+		Card.tsx
+	styles
+		global.css
+```
+
+### Copying Files
+
+Use `[source] > target` to copy files or directories:
+
+```txt
+config
+	[~/configs/base.json] > base.json   # Copy file
+	[~/templates/react] > template      # Copy directory
+```
+
+### Importing Files
+
+Use `(source) > target` to import (move) files or directories:
+
+```txt
+tests
+	(~/old-project/Button.test.tsx) > Button.test.tsx  # Import file
+	(~/old-project/utils) > utils                      # Import directory
+```
+
+### Validation
+
+```typescript
 await createStructureFromString(
-  `
-src/
-  components/
-    Button.tsx
-`,
+  await fs.readFile("structure.txt", "utf-8"),
   "/tmp/validate",
   { validate: true }
 );
@@ -74,19 +145,10 @@ Creates a directory structure from a text description.
   - `verbose`: Show detailed output (default: false)
   - `validate`: Only validate the structure without creating files (default: false)
   - `fs`: Custom filesystem implementation (default: NodeFileSystem)
+  - `replaceInFiles`: Object mapping strings to replace in file names
+  - `replaceInFolders`: Object mapping strings to replace in folder names
 
-## Syntax Guide
-
-| Syntax              | Description          | Example                         |
-| ------------------- | -------------------- | ------------------------------- |
-| `name`              | Create an empty file | `file.txt`                      |
-| `name/`             | Create a directory   | `src/`                          |
-| `[source] > target` | Copy file/directory  | `[~/config.json] > config.json` |
-| `(source) > target` | Move file/directory  | `(~/old.txt) > new.txt`         |
-
-## Custom Filesystem Support
-
-You can provide your own filesystem implementation for different environments:
+### Custom Filesystem Support (Experimental)
 
 ```typescript
 import { createStructureFromString, FileSystem } from "@filearchitect/core";
