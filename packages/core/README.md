@@ -121,22 +121,6 @@ tests
 	(~/old-project/utils) > utils                      # Import directory
 ```
 
-## API
-
-### createStructureFromString(input: string, outputDir: string, options?: Options)
-
-Creates a directory structure from a text description.
-
-#### Parameters
-
-- `input`: Text description of the directory structure
-- `outputDir`: Directory where the structure will be created
-- `options`: Optional configuration
-  - `verbose`: Show detailed output (default: false)
-  - `fs`: Custom filesystem implementation (default: NodeFileSystem)
-  - `replaceInFiles`: Object mapping strings to replace in file names
-  - `replaceInFolders`: Object mapping strings to replace in folder names
-
 ### Custom Filesystem Support (Experimental)
 
 ```typescript
@@ -148,6 +132,37 @@ class CustomFileSystem implements FileSystem {
 
 const fs = new CustomFileSystem();
 await createStructureFromString(input, outputDir, { fs });
+```
+
+## API
+
+### createStructureFromString(input: string, outputDir: string, options?: Options)
+
+Creates a directory structure from a text description.
+
+#### Parameters
+
+- `input`: Text description of the directory structure
+- `outputDir`: Directory where the structure will be created
+- `options`: Optional configuration
+  - `fs`: Custom filesystem implementation (default: NodeFileSystem)
+  - `fileNameReplacements`: Array of replacements to apply to file and folder names
+    ```typescript
+    interface FileNameReplacement {
+      search: string; // String to search for
+      replace: string; // String to replace with
+    }
+    ```
+
+#### Example with replacements
+
+```typescript
+await createStructureFromString(input, outputDir, {
+  fileNameReplacements: [
+    { search: "user", replace: "admin" },
+    { search: "api", replace: "rest" },
+  ],
+});
 ```
 
 ## CLI Tool

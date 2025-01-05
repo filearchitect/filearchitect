@@ -18,8 +18,6 @@ npm install @filearchitect/cli
 # Create a directory structure from a file
 filearchitect create structure.txt output
 
-# Create a structure with verbose output
-filearchitect create structure.txt output --verbose
 
 # Create a structure with file name replacements
 filearchitect create structure.txt output --replace-file user:admin
@@ -66,7 +64,6 @@ src/
 
 ## Options
 
-- `--verbose`: Show detailed output during creation
 - `--replace-file <pattern>`: Replace text in file names (e.g. --replace-file user:admin)
 - `--replace-folder <pattern>`: Replace text in folder names (e.g. --replace-folder api:rest)
 - `-h, --help`: Show help message

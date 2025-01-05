@@ -14,7 +14,7 @@
     "clean": "pnpm -r exec rm -rf dist node_modules",
     "patch": "pnpm --recursive --workspace-root exec npm version patch",
     "publish": "pnpm build && pnpm publish -r --filter @filearchitect/core --filter @filearchitect/cli",
-    "try": "pnpm cli create structure.txt output --replace-file main:bar --replace-folder inal:demo && open packages/cli/output"
+    "try": "pnpm --filter @filearchitect/cli dev create structure.txt output --replace-file main:bar --replace-folder inal:demo && open packages/cli/output"
   },
   "engines": {
     "node": ">=18",

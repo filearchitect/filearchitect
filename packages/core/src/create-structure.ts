@@ -8,7 +8,7 @@ import {
   logStructureResult,
   logSuccess,
   logWarning,
-} from "./browser-messages.js";
+} from "./messages.js";
 import { CreateStructureOptions, FileSystem } from "./types.js";
 
 /**
@@ -60,12 +60,7 @@ export async function createStructureFromString(
   rootDir: string,
   options: CreateStructureOptions
 ): Promise<void> {
-  const {
-    verbose = false,
-    fs: filesystem,
-    isCLI = false,
-    fileNameReplacements,
-  } = options;
+  const { fs: filesystem, isCLI = false, fileNameReplacements } = options;
   if (!filesystem) {
     throw new Error("Filesystem implementation is required");
   }
@@ -100,14 +95,13 @@ export async function createStructureFromString(
       );
       const targetPath = path.join(currentDir, replacedName);
 
-      logOperation(operation.type, line, { verbose, isCLI });
+      logOperation(operation.type, line, { isCLI });
 
       try {
         const newPath = await executeOperation(
           { ...operation, name: replacedName, originalName },
           targetPath,
           {
-            verbose,
             isCLI,
             fs: filesystem,
           }
@@ -119,7 +113,7 @@ export async function createStructureFromString(
         hasWarnings = true;
         if (error.code === "ENOENT") {
           logWarning("SOURCE_NOT_FOUND", [error.path], { isCLI });
-          await createEmptyFile(targetPath, { verbose, isCLI, fs: filesystem });
+          await createEmptyFile(targetPath, { isCLI, fs: filesystem });
         } else {
           logWarning("OPERATION_FAILED", [error.message], { isCLI });
         }
@@ -130,7 +124,7 @@ export async function createStructureFromString(
     }
   }
 
-  logStructureResult(hasWarnings, { verbose, isCLI });
+  logStructureResult(hasWarnings, { isCLI });
 }
 
 /**
@@ -236,15 +230,15 @@ function parseOperation(line: string): FileOperation {
 async function executeOperation(
   operation: FileOperation,
   targetPath: string,
-  options: { verbose?: boolean; isCLI?: boolean; fs: FileSystem } = {} as any
+  options: { isCLI?: boolean; fs: FileSystem } = {} as any
 ): Promise<string | void> {
-  const { verbose = false, isCLI = false, fs: filesystem } = options;
+  const { isCLI = false, fs: filesystem } = options;
 
   try {
     const destinationDir = path.dirname(targetPath);
     if (!(await filesystem.exists(destinationDir))) {
       await filesystem.mkdir(destinationDir, { recursive: true });
-      logMessage("CREATED_DIR", [destinationDir], { verbose, isCLI });
+      logMessage("CREATED_DIR", [destinationDir], { isCLI });
     }
 
     // If the name was changed by replacements, log it as a rename
@@ -258,24 +252,19 @@ async function executeOperation(
 
       switch (operation.type) {
         case "file":
-          await createEmptyFile(targetPath, { verbose, isCLI, fs: filesystem });
+          await createEmptyFile(targetPath, { isCLI, fs: filesystem });
           break;
 
         case "directory":
-          await createDirectory(targetPath, { verbose, isCLI, fs: filesystem });
+          await createDirectory(targetPath, { isCLI, fs: filesystem });
           return targetPath;
 
         case "copy":
           if (!operation.sourcePath) {
-            await createEmptyFile(targetPath, {
-              verbose,
-              isCLI,
-              fs: filesystem,
-            });
+            await createEmptyFile(targetPath, { isCLI, fs: filesystem });
             break;
           }
           await copyFile(operation.sourcePath, targetPath, {
-            verbose,
             isCLI,
             fs: filesystem,
           });
@@ -283,15 +272,10 @@ async function executeOperation(
 
         case "move":
           if (!operation.sourcePath) {
-            await createEmptyFile(targetPath, {
-              verbose,
-              isCLI,
-              fs: filesystem,
-            });
+            await createEmptyFile(targetPath, { isCLI, fs: filesystem });
             break;
           }
           await moveFile(operation.sourcePath, targetPath, {
-            verbose,
             isCLI,
             fs: filesystem,
           });
@@ -302,20 +286,19 @@ async function executeOperation(
 
     switch (operation.type) {
       case "file":
-        await createEmptyFile(targetPath, { verbose, isCLI, fs: filesystem });
+        await createEmptyFile(targetPath, { isCLI, fs: filesystem });
         break;
 
       case "directory":
-        await createDirectory(targetPath, { verbose, isCLI, fs: filesystem });
+        await createDirectory(targetPath, { isCLI, fs: filesystem });
         return targetPath;
 
       case "copy":
         if (!operation.sourcePath) {
-          await createEmptyFile(targetPath, { verbose, isCLI, fs: filesystem });
+          await createEmptyFile(targetPath, { isCLI, fs: filesystem });
           break;
         }
         await copyFile(operation.sourcePath, targetPath, {
-          verbose,
           isCLI,
           fs: filesystem,
         });
@@ -323,11 +306,10 @@ async function executeOperation(
 
       case "move":
         if (!operation.sourcePath) {
-          await createEmptyFile(targetPath, { verbose, isCLI, fs: filesystem });
+          await createEmptyFile(targetPath, { isCLI, fs: filesystem });
           break;
         }
         await moveFile(operation.sourcePath, targetPath, {
-          verbose,
           isCLI,
           fs: filesystem,
         });
@@ -336,7 +318,7 @@ async function executeOperation(
   } catch (error: any) {
     logWarning("OPERATION_FAILED", [error.message], { isCLI });
     try {
-      await createEmptyFile(targetPath, { verbose, isCLI, fs: filesystem });
+      await createEmptyFile(targetPath, { isCLI, fs: filesystem });
     } catch (err: any) {
       logWarning("CREATE_EMPTY_FAILED", [err.message], { isCLI });
     }
@@ -351,9 +333,9 @@ async function executeOperation(
  */
 async function createEmptyFile(
   filePath: string,
-  options: { verbose?: boolean; isCLI?: boolean; fs: FileSystem } = {} as any
+  options: { isCLI?: boolean; fs: FileSystem } = {} as any
 ): Promise<void> {
-  const { verbose = false, isCLI = false, fs: filesystem } = options;
+  const { isCLI = false, fs: filesystem } = options;
 
   const dir = path.dirname(filePath);
   if (!(await filesystem.exists(dir))) {
@@ -362,7 +344,7 @@ async function createEmptyFile(
 
   // Always write the file, even if it exists
   await filesystem.writeFile(filePath, "");
-  logMessage("CREATED_FILE", [filePath], { verbose, isCLI });
+  logMessage("CREATED_FILE", [filePath], { isCLI });
 }
 
 /**
@@ -373,15 +355,15 @@ async function createEmptyFile(
  */
 async function createDirectory(
   dirPath: string,
-  options: { verbose?: boolean; isCLI?: boolean; fs: FileSystem } = {} as any
+  options: { isCLI?: boolean; fs: FileSystem } = {} as any
 ): Promise<void> {
-  const { verbose = false, isCLI = false, fs: filesystem } = options;
+  const { isCLI = false, fs: filesystem } = options;
 
   if (!(await filesystem.exists(dirPath))) {
     await filesystem.mkdir(dirPath, { recursive: true });
-    logMessage("CREATED_DIR", [dirPath], { verbose, isCLI });
+    logMessage("CREATED_DIR", [dirPath], { isCLI });
   } else {
-    logMessage("DIR_EXISTS", [dirPath], { verbose, isCLI });
+    logMessage("DIR_EXISTS", [dirPath], { isCLI });
   }
 }
 
@@ -408,9 +390,9 @@ function resolveTildePath(filePath: string): string {
 async function copyFile(
   sourcePath: string,
   targetPath: string,
-  options: { verbose?: boolean; isCLI?: boolean; fs: FileSystem } = {} as any
+  options: { isCLI?: boolean; fs: FileSystem } = {} as any
 ): Promise<void> {
-  const { verbose = false, isCLI = false, fs: filesystem } = options;
+  const { isCLI = false, fs: filesystem } = options;
 
   // Always use absolute path for source
   const resolvedSource = path.isAbsolute(sourcePath)
@@ -419,7 +401,7 @@ async function copyFile(
 
   if (!(await filesystem.exists(resolvedSource))) {
     logWarning("SOURCE_NOT_FOUND", [sourcePath], { isCLI });
-    await createEmptyFile(targetPath, { verbose, isCLI, fs: filesystem });
+    await createEmptyFile(targetPath, { isCLI, fs: filesystem });
     return;
   }
 
@@ -431,19 +413,18 @@ async function copyFile(
   try {
     const stat = await filesystem.stat(resolvedSource);
     if (stat.isDirectory()) {
-      logMessage("COPYING_DIR", [resolvedSource, targetPath], { verbose });
+      logMessage("COPYING_DIR", [resolvedSource, targetPath], { isCLI });
       await copyDirectorySync(resolvedSource, targetPath, {
-        verbose,
         isCLI,
         fs: filesystem,
       });
     } else {
       await filesystem.copyFile(resolvedSource, targetPath);
-      logSuccess("COPIED_FILE", [sourcePath, targetPath], { verbose });
+      logSuccess("COPIED_FILE", [sourcePath, targetPath], { isCLI });
     }
   } catch (error) {
     logWarning("COPY_FAILED", [sourcePath], { isCLI });
-    await createEmptyFile(targetPath, { verbose, isCLI, fs: filesystem });
+    await createEmptyFile(targetPath, { isCLI, fs: filesystem });
   }
 }
 
@@ -457,9 +438,9 @@ async function copyFile(
 async function moveFile(
   sourcePath: string,
   targetPath: string,
-  options: { verbose?: boolean; isCLI?: boolean; fs: FileSystem } = {} as any
+  options: { isCLI?: boolean; fs: FileSystem } = {} as any
 ): Promise<void> {
-  const { verbose = false, isCLI = false, fs: filesystem } = options;
+  const { isCLI = false, fs: filesystem } = options;
 
   // Always use absolute path for source
   const resolvedSource = path.isAbsolute(sourcePath)
@@ -468,7 +449,7 @@ async function moveFile(
 
   if (!(await filesystem.exists(resolvedSource))) {
     logWarning("SOURCE_NOT_FOUND", [sourcePath], { isCLI });
-    await createEmptyFile(targetPath, { verbose, isCLI, fs: filesystem });
+    await createEmptyFile(targetPath, { isCLI, fs: filesystem });
     return;
   }
 
@@ -480,24 +461,23 @@ async function moveFile(
 
   try {
     if (isDirectory) {
-      logMessage("MOVING_DIR", [resolvedSource, targetPath], { verbose });
+      logMessage("MOVING_DIR", [resolvedSource, targetPath], { isCLI });
       // If source is a directory and no target name is specified, use the source directory name
       const targetDir =
         path.extname(targetPath) === "" ? targetPath : path.dirname(targetPath);
       await copyDirectorySync(resolvedSource, targetDir, {
-        verbose,
         isCLI,
         fs: filesystem,
       });
       await filesystem.rm(resolvedSource, { recursive: true });
     } else {
-      logMessage("MOVING_FILE", [resolvedSource, targetPath], { verbose });
+      logMessage("MOVING_FILE", [resolvedSource, targetPath], { isCLI });
       await filesystem.rename(resolvedSource, targetPath);
     }
-    logSuccess("MOVED_SUCCESS", [], { verbose });
+    logSuccess("MOVED_SUCCESS", [], { isCLI });
   } catch (error: any) {
     logWarning("MOVE_FAILED", [error.message], { isCLI });
-    await createEmptyFile(targetPath, { verbose, isCLI, fs: filesystem });
+    await createEmptyFile(targetPath, { isCLI, fs: filesystem });
   }
 }
 
@@ -511,14 +491,14 @@ async function moveFile(
 async function copyDirectorySync(
   source: string,
   destination: string,
-  options: { verbose?: boolean; isCLI?: boolean; fs: FileSystem } = {} as any
+  options: { isCLI?: boolean; fs: FileSystem } = {} as any
 ): Promise<void> {
-  const { verbose = false, isCLI = false, fs: filesystem } = options;
+  const { isCLI = false, fs: filesystem } = options;
 
   // Create the destination directory
   if (!(await filesystem.exists(destination))) {
     await filesystem.mkdir(destination, { recursive: true });
-    logMessage("CREATED_DIR", [destination], { verbose, isCLI });
+    logMessage("CREATED_DIR", [destination], { isCLI });
   }
 
   // Read all entries in the source directory
@@ -532,14 +512,13 @@ async function copyDirectorySync(
     if (entry.isDirectory()) {
       // Recursively copy subdirectories
       await copyDirectorySync(sourcePath, destPath, {
-        verbose,
         isCLI,
         fs: filesystem,
       });
     } else {
       // Copy files
       await filesystem.copyFile(sourcePath, destPath);
-      logMessage("COPIED_FILE", [entry.name], { verbose, isCLI });
+      logMessage("COPIED_FILE", [entry.name], { isCLI });
     }
   }
 }

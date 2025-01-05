@@ -129,9 +129,6 @@ my-project/
 # Create a structure
 filearchitect create structure.txt output
 
-# Create with verbose output
-filearchitect create structure.txt output --verbose
-
 # Replace text in file names
 filearchitect create structure.txt output --replace-file user:admin
 

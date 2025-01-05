@@ -37,16 +37,23 @@
 
     <h2>Enter File Structure</h2>
     <p>
-      Use indentation to define the structure. Add a trailing slash (/) for
-      directories.
+      Use tabs for indentation to define the structure. Directories are created
+      without extensions, files with extensions. You can also use [source] >
+      target to copy files and (source) > target to move files.
     </p>
     <textarea id="structure">
-src/
-    index.ts
-    components/
-      Button.tsx
-      Input.tsx</textarea
-    >
+src
+	components
+		Button.tsx
+		Input.tsx
+	styles
+		global.css
+	utils
+		api.ts
+		helpers.ts
+	types
+		index.d.ts
+    </textarea>
 
     <div>
       <button id="create">Create Structure</button>

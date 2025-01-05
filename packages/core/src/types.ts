@@ -45,7 +45,6 @@ export interface FileOperation {
 }
 
 export interface CreateOptions {
-  verbose?: boolean;
   fs?: FileSystem;
   recursive?: boolean;
 }
@@ -61,7 +60,7 @@ export interface OperationResult {
   path?: string;
 }
 
-import { LogOptions } from "./browser-messages.js";
+import { LogOptions } from "./messages.js";
 
 export interface FileNameReplacement {
   search: string;
