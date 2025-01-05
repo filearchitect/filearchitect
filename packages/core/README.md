@@ -121,16 +121,6 @@ tests
 	(~/old-project/utils) > utils                      # Import directory
 ```
 
-### Validation
-
-```typescript
-await createStructureFromString(
-  await fs.readFile("structure.txt", "utf-8"),
-  "/tmp/validate",
-  { validate: true }
-);
-```
-
 ## API
 
 ### createStructureFromString(input: string, outputDir: string, options?: Options)
@@ -143,7 +133,6 @@ Creates a directory structure from a text description.
 - `outputDir`: Directory where the structure will be created
 - `options`: Optional configuration
   - `verbose`: Show detailed output (default: false)
-  - `validate`: Only validate the structure without creating files (default: false)
   - `fs`: Custom filesystem implementation (default: NodeFileSystem)
   - `replaceInFiles`: Object mapping strings to replace in file names
   - `replaceInFolders`: Object mapping strings to replace in folder names
