@@ -23,11 +23,11 @@ npm install -g @filearchitect/cli
 
 ```txt
 src
-	components
-		Button.tsx
-		Card.tsx
-	styles
-		global.css
+    components
+        Button.tsx
+        Card.tsx
+    styles
+        global.css
 ```
 
 3. Create the structure:
@@ -51,11 +51,11 @@ import { createStructureFromString } from "@filearchitect/core";
 
 const structure = `
 src
-	components
-		Button.tsx
-		Card.tsx
-	styles
-		global.css
+    components
+        Button.tsx
+        Card.tsx
+    styles
+        global.css
 `;
 
 await createStructureFromString(structure, "./my-project");
@@ -78,30 +78,30 @@ Create a complete project structure with file creation, copying, and importing. 
 
 ```txt
 src
-	components
-		Button.tsx
-		Card.tsx
-		forms
-			LoginForm.tsx
-			SignupForm.tsx
-	styles
-		global.css
-		components.css
-	utils
-		api.ts
-		helpers.ts
-	types
-		index.d.ts
+    components
+        Button.tsx
+        Card.tsx
+        forms
+            LoginForm.tsx
+            SignupForm.tsx
+    styles
+        global.css
+        components.css
+    utils
+        api.ts
+        helpers.ts
+    types
+        index.d.ts
 
 # Copy configuration files
 config
-	[~/configs/base.json] > base.json
-	[~/templates/react] > template
+    [~/configs/base.json] > base.json
+    [~/templates/react] > template
 
 # Import existing files
 tests
-	(~/old-project/components/Button.test.tsx) > components/Button.test.tsx
-	(~/old-project/utils/helpers.test.ts) > utils/helpers.test.ts
+    (~/old-project/components/Button.test.tsx) > components/Button.test.tsx
+    (~/old-project/utils/helpers.test.ts) > utils/helpers.test.ts
 ```
 
 This creates:
