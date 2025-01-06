@@ -63,12 +63,14 @@ await createStructureFromString(structure, "./my-project");
 
 ## Syntax Guide
 
-| Syntax              | Description                      | Example                         |
-| ------------------- | -------------------------------- | ------------------------------- |
-| `name.ext`          | Creates an empty file            | `file.txt`                      |
-| `name`              | Creates a directory              | `folder`                        |
-| `[source] > target` | Copies a file/directory          | `[~/config.json] > config.json` |
-| `(source) > target` | Moves (imports) a file/directory | `(~/old.txt) > new.txt`         |
+| Syntax              | Description                                                       | Example                         |
+| ------------------- | ----------------------------------------------------------------- | ------------------------------- |
+| `name.ext`          | Creates an empty file                                             | `file.txt`                      |
+| `name`              | Creates a directory                                               | `folder`                        |
+| `[source]`          | Copies a file or folder with its contents                         | `[~/config.json]`               |
+| `[source] > target` | Copies a file or folder with its contents and renames it          | `[~/config.json] > config.json` |
+| `(source)`          | Moves (imports) a file or folder with its contents                | `(~/old.txt)`                   |
+| `(source) > target` | Moves (imports) a file or folder with its contents and renames it | `(~/old.txt) > new.txt`         |
 
 ### Full Example
 
