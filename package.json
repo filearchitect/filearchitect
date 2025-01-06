@@ -1,7 +1,7 @@
 {
   "name": "@filearchitect/monorepo",
   "private": true,
-  "version": "0.1.7",
+  "version": "0.1.5",
   "description": "File Architect monorepo",
   "type": "module",
   "scripts": {
@@ -12,7 +12,7 @@
     "dev": "pnpm --parallel -r dev",
     "cli": "pnpm --filter @filearchitect/cli dev",
     "clean": "pnpm -r exec rm -rf dist node_modules",
-    "patch": "git add . && git commit -m \"chore: version bump\" && git push && git push --tags && pnpm --recursive --workspace-root exec npm version patch",
+    "patch": "git add . && git commit -m \"chore: prepare for version bump\" || true && pnpm --recursive --workspace-root exec npm version patch && git add . && git commit -m \"chore: version bump\" && git push && git push --tags && pnpm build && pnpm publish -r --filter @filearchitect/core --filter @filearchitect/cli",
     "publish": "pnpm build && pnpm publish -r --filter @filearchitect/core --filter @filearchitect/cli",
     "try": "pnpm --filter @filearchitect/cli dev create structure.txt output --replace-file main:bar --replace-folder inal:demo && open packages/cli/output"
   },
