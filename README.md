@@ -8,8 +8,6 @@ Create file and directory structures from simple text descriptions. Perfect for 
 - Copy files and directories from existing locations
 - Import (move) files from other projects
 - Available as both a CLI tool and a TypeScript/JavaScript library
-- Validate structures before creating them
-- Replace file and folder names dynamically
 
 ## Quick Start
 
