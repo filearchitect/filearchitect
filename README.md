@@ -4,36 +4,47 @@ Create file and directory structures from simple text descriptions. Perfect for 
 
 ## Features
 
-- Create directory structures using a simple, indentation-based syntax
-- Copy files and directories from existing locations
-- Import (move) files from other projects
-- Available as both a CLI tool and a TypeScript/JavaScript library
+-   Create directory structures using a simple, indentation-based syntax
+-   Copy files and directories from existing locations
+-   Import (move) files from other projects
+-   Available as both a CLI tool and a TypeScript/JavaScript library
 
 ## Quick Start
 
 ### Using the CLI
 
-```bash
-# Install globally
-npm install -g @filearchitect/cli
+1. Install globally:
 
-# Create a structure file
-echo "src
+```bash
+npm install -g @filearchitect/cli
+```
+
+2. Create a structure file (`structure.txt`):
+
+```txt
+src
 	components
 		Button.tsx
 		Card.tsx
 	styles
-		global.css" > structure.txt
+		global.css
+```
 
-# Create the structure
+3. Create the structure:
+
+```bash
 filearchitect create structure.txt my-project
 ```
 
 ### Using the Library
 
+1. Install the package:
+
 ```bash
 npm install @filearchitect/core
 ```
+
+2. Use in your code:
 
 ```typescript
 import { createStructureFromString } from "@filearchitect/core";
@@ -50,12 +61,20 @@ src
 await createStructureFromString(structure, "./my-project");
 ```
 
-## Complete Example
+## Syntax Guide
 
-Create a complete project structure with file creation, copying, and importing (`project-structure.txt`):
+| Syntax              | Description                      | Example                         |
+| ------------------- | -------------------------------- | ------------------------------- |
+| `name.ext`          | Creates an empty file            | `file.txt`                      |
+| `name`              | Creates a directory              | `folder`                        |
+| `[source] > target` | Copies a file/directory          | `[~/config.json] > config.json` |
+| `(source) > target` | Moves (imports) a file/directory | `(~/old.txt) > new.txt`         |
+
+### Full Example
+
+Create a complete project structure with file creation, copying, and importing. Learn more on how the syntax works in the [docs](https://filearchitect.com/docs).
 
 ```txt
-# Create directories and files
 src
 	components
 		Button.tsx
@@ -112,15 +131,6 @@ my-project/
         └── helpers.test.ts  # Imported from ~/old-project/utils/helpers.test.ts
 ```
 
-## Syntax Guide
-
-| Syntax              | Description                      | Example                         |
-| ------------------- | -------------------------------- | ------------------------------- |
-| `name.ext`          | Creates an empty file            | `file.txt`                      |
-| `name`              | Creates a directory              | `folder`                        |
-| `[source] > target` | Copies a file/directory          | `[~/config.json] > config.json` |
-| `(source) > target` | Moves (imports) a file/directory | `(~/old.txt) > new.txt`         |
-
 ## CLI Usage
 
 ```bash
@@ -147,20 +157,20 @@ await createStructureFromString(structureText, "./output");
 
 // Replace names
 await createStructureFromString(structureText, "./output", {
-  replaceInFiles: { user: "admin" },
-  replaceInFolders: { api: "rest" },
+    replaceInFiles: { user: "admin" },
+    replaceInFolders: { api: "rest" },
 });
 
 // Validate only
 await createStructureFromString(structureText, "./output", {
-  validate: true,
+    validate: true,
 });
 ```
 
 ## Packages
 
-- [@filearchitect/cli](packages/cli/README.md): Command-line interface
-- [@filearchitect/core](packages/core/README.md): Core library for programmatic usage
+-   [@filearchitect/cli](packages/cli/README.md): Command-line interface
+-   [@filearchitect/core](packages/core/README.md): Core library for programmatic usage
 
 ## Contributing
 
