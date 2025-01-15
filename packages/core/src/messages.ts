@@ -60,27 +60,21 @@ export class LogCollector {
         charLength: { type: 10, path: 50, sourcePath: 50 },
       });
 
-      // Sort operations by path
-      const sortedOperations = [...operations].sort((a, b) => {
-        const pathA = this.getRelativePath(a.path)?.toLowerCase() ?? "";
-        const pathB = this.getRelativePath(b.path)?.toLowerCase() ?? "";
-        return pathA.localeCompare(pathB);
-      });
+      // Sort operations by path and filter out rename operations
+      const sortedOperations = [...operations]
+        .filter((op) => op.type !== "rename")
+        .sort((a, b) => {
+          const pathA = this.getRelativePath(a.path)?.toLowerCase() ?? "";
+          const pathB = this.getRelativePath(b.path)?.toLowerCase() ?? "";
+          return pathA.localeCompare(pathB);
+        });
 
       // Add rows to table
       for (const op of sortedOperations) {
         if (!op.path) continue;
 
         const row = {
-          type: op.isDirectory
-            ? `${
-                op.type === "rename"
-                  ? "created and renamed dir"
-                  : `${op.type} dir`
-              }`
-            : op.type === "rename"
-            ? "created and renamed"
-            : op.type,
+          type: op.isDirectory ? `${op.type} dir` : `${op.type} file`,
           path: this.getRelativePath(op.path),
           sourcePath:
             op.originalName ||
@@ -95,8 +89,6 @@ export class LogCollector {
             ? "cyan"
             : op.type === "move"
             ? "yellow"
-            : op.type === "rename"
-            ? "magenta"
             : op.type === "skip"
             ? "gray"
             : undefined;
@@ -212,78 +204,14 @@ export function logMessage(
   args: any[],
   options: LogOptions = {}
 ): void {
-  // Track operations in the collector
-  switch (type) {
-    case "CREATED_FILE":
-      // Skip if this is a rename operation
-      if (
-        collector
-          .getOperations()
-          .some((op) => op.type === "rename" && op.path === args[0])
-      ) {
-        break;
-      }
-      collector.addOperation({
-        type: "create",
-        path: args[0],
-        isDirectory: false,
-      });
-      break;
-    case "CREATED_DIR":
-      // Skip if this is a rename operation
-      if (
-        collector
-          .getOperations()
-          .some((op) => op.type === "rename" && op.path === args[0])
-      ) {
-        break;
-      }
-      collector.addOperation({
-        type: "create",
-        path: args[0],
-        isDirectory: true,
-      });
-      break;
-    case "DIR_EXISTS":
-      collector.addOperation({
-        type: "skip",
-        path: args[0],
-        isDirectory: true,
-      });
-      break;
-    case "COPIED_FILE":
-      collector.addOperation({
-        type: "copy",
-        path: args[1],
-        sourcePath: args[0],
-        isDirectory: false,
-      });
-      break;
-    case "COPYING_DIR":
-      collector.addOperation({
-        type: "copy",
-        path: args[1],
-        sourcePath: args[0],
-        isDirectory: true,
-      });
-      break;
-    case "MOVING_FILE":
-      collector.addOperation({
-        type: "move",
-        path: args[1],
-        sourcePath: args[0],
-        isDirectory: false,
-      });
-      break;
-    case "MOVING_DIR":
-      collector.addOperation({
-        type: "move",
-        path: args[1],
-        sourcePath: args[0],
-        isDirectory: true,
-      });
-      break;
-  }
+  const { silent = false } = options;
+  if (silent) return;
+
+  const config = Messages[type];
+  if (!config.alwaysShow && !options.isCLI) return;
+
+  const message = formatMessage(config, options, ...args);
+  console.log(message);
 }
 
 export function logOperation(
@@ -299,7 +227,14 @@ export function logSuccess(
   args: any[],
   options: LogOptions = {}
 ): void {
-  logMessage(type, args, options);
+  const { silent = false } = options;
+  if (silent) return;
+
+  const config = Messages[type];
+  if (!config.alwaysShow && !options.isCLI) return;
+
+  const message = formatMessage(config, options, ...args);
+  console.log(message);
 }
 
 export function logWarning(
@@ -307,16 +242,14 @@ export function logWarning(
   args: any[],
   options: LogOptions = {}
 ): void {
-  // Track operations in the collector
-  switch (type) {
-    case "SOURCE_NOT_FOUND":
-      collector.addOperation({
-        type: "create",
-        path: args[0],
-        isDirectory: false,
-      });
-      break;
-  }
+  const { silent = false } = options;
+  if (silent) return;
+
+  const config = Messages[type];
+  if (!config.alwaysShow && !options.isCLI) return;
+
+  const message = formatMessage(config, options, ...args);
+  console.warn(message);
 }
 
 export function logStructureResult(
