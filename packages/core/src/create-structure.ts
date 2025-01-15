@@ -237,8 +237,11 @@ async function executeOperation(
   try {
     const destinationDir = path.dirname(targetPath);
     if (!(await filesystem.exists(destinationDir))) {
-      await filesystem.mkdir(destinationDir, { recursive: true });
-      logMessage("CREATED_DIR", [destinationDir]);
+      await createDirectory(destinationDir, {
+        isCLI,
+        fs: filesystem,
+        skipLogging: true,
+      });
     }
 
     // If the name was changed by replacements, log it as a rename
@@ -253,7 +256,11 @@ async function executeOperation(
 
     switch (operation.type) {
       case "file":
-        await filesystem.writeFile(targetPath, "");
+        await createEmptyFile(targetPath, {
+          isCLI,
+          fs: filesystem,
+          skipLogging: true,
+        });
         collector.addOperation({
           type: "create",
           path: targetPath,
@@ -262,7 +269,16 @@ async function executeOperation(
         break;
 
       case "directory":
-        await createDirectory(targetPath, { isCLI, fs: filesystem });
+        await createDirectory(targetPath, {
+          isCLI,
+          fs: filesystem,
+          skipLogging: true,
+        });
+        collector.addOperation({
+          type: "create",
+          path: targetPath,
+          isDirectory: true,
+        });
         return targetPath;
 
       case "copy":
@@ -304,18 +320,24 @@ async function executeOperation(
  */
 async function createEmptyFile(
   filePath: string,
-  options: { isCLI?: boolean; fs: FileSystem } = {} as any
+  options: {
+    isCLI?: boolean;
+    fs: FileSystem;
+    skipLogging?: boolean;
+  } = {} as any
 ): Promise<void> {
-  const { isCLI = false, fs: filesystem } = options;
+  const { isCLI = false, fs: filesystem, skipLogging = false } = options;
 
   const dir = path.dirname(filePath);
   if (!(await filesystem.exists(dir))) {
-    await filesystem.mkdir(dir, { recursive: true });
+    await createDirectory(dir, { isCLI, fs: filesystem, skipLogging: true });
   }
 
   // Always write the file, even if it exists
   await filesystem.writeFile(filePath, "");
-  logMessage("CREATED_FILE", [filePath]);
+  if (!skipLogging) {
+    logMessage("CREATED_FILE", [filePath]);
+  }
 }
 
 /**
@@ -326,32 +348,19 @@ async function createEmptyFile(
  */
 async function createDirectory(
   dirPath: string,
-  options: { isCLI?: boolean; fs: FileSystem } = {} as any
+  options: {
+    isCLI?: boolean;
+    fs: FileSystem;
+    skipLogging?: boolean;
+  } = {} as any
 ): Promise<void> {
-  const { isCLI = false, fs: filesystem } = options;
+  const { isCLI = false, fs: filesystem, skipLogging = false } = options;
 
-  if (!(await filesystem.exists(dirPath))) {
-    await filesystem.mkdir(dirPath, { recursive: true });
-    logMessage("CREATED_DIR", [dirPath]);
-  } else {
-    logMessage("DIR_EXISTS", [dirPath]);
-  }
-}
-
-/**
- * Creates an empty directory, creating parent directories if needed.
- *
- * @param dirPath The path of the directory to create
- * @param options Additional options
- */
-async function createEmptyDirectory(
-  dirPath: string,
-  options: { isCLI?: boolean; fs: FileSystem } = {} as any
-): Promise<void> {
-  const { isCLI = false, fs: filesystem } = options;
-
+  // Always create the directory, even if it exists
   await filesystem.mkdir(dirPath, { recursive: true });
-  logMessage("CREATED_DIR", [dirPath]);
+  if (!skipLogging) {
+    logMessage("CREATED_DIR", [dirPath]);
+  }
 }
 
 /**
@@ -383,14 +392,22 @@ async function copyFile(
     const shouldBeDirectory =
       !path.extname(sourcePath) || sourcePath.endsWith(path.sep);
     if (shouldBeDirectory) {
-      await createEmptyDirectory(targetPath, { isCLI, fs: filesystem });
+      await createDirectory(targetPath, {
+        isCLI,
+        fs: filesystem,
+        skipLogging: true,
+      });
       collector.addOperation({
         type: "create",
         path: targetPath,
         isDirectory: true,
       });
     } else {
-      await createEmptyFile(targetPath, { isCLI, fs: filesystem });
+      await createEmptyFile(targetPath, {
+        isCLI,
+        fs: filesystem,
+        skipLogging: true,
+      });
       collector.addOperation({
         type: "create",
         path: targetPath,
@@ -398,11 +415,6 @@ async function copyFile(
       });
     }
     return;
-  }
-
-  const destinationDir = path.dirname(targetPath);
-  if (!(await filesystem.exists(destinationDir))) {
-    await filesystem.mkdir(destinationDir, { recursive: true });
   }
 
   try {
@@ -437,9 +449,27 @@ async function copyFile(
     const shouldBeDirectory =
       !path.extname(sourcePath) || sourcePath.endsWith(path.sep);
     if (shouldBeDirectory) {
-      await createEmptyDirectory(targetPath, { isCLI, fs: filesystem });
+      await createDirectory(targetPath, {
+        isCLI,
+        fs: filesystem,
+        skipLogging: true,
+      });
+      collector.addOperation({
+        type: "create",
+        path: targetPath,
+        isDirectory: true,
+      });
     } else {
-      await createEmptyFile(targetPath, { isCLI, fs: filesystem });
+      await createEmptyFile(targetPath, {
+        isCLI,
+        fs: filesystem,
+        skipLogging: true,
+      });
+      collector.addOperation({
+        type: "create",
+        path: targetPath,
+        isDirectory: false,
+      });
     }
   }
 }
@@ -473,14 +503,22 @@ async function moveFile(
     const shouldBeDirectory =
       !path.extname(sourcePath) || sourcePath.endsWith(path.sep);
     if (shouldBeDirectory) {
-      await createEmptyDirectory(targetPath, { isCLI, fs: filesystem });
+      await createDirectory(targetPath, {
+        isCLI,
+        fs: filesystem,
+        skipLogging: true,
+      });
       collector.addOperation({
         type: "create",
         path: targetPath,
         isDirectory: true,
       });
     } else {
-      await createEmptyFile(targetPath, { isCLI, fs: filesystem });
+      await createEmptyFile(targetPath, {
+        isCLI,
+        fs: filesystem,
+        skipLogging: true,
+      });
       collector.addOperation({
         type: "create",
         path: targetPath,
@@ -488,11 +526,6 @@ async function moveFile(
       });
     }
     return;
-  }
-
-  const destinationDir = path.dirname(targetPath);
-  if (!(await filesystem.exists(destinationDir))) {
-    await filesystem.mkdir(destinationDir, { recursive: true });
   }
 
   try {
@@ -531,9 +564,27 @@ async function moveFile(
     const shouldBeDirectory =
       !path.extname(sourcePath) || sourcePath.endsWith(path.sep);
     if (shouldBeDirectory) {
-      await createEmptyDirectory(targetPath, { isCLI, fs: filesystem });
+      await createDirectory(targetPath, {
+        isCLI,
+        fs: filesystem,
+        skipLogging: true,
+      });
+      collector.addOperation({
+        type: "create",
+        path: targetPath,
+        isDirectory: true,
+      });
     } else {
-      await createEmptyFile(targetPath, { isCLI, fs: filesystem });
+      await createEmptyFile(targetPath, {
+        isCLI,
+        fs: filesystem,
+        skipLogging: true,
+      });
+      collector.addOperation({
+        type: "create",
+        path: targetPath,
+        isDirectory: false,
+      });
     }
   }
 }
@@ -552,11 +603,12 @@ async function copyDirectorySync(
 ): Promise<void> {
   const { isCLI = false, fs: filesystem } = options;
 
-  // Create the destination directory
-  if (!(await filesystem.exists(destination))) {
-    await filesystem.mkdir(destination, { recursive: true });
-    logMessage("CREATED_DIR", [destination]);
-  }
+  // Create the destination directory without logging (createDirectory will handle logging)
+  await createDirectory(destination, {
+    isCLI,
+    fs: filesystem,
+    skipLogging: true,
+  });
 
   // Read all entries in the source directory
   const entries = await filesystem.readdir(source, { withFileTypes: true });
@@ -572,22 +624,10 @@ async function copyDirectorySync(
         isCLI,
         fs: filesystem,
       });
-      collector.addOperation({
-        type: "copy",
-        path: destPath,
-        sourcePath: sourcePath,
-        isDirectory: true,
-      });
     } else {
       // Copy files
       await filesystem.copyFile(sourcePath, destPath);
       logMessage("COPIED_FILE", [entry.name]);
-      collector.addOperation({
-        type: "copy",
-        path: destPath,
-        sourcePath: sourcePath,
-        isDirectory: false,
-      });
     }
   }
 }
