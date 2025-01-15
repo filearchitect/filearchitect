@@ -1,5 +1,6 @@
 import fs from "fs";
 import { FSError } from "./errors.js";
+import { resolveTildePath } from "./path-utils.js";
 import type {
   DirectoryEntry,
   FileStat,
@@ -13,7 +14,7 @@ import type {
 export class NodeFileSystem implements FileSystem {
   async exists(path: string): Promise<boolean> {
     try {
-      await fs.promises.access(path);
+      await fs.promises.access(resolveTildePath(path));
       return true;
     } catch {
       return false;
@@ -21,8 +22,9 @@ export class NodeFileSystem implements FileSystem {
   }
 
   async mkdir(path: string, options: FileSystemOptions): Promise<void> {
+    const resolvedPath = resolveTildePath(path);
     try {
-      await fs.promises.mkdir(path, { recursive: options.recursive });
+      await fs.promises.mkdir(resolvedPath, { recursive: options.recursive });
     } catch (error: any) {
       if (error.code === "EEXIST") {
         throw FSError.alreadyExists(path);
@@ -35,8 +37,9 @@ export class NodeFileSystem implements FileSystem {
   }
 
   async writeFile(path: string, data: string): Promise<void> {
+    const resolvedPath = resolveTildePath(path);
     try {
-      await fs.promises.writeFile(path, data);
+      await fs.promises.writeFile(resolvedPath, data);
     } catch (error: any) {
       if (error.code === "EISDIR") {
         throw FSError.isDirectory(path);
@@ -49,8 +52,9 @@ export class NodeFileSystem implements FileSystem {
   }
 
   async readFile(path: string): Promise<string> {
+    const resolvedPath = resolveTildePath(path);
     try {
-      return await fs.promises.readFile(path, "utf-8");
+      return await fs.promises.readFile(resolvedPath, "utf-8");
     } catch (error: any) {
       if (error.code === "ENOENT") {
         throw FSError.notFound(path);
@@ -66,8 +70,10 @@ export class NodeFileSystem implements FileSystem {
   }
 
   async copyFile(src: string, dest: string): Promise<void> {
+    const resolvedSrc = resolveTildePath(src);
+    const resolvedDest = resolveTildePath(dest);
     try {
-      await fs.promises.copyFile(src, dest);
+      await fs.promises.copyFile(resolvedSrc, resolvedDest);
     } catch (error: any) {
       if (error.code === "ENOENT") {
         throw FSError.notFound(error.path || src);
@@ -80,8 +86,9 @@ export class NodeFileSystem implements FileSystem {
   }
 
   async stat(path: string): Promise<FileStat> {
+    const resolvedPath = resolveTildePath(path);
     try {
-      const stats = await fs.promises.stat(path);
+      const stats = await fs.promises.stat(resolvedPath);
       return {
         isDirectory: () => stats.isDirectory(),
         size: stats.size,
@@ -98,8 +105,9 @@ export class NodeFileSystem implements FileSystem {
   }
 
   async isDirectory(path: string): Promise<boolean> {
+    const resolvedPath = resolveTildePath(path);
     try {
-      const stats = await fs.promises.stat(path);
+      const stats = await fs.promises.stat(resolvedPath);
       return stats.isDirectory();
     } catch (error: any) {
       if (error.code === "ENOENT") {
@@ -116,9 +124,10 @@ export class NodeFileSystem implements FileSystem {
     path: string,
     options: FileSystemOptions
   ): Promise<DirectoryEntry[]> {
+    const resolvedPath = resolveTildePath(path);
     try {
       if (options.withFileTypes) {
-        const entries = await fs.promises.readdir(path, {
+        const entries = await fs.promises.readdir(resolvedPath, {
           withFileTypes: true,
         });
         return entries.map((entry) => ({
@@ -126,7 +135,7 @@ export class NodeFileSystem implements FileSystem {
           isDirectory: () => entry.isDirectory(),
         }));
       }
-      const entries = await fs.promises.readdir(path);
+      const entries = await fs.promises.readdir(resolvedPath);
       return entries.map((name) => ({
         name,
         isDirectory: () => false,
@@ -146,8 +155,9 @@ export class NodeFileSystem implements FileSystem {
   }
 
   async rm(path: string, options: FileSystemOptions): Promise<void> {
+    const resolvedPath = resolveTildePath(path);
     try {
-      await fs.promises.rm(path, { recursive: options.recursive });
+      await fs.promises.rm(resolvedPath, { recursive: options.recursive });
     } catch (error: any) {
       if (error.code === "ENOENT") {
         throw FSError.notFound(path);
@@ -160,8 +170,9 @@ export class NodeFileSystem implements FileSystem {
   }
 
   async unlink(path: string): Promise<void> {
+    const resolvedPath = resolveTildePath(path);
     try {
-      await fs.promises.unlink(path);
+      await fs.promises.unlink(resolvedPath);
     } catch (error: any) {
       if (error.code === "ENOENT") {
         throw FSError.notFound(path);
@@ -177,8 +188,10 @@ export class NodeFileSystem implements FileSystem {
   }
 
   async rename(oldPath: string, newPath: string): Promise<void> {
+    const resolvedOldPath = resolveTildePath(oldPath);
+    const resolvedNewPath = resolveTildePath(newPath);
     try {
-      await fs.promises.rename(oldPath, newPath);
+      await fs.promises.rename(resolvedOldPath, resolvedNewPath);
     } catch (error: any) {
       if (error.code === "ENOENT") {
         throw FSError.notFound(error.path || oldPath);

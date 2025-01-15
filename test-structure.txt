@@ -1,7 +1,0 @@
-test-foo/
-    foo.txt
-    foo-config/
-        foo-settings.json
-        foo-data.txt
-    another-foo/
-        foo-test.js 
