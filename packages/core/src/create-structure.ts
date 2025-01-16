@@ -531,10 +531,7 @@ async function moveFile(
 
     if (isDirectory) {
       logMessage("MOVING_DIR", [resolvedSource, targetPath]);
-      // First copy the directory
-      await filesystem.copyFolder(resolvedSource, targetPath);
-      // Then remove the source
-      await filesystem.rm(resolvedSource, { recursive: true });
+      await filesystem.moveFolder(resolvedSource, targetPath);
       collector.addOperation({
         type: "move",
         path: targetPath,

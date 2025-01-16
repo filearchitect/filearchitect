@@ -17,16 +17,11 @@ export interface FileStat {
 }
 
 export interface FileSystem {
+  // Basic operations
   exists(path: string): boolean | Promise<boolean>;
   mkdir(path: string, options?: FileSystemOptions): void | Promise<void>;
   writeFile(path: string, data: string): void | Promise<void>;
   readFile(path: string): string | Promise<string>;
-  copyFile(src: string, dest: string): void | Promise<void>;
-  copyFolder(
-    src: string,
-    dest: string,
-    options?: FileSystemOptions
-  ): Promise<void>;
   stat(path: string): FileStat | Promise<FileStat>;
   readdir(
     path: string,
@@ -36,6 +31,26 @@ export interface FileSystem {
   unlink(path: string): void | Promise<void>;
   rename(oldPath: string, newPath: string): void | Promise<void>;
   isDirectory(path: string): Promise<boolean>;
+
+  // High-level operations
+  copyFile(src: string, dest: string): void | Promise<void>;
+  copyFolder(
+    src: string,
+    dest: string,
+    options?: FileSystemOptions
+  ): Promise<void>;
+  moveFolder(
+    src: string,
+    dest: string,
+    options?: FileSystemOptions
+  ): Promise<void>;
+
+  // Convenience methods
+  ensureDir(path: string): Promise<void>;
+  emptyDir(path: string): Promise<void>;
+  copy(src: string, dest: string, options?: FileSystemOptions): Promise<void>;
+  move(src: string, dest: string, options?: FileSystemOptions): Promise<void>;
+  existsAs(path: string, type: "file" | "directory"): Promise<boolean>;
 }
 
 /**

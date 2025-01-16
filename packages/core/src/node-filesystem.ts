@@ -1,5 +1,6 @@
 import fs from "fs";
 import path from "path";
+import { BaseFileSystem } from "./base-filesystem.js";
 import { FSError } from "./errors.js";
 import { resolveTildePath } from "./path-utils.js";
 import type {
@@ -12,7 +13,7 @@ import type {
 /**
  * Node.js filesystem implementation
  */
-export class NodeFileSystem implements FileSystem {
+export class NodeFileSystem extends BaseFileSystem {
   async exists(path: string): Promise<boolean> {
     try {
       await fs.promises.access(resolveTildePath(path));
@@ -247,6 +248,109 @@ export class NodeFileSystem implements FileSystem {
         throw FSError.permissionDenied(src);
       }
       throw FSError.operationFailed(error.message, src);
+    }
+  }
+
+  /**
+   * Moves a folder and its contents.
+   * On platforms that support it, this will use a native move operation.
+   * Otherwise, it will fall back to copy + delete.
+   *
+   * @param src The source folder path
+   * @param dest The destination folder path
+   * @param options Additional options
+   */
+  async moveFolder(
+    src: string,
+    dest: string,
+    options?: FileSystemOptions
+  ): Promise<void> {
+    const resolvedSrc = resolveTildePath(src);
+    const resolvedDest = resolveTildePath(dest);
+
+    try {
+      // Try to use rename first (atomic move operation)
+      await this.rename(resolvedSrc, resolvedDest);
+    } catch (error: any) {
+      // If rename fails (e.g., across devices), fall back to copy + delete
+      if (error.code === "EXDEV") {
+        await this.copyFolder(resolvedSrc, resolvedDest, options);
+        await this.rm(resolvedSrc, { recursive: true });
+      } else {
+        if (error.code === "ENOENT") {
+          throw FSError.notFound(src);
+        }
+        if (error.code === "EACCES") {
+          throw FSError.permissionDenied(src);
+        }
+        throw FSError.operationFailed(error.message, src);
+      }
+    }
+  }
+
+  /**
+   * Ensures a directory exists, creating it and any necessary parent directories.
+   */
+  async ensureDir(path: string): Promise<void> {
+    await this.mkdir(path, { recursive: true });
+  }
+
+  /**
+   * Empties a directory without removing it.
+   */
+  async emptyDir(path: string): Promise<void> {
+    const resolvedPath = resolveTildePath(path);
+    try {
+      await this.rm(resolvedPath, { recursive: true });
+    } catch (error: any) {
+      if (error.code !== "ENOENT") {
+        throw error;
+      }
+    }
+    await this.mkdir(resolvedPath, { recursive: true });
+  }
+
+  /**
+   * Smart copy that handles both files and directories.
+   */
+  async copy(
+    src: string,
+    dest: string,
+    options?: FileSystemOptions
+  ): Promise<void> {
+    const stat = await this.stat(src);
+    if (stat.isDirectory()) {
+      await this.copyFolder(src, dest, options);
+    } else {
+      await this.copyFile(src, dest);
+    }
+  }
+
+  /**
+   * Smart move that handles both files and directories.
+   */
+  async move(
+    src: string,
+    dest: string,
+    options?: FileSystemOptions
+  ): Promise<void> {
+    const stat = await this.stat(src);
+    if (stat.isDirectory()) {
+      await this.moveFolder(src, dest, options);
+    } else {
+      await this.rename(src, dest);
+    }
+  }
+
+  /**
+   * Checks if a path exists and is of a specific type.
+   */
+  async existsAs(path: string, type: "file" | "directory"): Promise<boolean> {
+    try {
+      const stat = await this.stat(path);
+      return type === "directory" ? stat.isDirectory() : !stat.isDirectory();
+    } catch {
+      return false;
     }
   }
 }

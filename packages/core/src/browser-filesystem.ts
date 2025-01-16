@@ -1,11 +1,18 @@
-import { DirectoryEntry, FileSystem, FileSystemOptions } from "./types.js";
+import { BaseFileSystem } from "./base-filesystem.js";
+import { DirectoryEntry, FileSystemOptions } from "./types.js";
 
-export class BrowserFileSystem implements FileSystem {
-  private files: Map<string, string> = new Map();
-  private directories: Set<string> = new Set();
+/**
+ * Browser-based in-memory filesystem implementation
+ */
+export class BrowserFileSystem extends BaseFileSystem {
+  private files: Map<string, string>;
+  private directories: Set<string>;
 
   constructor() {
+    super();
     // Initialize root directory
+    this.files = new Map();
+    this.directories = new Set();
     this.directories.add("");
   }
 
@@ -241,5 +248,24 @@ export class BrowserFileSystem implements FileSystem {
         await this.copyFile(srcPath, destPath);
       }
     }
+  }
+
+  /**
+   * Moves a folder and its contents.
+   *
+   * @param src The source folder path
+   * @param dest The destination folder path
+   * @param options Additional options
+   */
+  async moveFolder(
+    src: string,
+    dest: string,
+    options?: FileSystemOptions
+  ): Promise<void> {
+    const normalizedSrc = this.normalizePath(src);
+    const normalizedDest = this.normalizePath(dest);
+
+    // Use rename for the move operation since it's all in-memory
+    await this.rename(normalizedSrc, normalizedDest);
   }
 }
