@@ -202,4 +202,44 @@ export class BrowserFileSystem implements FileSystem {
   getDirectories(): Set<string> {
     return new Set(this.directories);
   }
+
+  /**
+   * Recursively copies a folder and its contents.
+   *
+   * @param src The source folder path
+   * @param dest The destination folder path
+   * @param options Additional options
+   */
+  async copyFolder(
+    src: string,
+    dest: string,
+    options?: FileSystemOptions
+  ): Promise<void> {
+    const normalizedSrc = this.normalizePath(src);
+    const normalizedDest = this.normalizePath(dest);
+
+    // Create destination directory
+    await this.mkdir(normalizedDest, { recursive: true });
+
+    // Read source directory contents
+    const entries = await this.readdir(normalizedSrc, { withFileTypes: true });
+
+    // Copy each entry
+    for (const entry of entries) {
+      const srcPath = normalizedSrc
+        ? `${normalizedSrc}/${entry.name}`
+        : entry.name;
+      const destPath = normalizedDest
+        ? `${normalizedDest}/${entry.name}`
+        : entry.name;
+
+      if (entry.isDirectory()) {
+        // Recursively copy subdirectories
+        await this.copyFolder(srcPath, destPath, options);
+      } else {
+        // Copy files
+        await this.copyFile(srcPath, destPath);
+      }
+    }
+  }
 }

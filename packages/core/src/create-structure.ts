@@ -423,10 +423,7 @@ async function copyFile(
 
     if (isDirectory) {
       logMessage("COPYING_DIR", [resolvedSource, targetPath]);
-      await copyDirectorySync(resolvedSource, targetPath, {
-        isCLI,
-        fs: filesystem,
-      });
+      await filesystem.copyFolder(resolvedSource, targetPath);
       collector.addOperation({
         type: "copy",
         path: targetPath,
@@ -535,10 +532,7 @@ async function moveFile(
     if (isDirectory) {
       logMessage("MOVING_DIR", [resolvedSource, targetPath]);
       // First copy the directory
-      await copyDirectorySync(resolvedSource, targetPath, {
-        isCLI,
-        fs: filesystem,
-      });
+      await filesystem.copyFolder(resolvedSource, targetPath);
       // Then remove the source
       await filesystem.rm(resolvedSource, { recursive: true });
       collector.addOperation({
@@ -585,49 +579,6 @@ async function moveFile(
         path: targetPath,
         isDirectory: false,
       });
-    }
-  }
-}
-
-/**
- * Recursively copies a directory.
- *
- * @param source The source directory to copy from
- * @param destination The destination directory to copy to
- * @param options Additional options
- */
-async function copyDirectorySync(
-  source: string,
-  destination: string,
-  options: { isCLI?: boolean; fs: FileSystem } = {} as any
-): Promise<void> {
-  const { isCLI = false, fs: filesystem } = options;
-
-  // Create the destination directory without logging (createDirectory will handle logging)
-  await createDirectory(destination, {
-    isCLI,
-    fs: filesystem,
-    skipLogging: true,
-  });
-
-  // Read all entries in the source directory
-  const entries = await filesystem.readdir(source, { withFileTypes: true });
-
-  // Copy each entry
-  for (const entry of entries) {
-    const sourcePath = path.join(source, entry.name);
-    const destPath = path.join(destination, entry.name);
-
-    if (entry.isDirectory()) {
-      // Always create and recursively copy directories, even if they're empty
-      await copyDirectorySync(sourcePath, destPath, {
-        isCLI,
-        fs: filesystem,
-      });
-    } else {
-      // Copy files
-      await filesystem.copyFile(sourcePath, destPath);
-      logMessage("COPIED_FILE", [entry.name]);
     }
   }
 }

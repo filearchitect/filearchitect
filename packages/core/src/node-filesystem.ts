@@ -1,4 +1,5 @@
 import fs from "fs";
+import path from "path";
 import { FSError } from "./errors.js";
 import { resolveTildePath } from "./path-utils.js";
 import type {
@@ -200,6 +201,52 @@ export class NodeFileSystem implements FileSystem {
         throw FSError.permissionDenied(error.path || oldPath);
       }
       throw FSError.operationFailed(error.message, error.path || oldPath);
+    }
+  }
+
+  /**
+   * Recursively copies a folder and its contents.
+   *
+   * @param src The source folder path
+   * @param dest The destination folder path
+   * @param options Additional options
+   */
+  async copyFolder(
+    src: string,
+    dest: string,
+    options?: FileSystemOptions
+  ): Promise<void> {
+    const resolvedSrc = resolveTildePath(src);
+    const resolvedDest = resolveTildePath(dest);
+
+    try {
+      // Create destination directory if it doesn't exist
+      await this.mkdir(resolvedDest, { recursive: true });
+
+      // Read source directory contents
+      const entries = await this.readdir(resolvedSrc, { withFileTypes: true });
+
+      // Copy each entry
+      for (const entry of entries) {
+        const srcPath = path.join(resolvedSrc, entry.name);
+        const destPath = path.join(resolvedDest, entry.name);
+
+        if (entry.isDirectory()) {
+          // Recursively copy subdirectories
+          await this.copyFolder(srcPath, destPath, options);
+        } else {
+          // Copy files
+          await this.copyFile(srcPath, destPath);
+        }
+      }
+    } catch (error: any) {
+      if (error.code === "ENOENT") {
+        throw FSError.notFound(src);
+      }
+      if (error.code === "EACCES") {
+        throw FSError.permissionDenied(src);
+      }
+      throw FSError.operationFailed(error.message, src);
     }
   }
 }

@@ -22,6 +22,11 @@ export interface FileSystem {
   writeFile(path: string, data: string): void | Promise<void>;
   readFile(path: string): string | Promise<string>;
   copyFile(src: string, dest: string): void | Promise<void>;
+  copyFolder(
+    src: string,
+    dest: string,
+    options?: FileSystemOptions
+  ): Promise<void>;
   stat(path: string): FileStat | Promise<FileStat>;
   readdir(
     path: string,
