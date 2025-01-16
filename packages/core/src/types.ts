@@ -78,6 +78,9 @@ export interface FileSystem {
   ): Promise<() => void>;
   matchesPattern(path: string, pattern: string): boolean;
   getCommonParent(...paths: string[]): string;
+
+  /** Emits a warning during filesystem operations */
+  emitWarning?(warning: Warning): void;
 }
 
 /**
@@ -107,6 +110,18 @@ export interface OperationResult {
   path?: string;
 }
 
+/**
+ * Represents a warning that occurred during a filesystem operation
+ */
+export interface Warning {
+  /** The type of warning */
+  type: "missing_source" | "operation_failed" | "permission_denied" | "other";
+  /** A descriptive message about the warning */
+  message: string;
+  /** The path related to the warning */
+  path?: string;
+}
+
 import { LogOptions } from "./messages.js";
 
 export interface FileNameReplacement {
@@ -117,4 +132,8 @@ export interface FileNameReplacement {
 export interface CreateStructureOptions extends LogOptions {
   fs: FileSystem;
   fileNameReplacements?: FileNameReplacement[];
+  /** Callback for handling warnings */
+  onWarning?: (warning: Warning) => void;
+  /** Whether to emit verbose warnings */
+  verbose?: boolean;
 }

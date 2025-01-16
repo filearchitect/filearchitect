@@ -1,5 +1,6 @@
 import path from "path";
 import process from "process";
+import { BaseFileSystem } from "./base-filesystem.js";
 import {
   collector,
   logMessage,
@@ -7,6 +8,7 @@ import {
   logStructureResult,
   logSuccess,
   logWarning,
+  Messages,
 } from "./messages.js";
 import { resolveTildePath } from "./path-utils.js";
 import { CreateStructureOptions, FileSystem } from "./types.js";
@@ -44,6 +46,41 @@ function applyFileNameReplacements(
 }
 
 /**
+ * Valid message types for logging
+ */
+type MessageType =
+  | "SOURCE_NOT_FOUND"
+  | "OPERATION_FAILED"
+  | "CREATED_FILE"
+  | "CREATED_DIR"
+  | "DIR_EXISTS"
+  | "COPYING_DIR"
+  | "COPIED_FILE"
+  | "MOVING_DIR"
+  | "MOVING_FILE"
+  | "MOVED_SUCCESS"
+  | "COPY_FAILED"
+  | "MOVE_FAILED"
+  | "STRUCTURE_SUCCESS"
+  | "STRUCTURE_WARNING";
+
+/**
+ * Maps warning types to message types
+ */
+function mapWarningTypeToMessageType(type: string): keyof typeof Messages {
+  switch (type) {
+    case "missing_source":
+      return "SOURCE_NOT_FOUND";
+    case "operation_failed":
+      return "OPERATION_FAILED";
+    case "permission_denied":
+      return "OPERATION_FAILED";
+    default:
+      return "OPERATION_FAILED";
+  }
+}
+
+/**
  * Creates a file or directory structure from a tab-indented string.
  * The string format supports:
  * - Regular files and directories
@@ -60,9 +97,27 @@ export async function createStructureFromString(
   rootDir: string,
   options: CreateStructureOptions
 ): Promise<void> {
-  const { fs: filesystem, isCLI = false, fileNameReplacements } = options;
+  const {
+    fs: filesystem,
+    isCLI = false,
+    fileNameReplacements,
+    onWarning,
+    verbose = false,
+  } = options;
   if (!filesystem) {
     throw new Error("Filesystem implementation is required");
+  }
+
+  // Set up warning handler if provided
+  if (filesystem instanceof BaseFileSystem && onWarning) {
+    filesystem.setWarningHandler((warning) => {
+      onWarning(warning);
+      if (verbose) {
+        logWarning(mapWarningTypeToMessageType(warning.type), [
+          warning.message,
+        ]);
+      }
+    });
   }
 
   // Create the root directory if it doesn't exist
@@ -112,15 +167,33 @@ export async function createStructureFromString(
       } catch (error: any) {
         hasWarnings = true;
         if (error.code === "ENOENT") {
-          logWarning("SOURCE_NOT_FOUND", [error.path]);
+          if (filesystem.emitWarning) {
+            filesystem.emitWarning({
+              type: "missing_source",
+              message: `Source path not found: ${error.path}`,
+              path: error.path,
+            });
+          }
           await createEmptyFile(targetPath, { isCLI, fs: filesystem });
         } else {
-          logWarning("OPERATION_FAILED", [error.message]);
+          if (filesystem.emitWarning) {
+            filesystem.emitWarning({
+              type: "operation_failed",
+              message: error.message,
+              path: targetPath,
+            });
+          }
         }
       }
     } catch (error: any) {
       hasWarnings = true;
-      logWarning("OPERATION_FAILED", [error.message]);
+      if (filesystem.emitWarning) {
+        filesystem.emitWarning({
+          type: "other",
+          message: error.message,
+          path: rootDir,
+        });
+      }
     }
   }
 

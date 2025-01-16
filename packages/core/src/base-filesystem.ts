@@ -3,12 +3,29 @@ import {
   FileStat,
   FileSystem,
   FileSystemOptions,
+  Warning,
 } from "./types.js";
 
 /**
  * Base class with shared filesystem implementations.
  */
 export abstract class BaseFileSystem implements FileSystem {
+  protected onWarning?: (warning: Warning) => void;
+
+  /**
+   * Sets the warning handler for this filesystem
+   */
+  setWarningHandler(handler: (warning: Warning) => void) {
+    this.onWarning = handler;
+  }
+
+  /**
+   * Emits a warning through the warning handler if one is set
+   */
+  emitWarning(warning: Warning): void {
+    this.onWarning?.(warning);
+  }
+
   abstract exists(path: string): boolean | Promise<boolean>;
   abstract mkdir(
     path: string,
@@ -67,11 +84,22 @@ export abstract class BaseFileSystem implements FileSystem {
     dest: string,
     options?: FileSystemOptions
   ): Promise<void> {
-    const stat = await this.stat(src);
-    if (stat.isDirectory()) {
-      await this.copyFolder(src, dest, options);
-    } else {
-      await this.copyFile(src, dest);
+    try {
+      const stat = await this.stat(src);
+      if (stat.isDirectory()) {
+        await this.copyFolder(src, dest, options);
+      } else {
+        await this.copyFile(src, dest);
+      }
+    } catch (error: any) {
+      if (error.code === "ENOENT") {
+        this.emitWarning({
+          type: "missing_source",
+          message: `Source path does not exist: ${src}`,
+          path: src,
+        });
+      }
+      throw error;
     }
   }
 
@@ -83,11 +111,22 @@ export abstract class BaseFileSystem implements FileSystem {
     dest: string,
     options?: FileSystemOptions
   ): Promise<void> {
-    const stat = await this.stat(src);
-    if (stat.isDirectory()) {
-      await this.moveFolder(src, dest, options);
-    } else {
-      await this.rename(src, dest);
+    try {
+      const stat = await this.stat(src);
+      if (stat.isDirectory()) {
+        await this.moveFolder(src, dest, options);
+      } else {
+        await this.rename(src, dest);
+      }
+    } catch (error: any) {
+      if (error.code === "ENOENT") {
+        this.emitWarning({
+          type: "missing_source",
+          message: `Source path does not exist: ${src}`,
+          path: src,
+        });
+      }
+      throw error;
     }
   }
 
