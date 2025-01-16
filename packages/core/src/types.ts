@@ -51,6 +51,33 @@ export interface FileSystem {
   copy(src: string, dest: string, options?: FileSystemOptions): Promise<void>;
   move(src: string, dest: string, options?: FileSystemOptions): Promise<void>;
   existsAs(path: string, type: "file" | "directory"): Promise<boolean>;
+  ensureFile(path: string): Promise<void>;
+  remove(path: string): Promise<void>;
+  isEmptyDir(path: string): Promise<boolean>;
+  readFileOrDefault(path: string, defaultContent?: string): Promise<string>;
+  ensureEmptyDir(path: string): Promise<void>;
+  copyIfNotExists(
+    src: string,
+    dest: string,
+    options?: FileSystemOptions
+  ): Promise<boolean>;
+  moveIfNotExists(
+    src: string,
+    dest: string,
+    options?: FileSystemOptions
+  ): Promise<boolean>;
+  getAllFiles(dirPath: string): Promise<string[]>;
+  getAllDirectories(dirPath: string): Promise<string[]>;
+
+  // Path manipulation and watching
+  getRelativePath(from: string, to: string): Promise<string>;
+  glob(pattern: string): Promise<string[]>;
+  watch(
+    path: string,
+    callback: (eventType: "add" | "change" | "unlink", path: string) => void
+  ): Promise<() => void>;
+  matchesPattern(path: string, pattern: string): boolean;
+  getCommonParent(...paths: string[]): string;
 }
 
 /**
