@@ -268,4 +268,14 @@ export class BrowserFileSystem extends BaseFileSystem {
     // Use rename for the move operation since it's all in-memory
     await this.rename(normalizedSrc, normalizedDest);
   }
+
+  /**
+   * Watch is not supported in the browser filesystem
+   */
+  async watch(
+    _path: string,
+    _callback: (eventType: "add" | "change" | "unlink", path: string) => void
+  ): Promise<() => void> {
+    throw new Error("Watch is not supported in the browser filesystem");
+  }
 }

@@ -3,6 +3,7 @@ import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
   createStructureFromString,
+  getStructureFromString,
   NodeFileSystem,
 } from "../../core/src/index.js";
 
@@ -35,12 +36,13 @@ for (let i = 0; i < args.length; i++) {
 }
 
 // Show usage if required arguments are missing
-if (!command || !inputFile || command !== "create") {
+if (!command || !inputFile || (command !== "create" && command !== "show")) {
   console.log(`
 FileArchitect - Create file structures from text descriptions
 
 Usage:
   filearchitect create <input-file> [output-dir] [options]
+  filearchitect show <input-file> [output-dir] [options]
 
 Arguments:
   input-file    Text file containing the structure description
@@ -49,6 +51,10 @@ Arguments:
 Options:
   --replace-folder <search:replace>   Replace occurrences of 'search' with 'replace' in directory names
   --replace-file <search:replace>     Replace occurrences of 'search' with 'replace' in file names
+
+Commands:
+  create    Create the file structure
+  show      Show the operations that would be performed without executing them
 `);
   process.exit(1);
 }
@@ -62,12 +68,47 @@ async function main() {
     const structure = await readFile(input, "utf-8");
     const absoluteOutput = resolve(outputDir);
 
-    // Create the structure
-    await createStructureFromString(structure, absoluteOutput, {
-      isCLI: true,
-      fs: new NodeFileSystem(),
-      fileNameReplacements,
-    });
+    if (command === "show") {
+      // Get and display the operations
+      const operations = getStructureFromString(structure, {
+        rootDir: absoluteOutput,
+        fileNameReplacements,
+      });
+
+      console.log("\nOperations that would be performed:\n");
+      for (const op of operations) {
+        console.table(
+          operations.map((op) => ({
+            Type: op.isDirectory ? "Directory" : "File",
+            Operation: op.type,
+            Source: op.sourcePath || "-",
+            Target: op.targetPath,
+          }))
+        );
+        return;
+        const type = op.isDirectory ? "Directory" : "File";
+        switch (op.type) {
+          case "file":
+          case "directory":
+            console.log(`Create ${type}: ${op.targetPath}`);
+            break;
+          case "copy":
+            console.log(`Copy ${type}: ${op.sourcePath} -> ${op.targetPath}`);
+            break;
+          case "move":
+            console.log(`Move ${type}: ${op.sourcePath} -> ${op.targetPath}`);
+            break;
+        }
+      }
+      console.log("\nNo changes were made to the filesystem.");
+    } else {
+      // Create the structure
+      await createStructureFromString(structure, absoluteOutput, {
+        isCLI: true,
+        fs: new NodeFileSystem(),
+        fileNameReplacements,
+      });
+    }
   } catch (error) {
     if (error instanceof Error) {
       console.error("Error:", error.message);

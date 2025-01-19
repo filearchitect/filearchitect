@@ -137,3 +137,27 @@ export interface CreateStructureOptions extends LogOptions {
   /** Whether to emit verbose warnings */
   verbose?: boolean;
 }
+
+/**
+ * Represents a structure operation with its target path and details
+ */
+export interface StructureOperation {
+  /** The type of operation (file, directory, copy, move) */
+  type: OperationType;
+  /** The target path where the operation will be performed */
+  targetPath: string;
+  /** The source path for copy/move operations */
+  sourcePath?: string;
+  /** Whether this is a directory operation */
+  isDirectory: boolean;
+}
+
+/**
+ * Options for getting structure operations
+ */
+export interface GetStructureOptions {
+  /** The root directory path where the structure would be created */
+  rootDir: string;
+  /** Optional file name replacements to apply */
+  fileNameReplacements?: FileNameReplacement[];
+}

@@ -1,5 +1,6 @@
-import fs from "fs";
-import path from "path";
+import { watch as fsWatch } from "node:fs";
+import * as fsPromises from "node:fs/promises";
+import * as pathPromises from "node:path";
 import { BaseFileSystem } from "./base-filesystem.js";
 import { FSError } from "./errors.js";
 import { resolveTildePath } from "./path-utils.js";
@@ -16,7 +17,7 @@ import type {
 export class NodeFileSystem extends BaseFileSystem {
   async exists(path: string): Promise<boolean> {
     try {
-      await fs.promises.access(resolveTildePath(path));
+      await fsPromises.access(resolveTildePath(path));
       return true;
     } catch {
       return false;
@@ -26,7 +27,7 @@ export class NodeFileSystem extends BaseFileSystem {
   async mkdir(path: string, options: FileSystemOptions): Promise<void> {
     const resolvedPath = resolveTildePath(path);
     try {
-      await fs.promises.mkdir(resolvedPath, { recursive: options.recursive });
+      await fsPromises.mkdir(resolvedPath, { recursive: options.recursive });
     } catch (error: any) {
       if (error.code === "EEXIST") {
         throw FSError.alreadyExists(path);
@@ -41,7 +42,7 @@ export class NodeFileSystem extends BaseFileSystem {
   async writeFile(path: string, data: string): Promise<void> {
     const resolvedPath = resolveTildePath(path);
     try {
-      await fs.promises.writeFile(resolvedPath, data);
+      await fsPromises.writeFile(resolvedPath, data);
     } catch (error: any) {
       if (error.code === "EISDIR") {
         throw FSError.isDirectory(path);
@@ -56,7 +57,7 @@ export class NodeFileSystem extends BaseFileSystem {
   async readFile(path: string): Promise<string> {
     const resolvedPath = resolveTildePath(path);
     try {
-      return await fs.promises.readFile(resolvedPath, "utf-8");
+      return await fsPromises.readFile(resolvedPath, "utf-8");
     } catch (error: any) {
       if (error.code === "ENOENT") {
         throw FSError.notFound(path);
@@ -75,7 +76,7 @@ export class NodeFileSystem extends BaseFileSystem {
     const resolvedSrc = resolveTildePath(src);
     const resolvedDest = resolveTildePath(dest);
     try {
-      await fs.promises.copyFile(resolvedSrc, resolvedDest);
+      await fsPromises.copyFile(resolvedSrc, resolvedDest);
     } catch (error: any) {
       if (error.code === "ENOENT") {
         throw FSError.notFound(error.path || src);
@@ -90,7 +91,7 @@ export class NodeFileSystem extends BaseFileSystem {
   async stat(path: string): Promise<FileStat> {
     const resolvedPath = resolveTildePath(path);
     try {
-      const stats = await fs.promises.stat(resolvedPath);
+      const stats = await fsPromises.stat(resolvedPath);
       return {
         isDirectory: () => stats.isDirectory(),
         size: stats.size,
@@ -109,7 +110,7 @@ export class NodeFileSystem extends BaseFileSystem {
   async isDirectory(path: string): Promise<boolean> {
     const resolvedPath = resolveTildePath(path);
     try {
-      const stats = await fs.promises.stat(resolvedPath);
+      const stats = await fsPromises.stat(resolvedPath);
       return stats.isDirectory();
     } catch (error: any) {
       if (error.code === "ENOENT") {
@@ -129,7 +130,7 @@ export class NodeFileSystem extends BaseFileSystem {
     const resolvedPath = resolveTildePath(path);
     try {
       if (options.withFileTypes) {
-        const entries = await fs.promises.readdir(resolvedPath, {
+        const entries = await fsPromises.readdir(resolvedPath, {
           withFileTypes: true,
         });
         return entries.map((entry) => ({
@@ -137,7 +138,7 @@ export class NodeFileSystem extends BaseFileSystem {
           isDirectory: () => entry.isDirectory(),
         }));
       }
-      const entries = await fs.promises.readdir(resolvedPath);
+      const entries = await fsPromises.readdir(resolvedPath);
       return entries.map((name) => ({
         name,
         isDirectory: () => false,
@@ -159,7 +160,7 @@ export class NodeFileSystem extends BaseFileSystem {
   async rm(path: string, options: FileSystemOptions): Promise<void> {
     const resolvedPath = resolveTildePath(path);
     try {
-      await fs.promises.rm(resolvedPath, { recursive: options.recursive });
+      await fsPromises.rm(resolvedPath, { recursive: options.recursive });
     } catch (error: any) {
       if (error.code === "ENOENT") {
         throw FSError.notFound(path);
@@ -174,7 +175,7 @@ export class NodeFileSystem extends BaseFileSystem {
   async unlink(path: string): Promise<void> {
     const resolvedPath = resolveTildePath(path);
     try {
-      await fs.promises.unlink(resolvedPath);
+      await fsPromises.unlink(resolvedPath);
     } catch (error: any) {
       if (error.code === "ENOENT") {
         throw FSError.notFound(path);
@@ -193,7 +194,7 @@ export class NodeFileSystem extends BaseFileSystem {
     const resolvedOldPath = resolveTildePath(oldPath);
     const resolvedNewPath = resolveTildePath(newPath);
     try {
-      await fs.promises.rename(resolvedOldPath, resolvedNewPath);
+      await fsPromises.rename(resolvedOldPath, resolvedNewPath);
     } catch (error: any) {
       if (error.code === "ENOENT") {
         throw FSError.notFound(error.path || oldPath);
@@ -229,8 +230,8 @@ export class NodeFileSystem extends BaseFileSystem {
 
       // Copy each entry
       for (const entry of entries) {
-        const srcPath = path.join(resolvedSrc, entry.name);
-        const destPath = path.join(resolvedDest, entry.name);
+        const srcPath = pathPromises.join(resolvedSrc, entry.name);
+        const destPath = pathPromises.join(resolvedDest, entry.name);
 
         if (entry.isDirectory()) {
           // Recursively copy subdirectories
@@ -286,6 +287,41 @@ export class NodeFileSystem extends BaseFileSystem {
         throw FSError.operationFailed(error.message, src);
       }
     }
+  }
+
+  /**
+   * Watch a file or directory for changes
+   * @param path The path to watch
+   * @param callback Callback to be called when changes occur
+   * @returns A function to stop watching
+   */
+  async watch(
+    path: string,
+    callback: (eventType: "add" | "change" | "unlink", path: string) => void
+  ): Promise<() => void> {
+    const watcher = fsWatch(
+      path,
+      { recursive: true },
+      (eventType, filename) => {
+        if (!filename) return;
+
+        // Map fs.watch events to our event types
+        switch (eventType) {
+          case "rename":
+            // For rename, we need to check if the file exists to determine if it's an add or unlink
+            fsPromises
+              .access(pathPromises.join(path, filename))
+              .then(() => callback("add", filename))
+              .catch(() => callback("unlink", filename));
+            break;
+          case "change":
+            callback("change", filename);
+            break;
+        }
+      }
+    );
+
+    return () => watcher.close();
   }
 }
 
