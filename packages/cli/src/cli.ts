@@ -7,12 +7,16 @@ import {
   NodeFileSystem,
 } from "../../core/src/index.js";
 
+// Initialize filesystem for directory scanning
+const fs = new NodeFileSystem();
+
 // Parse command line arguments
 const args = process.argv.slice(2);
 let command: string | undefined;
 let inputFile: string | undefined;
 let outputDir = ".";
 let fileNameReplacements: { search: string; replace: string }[] = [];
+let showRecursive = true;
 
 // Parse arguments
 for (let i = 0; i < args.length; i++) {
@@ -32,6 +36,8 @@ for (let i = 0; i < args.length; i++) {
     if (search && replace) {
       fileNameReplacements.push({ search, replace });
     }
+  } else if (arg === "--no-recursive") {
+    showRecursive = false;
   }
 }
 
@@ -51,6 +57,7 @@ Arguments:
 Options:
   --replace-folder <search:replace>   Replace occurrences of 'search' with 'replace' in directory names
   --replace-file <search:replace>     Replace occurrences of 'search' with 'replace' in file names
+  --no-recursive                      Don't show recursive contents of copied/moved directories
 
 Commands:
   create    Create the file structure
@@ -70,27 +77,42 @@ async function main() {
 
     if (command === "show") {
       // Get and display the operations
-      const operations = getStructureFromString(structure, {
+      const result = await getStructureFromString(structure, {
         rootDir: absoluteOutput,
         fileNameReplacements,
+        recursive: showRecursive,
+        fs,
       });
 
       console.log("\nOperations that would be performed:\n");
       console.table(
-        operations.map((op) => ({
+        result.operations.map((op) => ({
           Type: op.isDirectory ? "Directory" : "File",
+          Name: op.name,
           Operation: op.type,
           Source: op.sourcePath || "-",
           Target: op.targetPath,
           Depth: op.depth,
+          Warning: op.warning || "-",
         }))
       );
+
+      // Show the options that were used
+      console.log("\nOptions used:");
+      console.log("- Root directory:", result.options.rootDir);
+      console.log("- Recursive:", result.options.recursive);
+      if (result.options.fileNameReplacements.length > 0) {
+        console.log("- File name replacements:");
+        for (const { search, replace } of result.options.fileNameReplacements) {
+          console.log(`  * ${search} -> ${replace}`);
+        }
+      }
       console.log("\nNo changes were made to the filesystem.");
     } else {
       // Create the structure
       await createStructureFromString(structure, absoluteOutput, {
         isCLI: true,
-        fs: new NodeFileSystem(),
+        fs,
         fileNameReplacements,
       });
     }

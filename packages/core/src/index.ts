@@ -8,4 +8,5 @@ export type {
   FileSystem,
   GetStructureOptions,
   StructureOperation,
+  StructureResult,
 } from "./types.js";

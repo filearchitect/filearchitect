@@ -86,11 +86,17 @@ export interface FileSystem {
 /**
  * Operation related types
  */
-export type OperationType = "file" | "directory" | "copy" | "move";
+export type OperationType = "file" | "directory" | "copy" | "move" | "included";
 
+/**
+ * Represents a file operation parsed from a line in the structure file
+ */
 export interface FileOperation {
+  /** The type of operation to perform */
   type: OperationType;
+  /** The target name for the file or directory */
   name: string;
+  /** The source path for copy or move operations */
   sourcePath?: string;
 }
 
@@ -152,6 +158,10 @@ export interface StructureOperation {
   isDirectory: boolean;
   /** The depth level from the root directory (0 = root level) */
   depth: number;
+  /** The name of the file or directory (last part of the path) */
+  name: string;
+  /** Warning message if there's an issue with this operation */
+  warning?: string;
 }
 
 /**
@@ -162,4 +172,18 @@ export interface GetStructureOptions {
   rootDir: string;
   /** Optional file name replacements to apply */
   fileNameReplacements?: FileNameReplacement[];
+  /** Whether to include recursive contents of directories being copied/moved (default: true) */
+  recursive?: boolean;
+  /** Optional filesystem implementation to use for scanning directories */
+  fs?: FileSystem;
+}
+
+/**
+ * Result of getting structure operations
+ */
+export interface StructureResult {
+  /** The array of operations that would be performed */
+  operations: StructureOperation[];
+  /** The options used to generate the operations */
+  options: Required<GetStructureOptions>;
 }

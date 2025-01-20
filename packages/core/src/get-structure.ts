@@ -1,10 +1,13 @@
 import path from "path";
+import { NodeFileSystem } from "./node-filesystem.js";
 import { resolveTildePath } from "./path-utils.js";
 import type {
   FileNameReplacement,
+  FileOperation,
+  FileSystem,
   GetStructureOptions,
-  OperationType,
   StructureOperation,
+  StructureResult,
 } from "./types.js";
 
 /**
@@ -50,18 +53,6 @@ function parseLine(line: string): {
   }
 
   return { level, operation: parseOperation(trimmedLine) };
-}
-
-/**
- * Represents a file operation to be performed.
- */
-interface FileOperation {
-  /** The type of operation to perform */
-  type: OperationType;
-  /** The target name for the file or directory */
-  name: string;
-  /** The source path for copy or move operations */
-  sourcePath?: string;
 }
 
 /**
@@ -121,6 +112,45 @@ function adjustStack(stack: string[], level: number): void {
 }
 
 /**
+ * Recursively lists all files and directories in a directory
+ */
+async function listDirectoryContents(
+  fs: FileSystem,
+  sourcePath: string,
+  targetPath: string,
+  baseDepth: number
+): Promise<StructureOperation[]> {
+  const results: StructureOperation[] = [];
+  const entries = await fs.readdir(sourcePath, { withFileTypes: true });
+
+  for (const entry of entries) {
+    const currentSourcePath = path.join(sourcePath, entry.name);
+    const currentTargetPath = path.join(targetPath, entry.name);
+    const isDirectory = entry.isDirectory();
+    results.push({
+      type: "included",
+      targetPath: currentTargetPath,
+      sourcePath: currentSourcePath,
+      isDirectory,
+      depth: baseDepth + 1,
+      name: entry.name,
+    });
+
+    if (isDirectory) {
+      const subContents = await listDirectoryContents(
+        fs,
+        currentSourcePath,
+        currentTargetPath,
+        baseDepth + 1
+      );
+      results.push(...subContents);
+    }
+  }
+
+  return results;
+}
+
+/**
  * Gets an array of structure operations from a tab-indented string.
  * The string format supports:
  * - Regular files and directories
@@ -130,13 +160,19 @@ function adjustStack(stack: string[], level: number): void {
  *
  * @param input The tab-indented string describing the structure
  * @param options Options for getting structure operations
- * @returns An array of structure operations
+ * @returns The structure result containing operations and options used
  */
-export function getStructureFromString(
+export async function getStructureFromString(
   input: string,
   options: GetStructureOptions
-): StructureOperation[] {
-  const { rootDir, fileNameReplacements } = options;
+): Promise<StructureResult> {
+  const {
+    rootDir,
+    fileNameReplacements = [],
+    recursive = true,
+    fs = new NodeFileSystem(),
+  } = options;
+
   const operations: StructureOperation[] = [];
   const lines = input.split("\n").filter((line) => line.trim().length > 0);
   const stack: string[] = [rootDir];
@@ -171,6 +207,7 @@ export function getStructureFromString(
       sourcePath: operation.sourcePath,
       isDirectory,
       depth: level,
+      name: path.basename(targetPath),
     };
 
     operations.push(structureOperation);
@@ -179,7 +216,53 @@ export function getStructureFromString(
     if (structureOperation.isDirectory) {
       stack.push(targetPath);
     }
+
+    // If this is a copy or move of a directory that exists, list its contents
+    if (
+      recursive &&
+      (operation.type === "copy" || operation.type === "move") &&
+      isDirectory &&
+      operation.sourcePath
+    ) {
+      try {
+        const exists = await fs.exists(operation.sourcePath);
+        if (exists) {
+          const contents = await listDirectoryContents(
+            fs,
+            operation.sourcePath,
+            targetPath,
+            level
+          );
+          operations.push(...contents);
+        } else {
+          structureOperation.warning = `Source path does not exist: ${operation.sourcePath}`;
+        }
+      } catch (error) {
+        structureOperation.warning = `Error accessing source path: ${operation.sourcePath}`;
+      }
+    } else if (
+      (operation.type === "copy" || operation.type === "move") &&
+      operation.sourcePath
+    ) {
+      // Check if source file exists for copy/move operations
+      try {
+        const exists = await fs.exists(operation.sourcePath);
+        if (!exists) {
+          structureOperation.warning = `Source path does not exist: ${operation.sourcePath}`;
+        }
+      } catch (error) {
+        structureOperation.warning = `Error accessing source path: ${operation.sourcePath}`;
+      }
+    }
   }
 
-  return operations;
+  return {
+    operations,
+    options: {
+      rootDir,
+      fileNameReplacements,
+      recursive,
+      fs,
+    },
+  };
 }
