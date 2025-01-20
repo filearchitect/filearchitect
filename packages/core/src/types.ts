@@ -150,6 +150,8 @@ export interface StructureOperation {
   sourcePath?: string;
   /** Whether this is a directory operation */
   isDirectory: boolean;
+  /** The depth level from the root directory (0 = root level) */
+  depth: number;
 }
 
 /**

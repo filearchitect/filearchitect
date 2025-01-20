@@ -76,30 +76,15 @@ async function main() {
       });
 
       console.log("\nOperations that would be performed:\n");
-      for (const op of operations) {
-        console.table(
-          operations.map((op) => ({
-            Type: op.isDirectory ? "Directory" : "File",
-            Operation: op.type,
-            Source: op.sourcePath || "-",
-            Target: op.targetPath,
-          }))
-        );
-        return;
-        const type = op.isDirectory ? "Directory" : "File";
-        switch (op.type) {
-          case "file":
-          case "directory":
-            console.log(`Create ${type}: ${op.targetPath}`);
-            break;
-          case "copy":
-            console.log(`Copy ${type}: ${op.sourcePath} -> ${op.targetPath}`);
-            break;
-          case "move":
-            console.log(`Move ${type}: ${op.sourcePath} -> ${op.targetPath}`);
-            break;
-        }
-      }
+      console.table(
+        operations.map((op) => ({
+          Type: op.isDirectory ? "Directory" : "File",
+          Operation: op.type,
+          Source: op.sourcePath || "-",
+          Target: op.targetPath,
+          Depth: op.depth,
+        }))
+      );
       console.log("\nNo changes were made to the filesystem.");
     } else {
       // Create the structure

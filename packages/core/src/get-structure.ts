@@ -170,6 +170,7 @@ export function getStructureFromString(
       targetPath,
       sourcePath: operation.sourcePath,
       isDirectory,
+      depth: level,
     };
 
     operations.push(structureOperation);
