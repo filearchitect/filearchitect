@@ -1,4 +1,3 @@
-export * from "./browser.js";
 export { createStructureFromString } from "./create-structure.js";
 export { getStructureFromString } from "./get-structure.js";
 export type { LogOptions } from "./messages.js";
@@ -10,3 +9,4 @@ export type {
   StructureOperation,
   StructureResult,
 } from "./types.js";
+export { Messages, createMessage } from "./warnings.js";

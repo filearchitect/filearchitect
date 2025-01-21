@@ -8,10 +8,10 @@ import {
   logStructureResult,
   logSuccess,
   logWarning,
-  Messages,
 } from "./messages.js";
 import { resolveTildePath } from "./path-utils.js";
 import { CreateStructureOptions, FileSystem } from "./types.js";
+import { MessageType } from "./warnings.js";
 
 /**
  * Represents a file name replacement.
@@ -46,35 +46,14 @@ function applyFileNameReplacements(
 }
 
 /**
- * Valid message types for logging
- */
-type MessageType =
-  | "SOURCE_NOT_FOUND"
-  | "OPERATION_FAILED"
-  | "CREATED_FILE"
-  | "CREATED_DIR"
-  | "DIR_EXISTS"
-  | "COPYING_DIR"
-  | "COPIED_FILE"
-  | "MOVING_DIR"
-  | "MOVING_FILE"
-  | "MOVED_SUCCESS"
-  | "COPY_FAILED"
-  | "MOVE_FAILED"
-  | "STRUCTURE_SUCCESS"
-  | "STRUCTURE_WARNING";
-
-/**
  * Maps warning types to message types
  */
-function mapWarningTypeToMessageType(type: string): keyof typeof Messages {
+function mapWarningTypeToMessageType(type: string): MessageType {
   switch (type) {
     case "missing_source":
       return "SOURCE_NOT_FOUND";
     case "operation_failed":
-      return "OPERATION_FAILED";
     case "permission_denied":
-      return "OPERATION_FAILED";
     default:
       return "OPERATION_FAILED";
   }

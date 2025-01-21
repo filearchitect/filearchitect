@@ -9,6 +9,7 @@ import type {
   StructureOperation,
   StructureResult,
 } from "./types.js";
+import { createMessage } from "./warnings.js";
 
 /**
  * Applies file name replacements to a given name.
@@ -235,10 +236,16 @@ export async function getStructureFromString(
           );
           operations.push(...contents);
         } else {
-          structureOperation.warning = `Source path does not exist: ${operation.sourcePath}`;
+          structureOperation.warning = createMessage(
+            "SOURCE_NOT_FOUND",
+            operation.sourcePath
+          );
         }
       } catch (error) {
-        structureOperation.warning = `Error accessing source path: ${operation.sourcePath}`;
+        structureOperation.warning = createMessage(
+          "SOURCE_ACCESS_ERROR",
+          operation.sourcePath
+        );
       }
     } else if (
       (operation.type === "copy" || operation.type === "move") &&
@@ -248,10 +255,16 @@ export async function getStructureFromString(
       try {
         const exists = await fs.exists(operation.sourcePath);
         if (!exists) {
-          structureOperation.warning = `Source path does not exist: ${operation.sourcePath}`;
+          structureOperation.warning = createMessage(
+            "SOURCE_NOT_FOUND",
+            operation.sourcePath
+          );
         }
       } catch (error) {
-        structureOperation.warning = `Error accessing source path: ${operation.sourcePath}`;
+        structureOperation.warning = createMessage(
+          "SOURCE_ACCESS_ERROR",
+          operation.sourcePath
+        );
       }
     }
   }

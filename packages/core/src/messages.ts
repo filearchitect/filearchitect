@@ -1,4 +1,12 @@
 import { Table } from "console-table-printer";
+import {
+  createMessage,
+  MessageConfig,
+  Messages,
+  MessageType,
+} from "./warnings.js";
+
+export { Messages, type MessageType } from "./warnings.js";
 
 export interface LogOptions {
   silent?: boolean;
@@ -84,13 +92,15 @@ export class LogCollector {
         // Add color based on operation type
         const color =
           op.type === "create"
-            ? "green"
+            ? "greenBright" // Brighter green for creation
             : op.type === "copy"
-            ? "cyan"
+            ? "blueBright" // Bright blue for copy operations
             : op.type === "move"
-            ? "yellow"
+            ? "magentaBright" // Bright magenta for move operations
             : op.type === "skip"
-            ? "gray"
+            ? "gray" // Gray for skipped items
+            : op.type === "rename"
+            ? "yellowBright" // Bright yellow for rename operations
             : undefined;
 
         table.addRow(row, { color });
@@ -104,113 +114,18 @@ export class LogCollector {
 
 export const collector = new LogCollector();
 
-interface MessageConfig {
-  template: (...args: any[]) => string;
-  alwaysShow: boolean;
-}
-
-// Message definitions with their configuration
-export const Messages = {
-  // File operations
-  CREATED_FILE: {
-    template: (path: string) => `Created ${path}`,
-    alwaysShow: true,
-  },
-  CREATED_DIR: {
-    template: (path: string) => `Created ${path}`,
-    alwaysShow: true,
-  },
-  DIR_EXISTS: {
-    template: (path: string) => `Directory already exists: ${path}`,
-    alwaysShow: false,
-  },
-
-  // Copy operations
-  COPYING_DIR: {
-    template: (src: string, dest: string) =>
-      `Copying directory from ${src} to ${dest}`,
-    alwaysShow: true,
-  },
-  COPIED_FILE: {
-    template: (src: string, dest: string) => `Copied ${src} to ${dest}`,
-    alwaysShow: true,
-  },
-
-  // Move operations
-  MOVING_DIR: {
-    template: (src: string, dest: string) =>
-      `Moving directory from ${src} to ${dest}`,
-    alwaysShow: true,
-  },
-  MOVING_FILE: {
-    template: (src: string, dest: string) =>
-      `Moving file from ${src} to ${dest}`,
-    alwaysShow: true,
-  },
-  MOVED_SUCCESS: {
-    template: () => "Moved successfully",
-    alwaysShow: false,
-  },
-
-  // Warnings and errors
-  SOURCE_NOT_FOUND: {
-    template: (path: string) =>
-      `Warning: Source not found "${path}", creating empty file`,
-    alwaysShow: true,
-  },
-  OPERATION_FAILED: {
-    template: (error: string) =>
-      `Warning: Operation failed, creating empty file: ${error}`,
-    alwaysShow: true,
-  },
-  CREATE_EMPTY_FAILED: {
-    template: (error: string) =>
-      `Warning: Could not create empty file: ${error}`,
-    alwaysShow: true,
-  },
-  MOVE_FAILED: {
-    template: (error: string) =>
-      `Warning: Failed to move file, falling back to copy: ${error}`,
-    alwaysShow: true,
-  },
-  COPY_FAILED: {
-    template: (path: string) =>
-      `Warning: Failed to copy "${path}", creating empty file`,
-    alwaysShow: true,
-  },
-
-  // Structure results
-  STRUCTURE_WARNINGS: {
-    template: () => "\nStructure created with warnings",
-    alwaysShow: true,
-  },
-  STRUCTURE_SUCCESS: {
-    template: () => "\nStructure created successfully",
-    alwaysShow: false,
-  },
-} as const;
-
-// Helper function to format a message
-function formatMessage(
-  config: MessageConfig,
-  options: LogOptions = {},
-  ...args: any[]
-): string {
-  return config.template(...args);
-}
-
-export function logMessage(
-  type: keyof typeof Messages,
-  args: any[],
+export function logMessage<T extends MessageType>(
+  type: T,
+  args: Parameters<(typeof Messages)[T]>,
   options: LogOptions = {}
 ): void {
   const { silent = false } = options;
   if (silent) return;
 
-  const config = Messages[type];
+  const config = MessageConfig[type];
   if (!config.alwaysShow && !options.isCLI) return;
 
-  const message = formatMessage(config, options, ...args);
+  const message = createMessage(type, ...args);
   console.log(message);
 }
 
@@ -222,33 +137,33 @@ export function logOperation(
   // No console output needed
 }
 
-export function logSuccess(
-  type: keyof typeof Messages,
-  args: any[],
+export function logSuccess<T extends MessageType>(
+  type: T,
+  args: Parameters<(typeof Messages)[T]>,
   options: LogOptions = {}
 ): void {
   const { silent = false } = options;
   if (silent) return;
 
-  const config = Messages[type];
+  const config = MessageConfig[type];
   if (!config.alwaysShow && !options.isCLI) return;
 
-  const message = formatMessage(config, options, ...args);
+  const message = createMessage(type, ...args);
   console.log(message);
 }
 
-export function logWarning(
-  type: keyof typeof Messages,
-  args: any[],
+export function logWarning<T extends MessageType>(
+  type: T,
+  args: Parameters<(typeof Messages)[T]>,
   options: LogOptions = {}
 ): void {
   const { silent = false } = options;
   if (silent) return;
 
-  const config = Messages[type];
+  const config = MessageConfig[type];
   if (!config.alwaysShow && !options.isCLI) return;
 
-  const message = formatMessage(config, options, ...args);
+  const message = createMessage(type, ...args);
   console.warn(message);
 }
 
@@ -261,9 +176,9 @@ export function logStructureResult(
 
   // Show final status message
   if (hasWarnings) {
-    console.warn("\n⚠️  Structure created with warnings");
+    console.warn(createMessage("STRUCTURE_WARNINGS"));
   } else {
-    console.log("\n✅ Structure created successfully");
+    console.log(createMessage("STRUCTURE_SUCCESS"));
   }
 
   // Print the hierarchy at the end

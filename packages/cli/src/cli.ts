@@ -1,4 +1,5 @@
 #!/usr/bin/env node
+import { Table } from "console-table-printer";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
@@ -85,17 +86,42 @@ async function main() {
       });
 
       console.log("\nOperations that would be performed:\n");
-      console.table(
-        result.operations.map((op) => ({
-          Type: op.isDirectory ? "Directory" : "File",
-          Name: op.name,
-          Operation: op.type,
-          Source: op.sourcePath || "-",
-          Target: op.targetPath,
-          Depth: op.depth,
-          Warning: op.warning || "-",
-        }))
-      );
+
+      const table = new Table({
+        columns: [
+          { name: "type", title: "Type", alignment: "left" },
+          { name: "operation", title: "Operation", alignment: "left" },
+          { name: "path", title: "Path", alignment: "left" },
+          { name: "sourcePath", title: "Source", alignment: "left" },
+        ],
+        charLength: { type: 10, operation: 10, path: 50, sourcePath: 50 },
+      });
+
+      // Add rows to table with colors
+      for (const op of result.operations) {
+        const row = {
+          type: op.isDirectory ? "directory" : "file",
+          operation: op.type,
+          path: op.targetPath,
+          sourcePath: op.sourcePath || "-",
+        };
+
+        // Add color based on operation type
+        const color =
+          op.type === "included"
+            ? "green"
+            : op.type === "copy"
+            ? "cyan"
+            : op.type === "move"
+            ? "yellow"
+            : op.type === "file" || op.type === "directory"
+            ? "gray"
+            : undefined;
+
+        table.addRow(row, { color });
+      }
+
+      table.printTable();
 
       // Show the options that were used
       console.log("\nOptions used:");
