@@ -93,8 +93,15 @@ async function main() {
           { name: "operation", title: "Operation", alignment: "left" },
           { name: "path", title: "Path", alignment: "left" },
           { name: "sourcePath", title: "Source", alignment: "left" },
+          { name: "warning", title: "Warning", alignment: "left" },
         ],
-        charLength: { itemType: 10, operation: 10, path: 50, sourcePath: 50 },
+        charLength: {
+          itemType: 10,
+          operation: 10,
+          path: 50,
+          sourcePath: 50,
+          warning: 50,
+        },
       });
 
       // Add rows to table with colors
@@ -104,6 +111,7 @@ async function main() {
           operation: op.type,
           path: op.targetPath,
           sourcePath: op.sourcePath || "-",
+          warning: op.warning || "-",
         };
 
         // Add color based on operation type

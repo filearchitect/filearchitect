@@ -1,10 +1,5 @@
 import { Table } from "console-table-printer";
-import {
-  createMessage,
-  MessageConfig,
-  Messages,
-  MessageType,
-} from "./warnings.js";
+import { createMessage, Messages, MessageType } from "./warnings.js";
 
 export { Messages, type MessageType } from "./warnings.js";
 
@@ -119,11 +114,8 @@ export function logMessage<T extends MessageType>(
   args: Parameters<(typeof Messages)[T]>,
   options: LogOptions = {}
 ): void {
-  const { silent = false } = options;
-  if (silent) return;
-
-  const config = MessageConfig[type];
-  if (!config.alwaysShow && !options.isCLI) return;
+  const { silent = false, isCLI = false } = options;
+  if (silent || !isCLI) return;
 
   const message = createMessage(type, ...args);
   console.log(message);
@@ -142,11 +134,8 @@ export function logSuccess<T extends MessageType>(
   args: Parameters<(typeof Messages)[T]>,
   options: LogOptions = {}
 ): void {
-  const { silent = false } = options;
-  if (silent) return;
-
-  const config = MessageConfig[type];
-  if (!config.alwaysShow && !options.isCLI) return;
+  const { silent = false, isCLI = false } = options;
+  if (silent || !isCLI) return;
 
   const message = createMessage(type, ...args);
   console.log(message);
@@ -157,11 +146,8 @@ export function logWarning<T extends MessageType>(
   args: Parameters<(typeof Messages)[T]>,
   options: LogOptions = {}
 ): void {
-  const { silent = false } = options;
-  if (silent) return;
-
-  const config = MessageConfig[type];
-  if (!config.alwaysShow && !options.isCLI) return;
+  const { silent = false, isCLI = false } = options;
+  if (silent || !isCLI) return;
 
   const message = createMessage(type, ...args);
   console.warn(message);
@@ -171,8 +157,8 @@ export function logStructureResult(
   hasWarnings: boolean,
   options: LogOptions = {}
 ): void {
-  const { silent = false } = options;
-  if (silent) return;
+  const { silent = false, isCLI = false } = options;
+  if (silent || !isCLI) return;
 
   // Show final status message
   if (hasWarnings) {

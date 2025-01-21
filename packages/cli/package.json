@@ -1,21 +1,22 @@
 {
   "name": "@filearchitect/cli",
-  "version": "0.0.1",
-  "description": "CLI tool for FileArchitect",
+  "version": "0.1.9",
+  "description": "CLI for FileArchitect",
   "type": "module",
   "bin": {
-    "filearchitect": "./dist/cli.js"
+    "filearchitect": "dist/cli/src/cli.js"
   },
   "scripts": {
-    "build": "tsc",
-    "dev": "tsc -w"
+    "build": "rm -rf dist && tsc",
+    "dev": "tsx src/cli.ts",
+    "start": "node dist/cli/src/cli.js"
   },
   "dependencies": {
-    "@filearchitect/core": "workspace:*",
-    "console-table-printer": "^2.12.0"
+    "@filearchitect/core": "workspace:*"
   },
   "devDependencies": {
-    "@types/node": "^20.11.19",
+    "@types/node": "^20.11.16",
+    "tsx": "^4.7.0",
     "typescript": "^5.3.3"
   }
 }
