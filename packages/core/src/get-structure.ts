@@ -94,7 +94,8 @@ function parseOperation(line: string): FileOperation {
 
   // Regular file or directory
   const result: FileOperation = {
-    type: path.extname(line) ? "file" : "directory",
+    type: "create",
+    // type: path.extname(line) ? "file" : "directory",
     name: line,
   };
   return result;
@@ -193,13 +194,7 @@ export async function getStructureFromString(
     const targetPath = path.join(currentDir, replacedName);
 
     // Determine if it's a directory operation
-    const isDirectory =
-      operation.type === "directory" ||
-      Boolean(
-        operation.sourcePath &&
-          (!path.extname(operation.sourcePath) ||
-            operation.sourcePath.endsWith(path.sep))
-      );
+    const isDirectory = !path.extname(line);
 
     // Create the structure operation
     const structureOperation: StructureOperation = {

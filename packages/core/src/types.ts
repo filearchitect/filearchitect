@@ -86,7 +86,7 @@ export interface FileSystem {
 /**
  * Operation related types
  */
-export type OperationType = "file" | "directory" | "copy" | "move" | "included";
+export type OperationType = "copy" | "move" | "included" | "create";
 
 /**
  * Represents a file operation parsed from a line in the structure file

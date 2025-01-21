@@ -89,18 +89,18 @@ async function main() {
 
       const table = new Table({
         columns: [
-          { name: "type", title: "Type", alignment: "left" },
+          { name: "itemType", title: "Type", alignment: "left" },
           { name: "operation", title: "Operation", alignment: "left" },
           { name: "path", title: "Path", alignment: "left" },
           { name: "sourcePath", title: "Source", alignment: "left" },
         ],
-        charLength: { type: 10, operation: 10, path: 50, sourcePath: 50 },
+        charLength: { itemType: 10, operation: 10, path: 50, sourcePath: 50 },
       });
 
       // Add rows to table with colors
       for (const op of result.operations) {
         const row = {
-          type: op.isDirectory ? "directory" : "file",
+          itemType: op.isDirectory ? "directory" : "file",
           operation: op.type,
           path: op.targetPath,
           sourcePath: op.sourcePath || "-",
@@ -108,19 +108,18 @@ async function main() {
 
         // Add color based on operation type
         const color =
-          op.type === "included"
+          op.type === "create"
             ? "green"
             : op.type === "copy"
             ? "cyan"
             : op.type === "move"
             ? "yellow"
-            : op.type === "file" || op.type === "directory"
+            : op.type === "included"
             ? "gray"
             : undefined;
 
         table.addRow(row, { color });
       }
-
       table.printTable();
 
       // Show the options that were used
