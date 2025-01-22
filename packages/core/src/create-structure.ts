@@ -21,7 +21,13 @@ export async function createStructureFromString(
   rootDir: string,
   options: CreateStructureOptions
 ): Promise<void> {
-  const { fs: filesystem, fileNameReplacements, onWarning } = options;
+  const {
+    fs: filesystem,
+    fileNameReplacements,
+    folderNameReplacements,
+    recursive,
+    onWarning,
+  } = options;
 
   if (!filesystem) {
     throw new Error("Filesystem implementation is required");
@@ -40,9 +46,10 @@ export async function createStructureFromString(
   // Get the structure operations
   const result = await getStructureFromString(input, {
     rootDir,
-    fileNameReplacements,
-    recursive: true,
     fs: filesystem,
+    fileNameReplacements,
+    folderNameReplacements,
+    recursive,
   });
 
   // Execute each operation

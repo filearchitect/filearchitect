@@ -143,9 +143,32 @@ export interface FileNameReplacement {
   replace: string;
 }
 
-export interface CreateStructureOptions {
-  fs: FileSystem;
+/**
+ * Base options shared between structure operations
+ */
+export interface BaseStructureOptions {
+  /** Optional filesystem implementation to use */
+  fs?: FileSystem;
+  /** Optional file name replacements to apply */
   fileNameReplacements?: FileNameReplacement[];
+  /** Optional folder name replacements to apply */
+  folderNameReplacements?: FileNameReplacement[];
+  /** Whether to include recursive contents of directories being copied/moved (default: true) */
+  recursive?: boolean;
+}
+
+/**
+ * Options for getting structure operations
+ */
+export interface GetStructureOptions extends BaseStructureOptions {
+  /** The root directory path where the structure would be created */
+  rootDir: string;
+}
+
+/**
+ * Options for creating structure
+ */
+export interface CreateStructureOptions extends BaseStructureOptions {
   /** Callback for handling warnings */
   onWarning?: (warning: Warning) => void;
   /** Whether to emit verbose warnings */
@@ -174,20 +197,6 @@ export interface StructureOperation {
   name: string;
   /** Warning message if there's an issue with this operation */
   warning?: string;
-}
-
-/**
- * Options for getting structure operations
- */
-export interface GetStructureOptions {
-  /** The root directory path where the structure would be created */
-  rootDir: string;
-  /** Optional file name replacements to apply */
-  fileNameReplacements?: FileNameReplacement[];
-  /** Whether to include recursive contents of directories being copied/moved (default: true) */
-  recursive?: boolean;
-  /** Optional filesystem implementation to use for scanning directories */
-  fs?: FileSystem;
 }
 
 /**

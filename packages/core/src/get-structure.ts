@@ -165,22 +165,26 @@ async function processLine(
   stack: string[],
   options: GetStructureOptions
 ): Promise<StructureOperation | null> {
-  const { fileNameReplacements = [], fs } = options;
+  const {
+    fileNameReplacements = [],
+    folderNameReplacements = [],
+    fs,
+  } = options;
   const { level, operation } = parseLine(line);
   if (!operation) return null;
 
   adjustStack(stack, level);
   const currentDir = stack[stack.length - 1];
 
-  // Apply replacements to the operation name
-  const replacedName = applyFileNameReplacements(
-    operation.name,
-    fileNameReplacements
-  );
-  const targetPath = path.join(currentDir, replacedName);
-
   // Determine if it's a directory operation
   const isDirectory = !path.extname(line);
+
+  // Apply replacements based on whether it's a file or directory
+  const replacedName = applyFileNameReplacements(
+    operation.name,
+    isDirectory ? folderNameReplacements : fileNameReplacements
+  );
+  const targetPath = path.join(currentDir, replacedName);
 
   // Create the structure operation
   const structureOperation: StructureOperation = {
@@ -322,6 +326,7 @@ export async function getStructureFromString(
     options: {
       rootDir,
       fileNameReplacements: options.fileNameReplacements || [],
+      folderNameReplacements: options.folderNameReplacements || [],
       recursive: options.recursive ?? true,
       fs,
     },
