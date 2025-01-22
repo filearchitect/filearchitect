@@ -86,7 +86,7 @@ export interface FileSystem {
 /**
  * Operation related types
  */
-export type OperationType = "file" | "directory" | "copy" | "move" | "included";
+export type OperationType = "copy" | "move" | "included" | "create";
 
 /**
  * Represents a file operation parsed from a line in the structure file
@@ -128,20 +128,32 @@ export interface Warning {
   path?: string;
 }
 
-import { LogOptions } from "./messages.js";
+/**
+ * Options for logging operations
+ */
+export interface LogOptions {
+  /** Whether to suppress all output */
+  silent?: boolean;
+  /** Whether the output is for CLI */
+  isCLI?: boolean;
+}
 
 export interface FileNameReplacement {
   search: string;
   replace: string;
 }
 
-export interface CreateStructureOptions extends LogOptions {
+export interface CreateStructureOptions {
   fs: FileSystem;
   fileNameReplacements?: FileNameReplacement[];
   /** Callback for handling warnings */
   onWarning?: (warning: Warning) => void;
   /** Whether to emit verbose warnings */
   verbose?: boolean;
+  /** Whether to suppress all output */
+  silent?: boolean;
+  /** Whether the output is for CLI */
+  isCLI?: boolean;
 }
 
 /**

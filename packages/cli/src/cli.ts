@@ -1,14 +1,65 @@
 #!/usr/bin/env node
+import { Table } from "console-table-printer";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
   createStructureFromString,
   getStructureFromString,
   NodeFileSystem,
+  StructureResult,
 } from "../../core/src/index.js";
 
 // Initialize filesystem for directory scanning
 const fs = new NodeFileSystem();
+
+/**
+ * Creates and prints a table of operations
+ */
+function printOperationsTable(result: StructureResult) {
+  const table = new Table({
+    columns: [
+      { name: "itemType", title: "Type", alignment: "left" },
+      { name: "operation", title: "Operation", alignment: "left" },
+      { name: "path", title: "Path", alignment: "left" },
+      { name: "sourcePath", title: "Source", alignment: "left" },
+      { name: "warning", title: "Warning", alignment: "left" },
+    ],
+    charLength: {
+      itemType: 10,
+      operation: 10,
+      path: 50,
+      sourcePath: 50,
+      warning: 50,
+    },
+  });
+
+  // Add rows to table with colors
+  for (const op of result.operations) {
+    const row = {
+      itemType: op.isDirectory ? "directory" : "file",
+      operation: op.type,
+      path: op.targetPath,
+      sourcePath: op.sourcePath || "-",
+      warning: op.warning || "-",
+    };
+
+    // Add color based on operation type
+    const color =
+      op.type === "create"
+        ? "green"
+        : op.type === "copy"
+        ? "cyan"
+        : op.type === "move"
+        ? "yellow"
+        : op.type === "included"
+        ? "cyan"
+        : undefined;
+
+    table.addRow(row, { color });
+  }
+
+  table.printTable();
+}
 
 // Parse command line arguments
 const args = process.argv.slice(2);
@@ -85,36 +136,26 @@ async function main() {
       });
 
       console.log("\nOperations that would be performed:\n");
-      console.table(
-        result.operations.map((op) => ({
-          Type: op.isDirectory ? "Directory" : "File",
-          Name: op.name,
-          Operation: op.type,
-          Source: op.sourcePath || "-",
-          Target: op.targetPath,
-          Depth: op.depth,
-          Warning: op.warning || "-",
-        }))
-      );
-
-      // Show the options that were used
-      console.log("\nOptions used:");
-      console.log("- Root directory:", result.options.rootDir);
-      console.log("- Recursive:", result.options.recursive);
-      if (result.options.fileNameReplacements.length > 0) {
-        console.log("- File name replacements:");
-        for (const { search, replace } of result.options.fileNameReplacements) {
-          console.log(`  * ${search} -> ${replace}`);
-        }
-      }
+      printOperationsTable(result);
       console.log("\nNo changes were made to the filesystem.");
     } else {
-      // Create the structure
+      // Create the structure and show the operations performed
       await createStructureFromString(structure, absoluteOutput, {
         isCLI: true,
         fs,
         fileNameReplacements,
       });
+
+      // Get the operations that were performed for display
+      const result = await getStructureFromString(structure, {
+        rootDir: absoluteOutput,
+        fileNameReplacements,
+        recursive: showRecursive,
+        fs,
+      });
+
+      console.log("\nOperations performed:\n");
+      printOperationsTable(result);
     }
   } catch (error) {
     if (error instanceof Error) {

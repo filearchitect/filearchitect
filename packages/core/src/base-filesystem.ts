@@ -5,6 +5,7 @@ import {
   FileSystemOptions,
   Warning,
 } from "./types.js";
+import { createMessage } from "./warnings.js";
 
 /**
  * Base class with shared filesystem implementations.
@@ -95,7 +96,7 @@ export abstract class BaseFileSystem implements FileSystem {
       if (error.code === "ENOENT") {
         this.emitWarning({
           type: "missing_source",
-          message: `Source path does not exist: ${src}`,
+          message: createMessage("SOURCE_NOT_FOUND", src),
           path: src,
         });
       }
@@ -122,7 +123,7 @@ export abstract class BaseFileSystem implements FileSystem {
       if (error.code === "ENOENT") {
         this.emitWarning({
           type: "missing_source",
-          message: `Source path does not exist: ${src}`,
+          message: createMessage("SOURCE_EMPTY", src),
           path: src,
         });
       }
