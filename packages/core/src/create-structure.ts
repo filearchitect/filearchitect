@@ -90,6 +90,8 @@ export async function createStructureFromString(
           }
           await moveFile(operation.sourcePath, operation.targetPath, {
             fs: filesystem,
+            fileNameReplacements,
+            folderNameReplacements,
           });
           break;
 
@@ -192,9 +194,17 @@ async function copyFile(
 async function moveFile(
   sourcePath: string,
   targetPath: string,
-  options: { fs: FileSystem }
+  options: {
+    fs: FileSystem;
+    fileNameReplacements?: FileNameReplacement[];
+    folderNameReplacements?: FileNameReplacement[];
+  }
 ): Promise<void> {
-  const { fs: filesystem } = options;
+  const {
+    fs: filesystem,
+    fileNameReplacements,
+    folderNameReplacements,
+  } = options;
 
   const resolvedSource = path.isAbsolute(sourcePath)
     ? sourcePath
@@ -204,7 +214,10 @@ async function moveFile(
   const isDirectory = stat.isDirectory();
 
   if (isDirectory) {
-    await filesystem.moveFolder(resolvedSource, targetPath);
+    await filesystem.moveFolder(resolvedSource, targetPath, {
+      fileNameReplacements,
+      folderNameReplacements,
+    });
   } else {
     await filesystem.rename(resolvedSource, targetPath);
   }

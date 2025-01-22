@@ -244,7 +244,11 @@ export class NodeFileSystem extends BaseFileSystem {
     } catch (error: any) {
       // If rename fails (e.g., across devices), fall back to copy + delete
       if (error.code === "EXDEV") {
-        await this.copyFolder(resolvedSrc, resolvedDest, options);
+        await this.copyFolderWithReplacements(
+          resolvedSrc,
+          resolvedDest,
+          options
+        );
         await this.rm(resolvedSrc, { recursive: true });
       } else {
         if (error.code === "ENOENT") {

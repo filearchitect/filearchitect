@@ -1,5 +1,6 @@
 import { describe, expect, test } from "vitest";
 import { getStructureFromString } from "../src/get-structure.js";
+import { NodeFileSystem } from "../src/node-filesystem.js";
 import type {
   DirectoryEntry,
   FileStat,
@@ -104,6 +105,8 @@ class MockFileSystem implements FileSystem {
 }
 
 describe("getStructureFromString", () => {
+  const fs = new NodeFileSystem();
+
   test("creates basic file structure", async () => {
     const input = `
 src
@@ -114,7 +117,7 @@ src
 
     const result = await getStructureFromString(input, {
       rootDir: "/test",
-      fs: new MockFileSystem({}),
+      fs,
     });
 
     expect(result.operations).toHaveLength(4);
@@ -237,5 +240,206 @@ src
     expect(result.operations.length).toBeGreaterThan(2);
     expect(result.operations.some((op) => op.name === "file1.ts")).toBe(true);
     expect(result.operations.some((op) => op.name === "file2.ts")).toBe(true);
+  });
+
+  test("parses frontmatter with replacements", async () => {
+    const input = `---
+replace-folder:
+  - search: "old-folder"
+    replace: "new-folder"
+  - search: "temp"
+    replace: "permanent"
+replace-file:
+  - search: "old-file"
+    replace: "new-file"
+  - search: ".js"
+    replace: ".ts"
+---
+root
+  old-folder
+    old-file.js
+    temp
+      test.js`;
+
+    const result = await getStructureFromString(input, {
+      rootDir: "/test",
+      fs,
+    });
+
+    // Check if replacements were parsed correctly
+    expect(result.options.folderNameReplacements).toEqual([
+      { search: "old-folder", replace: "new-folder" },
+      { search: "temp", replace: "permanent" },
+    ]);
+    expect(result.options.fileNameReplacements).toEqual([
+      { search: "old-file", replace: "new-file" },
+      { search: ".js", replace: ".ts" },
+    ]);
+
+    // Check if replacements were applied correctly
+    const operations = result.operations.map((op) => ({
+      type: op.type,
+      targetPath: op.targetPath,
+      isDirectory: op.isDirectory,
+    }));
+
+    expect(operations).toEqual([
+      {
+        type: "create",
+        targetPath: "/test/root",
+        isDirectory: true,
+      },
+      {
+        type: "create",
+        targetPath: "/test/root/new-folder",
+        isDirectory: true,
+      },
+      {
+        type: "create",
+        targetPath: "/test/root/new-folder/new-file.ts",
+        isDirectory: false,
+      },
+      {
+        type: "create",
+        targetPath: "/test/root/new-folder/permanent",
+        isDirectory: true,
+      },
+      {
+        type: "create",
+        targetPath: "/test/root/new-folder/permanent/test.ts",
+        isDirectory: false,
+      },
+    ]);
+  });
+
+  test("applies replacements to copied files and directories", async () => {
+    const input = `---
+replace-folder:
+  - search: "old"
+    replace: "new"
+replace-file:
+  - search: ".js"
+    replace: ".ts"
+---
+root
+  [src/old-dir] > target-old-dir
+  [src/test.js] > target.js`;
+
+    const result = await getStructureFromString(input, {
+      rootDir: "/test",
+      fs,
+    });
+
+    const operations = result.operations.map((op) => ({
+      type: op.type,
+      targetPath: op.targetPath,
+      isDirectory: op.isDirectory,
+    }));
+
+    expect(operations).toEqual([
+      {
+        type: "create",
+        targetPath: "/test/root",
+        isDirectory: true,
+      },
+      {
+        type: "copy",
+        targetPath: "/test/root/target-new-dir",
+        isDirectory: true,
+      },
+      {
+        type: "copy",
+        targetPath: "/test/root/target.ts",
+        isDirectory: false,
+      },
+    ]);
+  });
+
+  test("applies replacements to moved files and directories", async () => {
+    const input = `---
+replace-folder:
+  - search: "old"
+    replace: "new"
+replace-file:
+  - search: ".js"
+    replace: ".ts"
+---
+root
+  (src/old-dir) > target-old-dir
+  (src/test.js) > target.js`;
+
+    const result = await getStructureFromString(input, {
+      rootDir: "/test",
+      fs,
+    });
+
+    const operations = result.operations.map((op) => ({
+      type: op.type,
+      targetPath: op.targetPath,
+      isDirectory: op.isDirectory,
+    }));
+
+    expect(operations).toEqual([
+      {
+        type: "create",
+        targetPath: "/test/root",
+        isDirectory: true,
+      },
+      {
+        type: "move",
+        targetPath: "/test/root/target-new-dir",
+        isDirectory: true,
+      },
+      {
+        type: "move",
+        targetPath: "/test/root/target.ts",
+        isDirectory: false,
+      },
+    ]);
+  });
+
+  test("merges frontmatter replacements with options replacements", async () => {
+    const input = `---
+replace-folder:
+  - search: "old"
+    replace: "new"
+replace-file:
+  - search: ".js"
+    replace: ".ts"
+---
+root
+  old-dir
+    test.js`;
+
+    const result = await getStructureFromString(input, {
+      rootDir: "/test",
+      fs,
+      fileNameReplacements: [{ search: "test", replace: "spec" }],
+      folderNameReplacements: [{ search: "dir", replace: "folder" }],
+    });
+
+    const operations = result.operations.map((op) => ({
+      type: op.type,
+      targetPath: op.targetPath,
+      isDirectory: op.isDirectory,
+    }));
+
+    expect(operations).toEqual([
+      {
+        type: "create",
+        targetPath: "/test/root",
+        isDirectory: true,
+      },
+      {
+        type: "create",
+        targetPath: "/test/root/new-folder",
+        isDirectory: true,
+      },
+      {
+        type: "create",
+        targetPath: "/test/root/new-folder/spec.ts",
+        isDirectory: false,
+      },
+    ]);
   });
 });
