@@ -52,7 +52,7 @@ function printOperationsTable(result: StructureResult) {
         : op.type === "move"
         ? "yellow"
         : op.type === "included"
-        ? "gray"
+        ? "cyan"
         : undefined;
 
     table.addRow(row, { color });
