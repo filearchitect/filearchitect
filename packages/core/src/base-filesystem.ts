@@ -1,5 +1,7 @@
+import path from "path";
 import {
   DirectoryEntry,
+  FileNameReplacement,
   FileStat,
   FileSystem,
   FileSystemOptions,
@@ -409,5 +411,55 @@ export abstract class BaseFileSystem implements FileSystem {
     }
 
     return commonParts.join("/") || "/";
+  }
+
+  protected async copyFolderWithReplacements(
+    src: string,
+    dest: string,
+    options: FileSystemOptions = {}
+  ): Promise<void> {
+    const {
+      recursive = true,
+      fileNameReplacements = [],
+      folderNameReplacements = [],
+    } = options;
+
+    // Create the destination directory
+    await this.mkdir(dest, { recursive: true });
+
+    // Read the source directory
+    const entries = await this.readdir(src, { withFileTypes: true });
+
+    // Copy each entry
+    for (const entry of entries) {
+      const srcPath = path.join(src, entry.name);
+      const isDirectory = entry.isDirectory();
+
+      // Apply replacements based on whether it's a file or directory
+      const replacedName = isDirectory
+        ? this.applyReplacements(entry.name, folderNameReplacements)
+        : this.applyReplacements(entry.name, fileNameReplacements);
+
+      const destPath = path.join(dest, replacedName);
+
+      if (isDirectory) {
+        if (recursive) {
+          await this.copyFolderWithReplacements(srcPath, destPath, options);
+        }
+      } else {
+        await this.copyFile(srcPath, destPath);
+      }
+    }
+  }
+
+  protected applyReplacements(
+    name: string,
+    replacements: FileNameReplacement[]
+  ): string {
+    let result = name;
+    for (const { search, replace } of replacements) {
+      result = result.split(search).join(replace);
+    }
+    return result;
   }
 }

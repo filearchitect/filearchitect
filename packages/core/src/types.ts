@@ -4,6 +4,8 @@
 export interface FileSystemOptions {
   recursive?: boolean;
   withFileTypes?: boolean;
+  fileNameReplacements?: FileNameReplacement[];
+  folderNameReplacements?: FileNameReplacement[];
 }
 
 export interface DirectoryEntry {
@@ -141,6 +143,16 @@ export interface LogOptions {
 export interface FileNameReplacement {
   search: string;
   replace: string;
+}
+
+/**
+ * Structure for YAML frontmatter in structure files
+ */
+export interface StructureFrontmatter {
+  /** Folder name replacements */
+  "replace-folder"?: FileNameReplacement[];
+  /** File name replacements */
+  "replace-file"?: FileNameReplacement[];
 }
 
 /**

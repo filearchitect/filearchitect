@@ -2,7 +2,11 @@ import path from "path";
 import process from "process";
 import { BaseFileSystem } from "./base-filesystem.js";
 import { getStructureFromString } from "./get-structure.js";
-import { CreateStructureOptions, FileSystem } from "./types.js";
+import {
+  CreateStructureOptions,
+  FileNameReplacement,
+  FileSystem,
+} from "./types.js";
 
 /**
  * Creates a file or directory structure from a tab-indented string.
@@ -75,6 +79,8 @@ export async function createStructureFromString(
           }
           await copyFile(operation.sourcePath, operation.targetPath, {
             fs: filesystem,
+            fileNameReplacements,
+            folderNameReplacements,
           });
           break;
 
@@ -151,9 +157,17 @@ async function createDirectory(
 async function copyFile(
   sourcePath: string,
   targetPath: string,
-  options: { fs: FileSystem }
+  options: {
+    fs: FileSystem;
+    fileNameReplacements?: FileNameReplacement[];
+    folderNameReplacements?: FileNameReplacement[];
+  }
 ): Promise<void> {
-  const { fs: filesystem } = options;
+  const {
+    fs: filesystem,
+    fileNameReplacements,
+    folderNameReplacements,
+  } = options;
 
   const resolvedSource = path.isAbsolute(sourcePath)
     ? sourcePath
@@ -163,7 +177,10 @@ async function copyFile(
   const isDirectory = stat.isDirectory();
 
   if (isDirectory) {
-    await filesystem.copyFolder(resolvedSource, targetPath);
+    await filesystem.copyFolder(resolvedSource, targetPath, {
+      fileNameReplacements,
+      folderNameReplacements,
+    });
   } else {
     await filesystem.copyFile(resolvedSource, targetPath);
   }

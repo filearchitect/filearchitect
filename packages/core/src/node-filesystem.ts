@@ -218,38 +218,7 @@ export class NodeFileSystem extends BaseFileSystem {
     dest: string,
     options?: FileSystemOptions
   ): Promise<void> {
-    const resolvedSrc = resolveTildePath(src);
-    const resolvedDest = resolveTildePath(dest);
-
-    try {
-      // Create destination directory if it doesn't exist
-      await this.mkdir(resolvedDest, { recursive: true });
-
-      // Read source directory contents
-      const entries = await this.readdir(resolvedSrc, { withFileTypes: true });
-
-      // Copy each entry
-      for (const entry of entries) {
-        const srcPath = pathPromises.join(resolvedSrc, entry.name);
-        const destPath = pathPromises.join(resolvedDest, entry.name);
-
-        if (entry.isDirectory()) {
-          // Recursively copy subdirectories
-          await this.copyFolder(srcPath, destPath, options);
-        } else {
-          // Copy files
-          await this.copyFile(srcPath, destPath);
-        }
-      }
-    } catch (error: any) {
-      if (error.code === "ENOENT") {
-        throw FSError.notFound(src);
-      }
-      if (error.code === "EACCES") {
-        throw FSError.permissionDenied(src);
-      }
-      throw FSError.operationFailed(error.message, src);
-    }
+    return this.copyFolderWithReplacements(src, dest, options);
   }
 
   /**

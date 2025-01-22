@@ -1,4 +1,5 @@
 import path from "path";
+import yaml from "yaml";
 import { NodeFileSystem } from "./node-filesystem.js";
 import { resolveTildePath } from "./path-utils.js";
 import type {
@@ -6,6 +7,7 @@ import type {
   FileOperation,
   FileSystem,
   GetStructureOptions,
+  StructureFrontmatter,
   StructureOperation,
   StructureResult,
 } from "./types.js";
@@ -120,22 +122,33 @@ async function listDirectoryContents(
   fs: FileSystem,
   sourcePath: string,
   targetPath: string,
-  baseDepth: number
+  baseDepth: number,
+  options: {
+    fileNameReplacements?: FileNameReplacement[];
+    folderNameReplacements?: FileNameReplacement[];
+  }
 ): Promise<StructureOperation[]> {
   const results: StructureOperation[] = [];
   const entries = await fs.readdir(sourcePath, { withFileTypes: true });
 
   for (const entry of entries) {
-    const currentSourcePath = path.join(sourcePath, entry.name);
-    const currentTargetPath = path.join(targetPath, entry.name);
     const isDirectory = entry.isDirectory();
+    const replacedName = applyFileNameReplacements(
+      entry.name,
+      isDirectory
+        ? options.folderNameReplacements
+        : options.fileNameReplacements
+    );
+    const currentSourcePath = path.join(sourcePath, entry.name);
+    const currentTargetPath = path.join(targetPath, replacedName);
+
     results.push({
       type: "included",
       targetPath: currentTargetPath,
       sourcePath: currentSourcePath,
       isDirectory,
       depth: baseDepth + 1,
-      name: entry.name,
+      name: replacedName,
     });
 
     if (isDirectory) {
@@ -143,7 +156,8 @@ async function listDirectoryContents(
         fs,
         currentSourcePath,
         currentTargetPath,
-        baseDepth + 1
+        baseDepth + 1,
+        options
       );
       results.push(...subContents);
     }
@@ -176,8 +190,12 @@ async function processLine(
   adjustStack(stack, level);
   const currentDir = stack[stack.length - 1];
 
-  // Determine if it's a directory operation
-  const isDirectory = !path.extname(line);
+  // For copy/move operations, check the target name (operation.name)
+  // For create operations, check the line itself to handle directories correctly
+  const isDirectory =
+    operation.type === "create"
+      ? !path.extname(line.trim())
+      : !path.extname(operation.name);
 
   // Apply replacements based on whether it's a file or directory
   const replacedName = applyFileNameReplacements(
@@ -232,7 +250,11 @@ async function handleDirectoryContents(
           fs,
           operation.sourcePath,
           operation.targetPath,
-          operation.depth
+          operation.depth,
+          {
+            fileNameReplacements: options.fileNameReplacements,
+            folderNameReplacements: options.folderNameReplacements,
+          }
         );
         operations.push(...contents);
       } else {
@@ -283,12 +305,35 @@ async function handleFileSourceCheck(
 }
 
 /**
+ * Parses YAML frontmatter from the input string if present
+ */
+function parseFrontmatter(input: string): {
+  frontmatter: StructureFrontmatter | null;
+  content: string;
+} {
+  const match = input.match(/^\s*---\s*([\s\S]*?)\s*---\s*([\s\S]*)$/);
+  if (!match) {
+    return { frontmatter: null, content: input };
+  }
+
+  try {
+    const yamlContent = match[1].replace(/\t/g, "  ");
+    const frontmatter = yaml.parse(yamlContent) as StructureFrontmatter;
+    return { frontmatter, content: match[2] };
+  } catch (error) {
+    // If YAML parsing fails, treat the whole input as content
+    return { frontmatter: null, content: input };
+  }
+}
+
+/**
  * Gets an array of structure operations from a tab-indented string.
  * The string format supports:
  * - Regular files and directories
  * - File/directory copying with [source] > target syntax
  * - File/directory moving with (source) > target syntax
  * - Tab or space indentation for nesting
+ * - YAML frontmatter for file and folder name replacements
  *
  * @param input The tab-indented string describing the structure
  * @param options Options for getting structure operations
@@ -299,14 +344,33 @@ export async function getStructureFromString(
   options: GetStructureOptions
 ): Promise<StructureResult> {
   const { rootDir } = options;
+  const { frontmatter, content } = parseFrontmatter(input);
+
+  // Merge frontmatter replacements with options
+  const fileNameReplacements = [
+    ...(options.fileNameReplacements || []),
+    ...(frontmatter?.["replace-file"] || []),
+  ];
+  const folderNameReplacements = [
+    ...(options.folderNameReplacements || []),
+    ...(frontmatter?.["replace-folder"] || []),
+  ];
+
+  // Create merged options with the replacements
+  const fs = options.fs || new NodeFileSystem();
+  const mergedOptions: GetStructureOptions = {
+    ...options,
+    fileNameReplacements,
+    folderNameReplacements,
+    fs,
+  };
 
   const operations: StructureOperation[] = [];
-  const lines = input.split("\n").filter((line) => line.trim().length > 0);
+  const lines = content.split("\n").filter((line) => line.trim().length > 0);
   const stack: string[] = [rootDir];
-  const fs = options.fs || new NodeFileSystem();
 
   for (const line of lines) {
-    const structureOperation = await processLine(line, stack, options);
+    const structureOperation = await processLine(line, stack, mergedOptions);
     if (!structureOperation) continue;
 
     operations.push(structureOperation);
@@ -314,7 +378,7 @@ export async function getStructureFromString(
     const directoryContents = await handleDirectoryContents(
       structureOperation,
       fs,
-      options
+      mergedOptions
     );
     operations.push(...directoryContents);
 
@@ -325,8 +389,8 @@ export async function getStructureFromString(
     operations,
     options: {
       rootDir,
-      fileNameReplacements: options.fileNameReplacements || [],
-      folderNameReplacements: options.folderNameReplacements || [],
+      fileNameReplacements,
+      folderNameReplacements,
       recursive: options.recursive ?? true,
       fs,
     },

@@ -66,8 +66,6 @@ const args = process.argv.slice(2);
 let command: string | undefined;
 let inputFile: string | undefined;
 let outputDir = ".";
-let fileNameReplacements: { search: string; replace: string }[] = [];
-let showRecursive = true;
 
 // Parse arguments
 for (let i = 0; i < args.length; i++) {
@@ -78,17 +76,6 @@ for (let i = 0; i < args.length; i++) {
     inputFile = arg;
   } else if (i === 2) {
     outputDir = arg;
-  } else if (
-    (arg === "--replace-folder" || arg === "--replace-file") &&
-    i + 1 < args.length
-  ) {
-    const replacement = args[++i];
-    const [search, replace] = replacement.split(":");
-    if (search && replace) {
-      fileNameReplacements.push({ search, replace });
-    }
-  } else if (arg === "--no-recursive") {
-    showRecursive = false;
   }
 }
 
@@ -98,17 +85,12 @@ if (!command || !inputFile || (command !== "create" && command !== "show")) {
 FileArchitect - Create file structures from text descriptions
 
 Usage:
-  filearchitect create <input-file> [output-dir] [options]
-  filearchitect show <input-file> [output-dir] [options]
+  filearchitect create <input> [output]
+  filearchitect show <input> [output]
 
 Arguments:
-  input-file    Text file containing the structure description
-  output-dir    Directory to create the structure in (default: current directory)
-
-Options:
-  --replace-folder <search:replace>   Replace occurrences of 'search' with 'replace' in directory names
-  --replace-file <search:replace>     Replace occurrences of 'search' with 'replace' in file names
-  --no-recursive                      Don't show recursive contents of copied/moved directories
+  input         Text file containing the structure description
+  output        Directory to create the structure in (default: current directory)
 
 Commands:
   create    Create the file structure
@@ -126,32 +108,23 @@ async function main() {
     const structure = await readFile(input, "utf-8");
     const absoluteOutput = resolve(outputDir);
 
-    if (command === "show") {
-      // Get and display the operations
-      const result = await getStructureFromString(structure, {
-        rootDir: absoluteOutput,
-        fileNameReplacements,
-        recursive: showRecursive,
-        fs,
-      });
+    // Get the structure operations first to parse frontmatter
+    const result = await getStructureFromString(structure, {
+      rootDir: absoluteOutput,
+      fs,
+    });
 
+    if (command === "show") {
       console.log("\nOperations that would be performed:\n");
       printOperationsTable(result);
       console.log("\nNo changes were made to the filesystem.");
     } else {
-      // Create the structure and show the operations performed
+      // Create the structure using the same options from the result
       await createStructureFromString(structure, absoluteOutput, {
         isCLI: true,
         fs,
-        fileNameReplacements,
-      });
-
-      // Get the operations that were performed for display
-      const result = await getStructureFromString(structure, {
-        rootDir: absoluteOutput,
-        fileNameReplacements,
-        recursive: showRecursive,
-        fs,
+        fileNameReplacements: result.options.fileNameReplacements,
+        folderNameReplacements: result.options.folderNameReplacements,
       });
 
       console.log("\nOperations performed:\n");
