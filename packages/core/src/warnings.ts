@@ -21,7 +21,7 @@ export const Messages = {
 
   // Warnings
   SOURCE_NOT_FOUND: (path: string) =>
-    `Source path does not exist. Will be created empty!!!!!`,
+    `Source path does not exist. Will be created empty.`,
   SOURCE_ACCESS_ERROR: (path: string) =>
     `Error accessing source path. Will be created empty.`,
   PERMISSION_DENIED: (path: string) =>
@@ -29,7 +29,7 @@ export const Messages = {
   INVALID_SOURCE: (path: string) =>
     `Invalid source path. Will be created empty.`,
   SOURCE_EMPTY: (path: string) =>
-    `Source path does not exist. Will be created empty!!!!!`,
+    `Source path does not exist. Will be created empty.`,
   OPERATION_FAILED: (error: string) => `Operation failed, creating empty file.`,
   CREATE_EMPTY_FAILED: (error: string) => `Could not create empty file.`,
   MOVE_FAILED: (error: string) => `Failed to move file, falling back to copy.`,
