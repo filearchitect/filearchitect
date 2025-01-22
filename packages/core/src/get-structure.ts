@@ -321,8 +321,8 @@ export async function getStructureFromString(
     operations,
     options: {
       rootDir,
-      fileNameReplacements: options.fileNameReplacements,
-      recursive: options.recursive,
+      fileNameReplacements: options.fileNameReplacements || [],
+      recursive: options.recursive ?? true,
       fs,
     },
   };
