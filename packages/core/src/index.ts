@@ -9,21 +9,22 @@ export { NodeFileSystem } from "./node-filesystem.js";
 
 // Types
 export type {
-  // Core types
+  BaseStructureOptions,
+  CreateOptions,
   CreateStructureOptions,
   DirectoryEntry,
-  // Utility types
   FileNameReplacement,
   FileOperation,
   FileStat,
-  // Filesystem types
   FileSystem,
+  FileSystemError,
   FileSystemOptions,
   GetStructureOptions,
+  GetStructureResult,
   LogOptions,
-  // Operation types
+  OperationResult,
   OperationType,
+  StructureFrontmatter,
   StructureOperation,
-  StructureResult,
   Warning,
 } from "./types.js";

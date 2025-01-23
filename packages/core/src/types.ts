@@ -180,16 +180,7 @@ export interface GetStructureOptions extends BaseStructureOptions {
 /**
  * Options for creating structure
  */
-export interface CreateStructureOptions extends BaseStructureOptions {
-  /** Callback for handling warnings */
-  onWarning?: (warning: Warning) => void;
-  /** Whether to emit verbose warnings */
-  verbose?: boolean;
-  /** Whether to suppress all output */
-  silent?: boolean;
-  /** Whether the output is for CLI */
-  isCLI?: boolean;
-}
+export interface CreateStructureOptions extends BaseStructureOptions {}
 
 /**
  * Represents a structure operation with its target path and details
@@ -214,7 +205,7 @@ export interface StructureOperation {
 /**
  * Result of getting structure operations
  */
-export interface StructureResult {
+export interface GetStructureResult {
   /** The array of operations that would be performed */
   operations: StructureOperation[];
   /** The options used to generate the operations */

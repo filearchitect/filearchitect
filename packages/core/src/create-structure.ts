@@ -1,6 +1,5 @@
 import path from "path";
 import process from "process";
-import { BaseFileSystem } from "./base-filesystem.js";
 import { getStructureFromString } from "./get-structure.js";
 import {
   CreateStructureOptions,
@@ -30,16 +29,10 @@ export async function createStructureFromString(
     fileNameReplacements,
     folderNameReplacements,
     recursive,
-    onWarning,
   } = options;
 
   if (!filesystem) {
     throw new Error("Filesystem implementation is required");
-  }
-
-  // Set up warning handler if provided
-  if (filesystem instanceof BaseFileSystem && onWarning) {
-    filesystem.setWarningHandler(onWarning);
   }
 
   // Create the root directory if it doesn't exist

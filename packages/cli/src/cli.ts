@@ -5,8 +5,8 @@ import { resolve } from "node:path";
 import {
   createStructureFromString,
   getStructureFromString,
+  GetStructureResult,
   NodeFileSystem,
-  StructureResult,
 } from "../../core/src/index.js";
 
 // Initialize filesystem for directory scanning
@@ -15,7 +15,7 @@ const fs = new NodeFileSystem();
 /**
  * Creates and prints a table of operations
  */
-function printOperationsTable(result: StructureResult) {
+function printOperationsTable(result: GetStructureResult) {
   const table = new Table({
     columns: [
       { name: "itemType", title: "Type", alignment: "left" },
@@ -121,7 +121,6 @@ async function main() {
     } else {
       // Create the structure using the same options from the result
       await createStructureFromString(structure, absoluteOutput, {
-        isCLI: true,
         fs,
         fileNameReplacements: result.options.fileNameReplacements,
         folderNameReplacements: result.options.folderNameReplacements,

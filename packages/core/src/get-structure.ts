@@ -7,9 +7,9 @@ import type {
   FileOperation,
   FileSystem,
   GetStructureOptions,
+  GetStructureResult,
   StructureFrontmatter,
   StructureOperation,
-  StructureResult,
 } from "./types.js";
 import { createMessage } from "./warnings.js";
 
@@ -342,7 +342,7 @@ function parseFrontmatter(input: string): {
 export async function getStructureFromString(
   input: string,
   options: GetStructureOptions
-): Promise<StructureResult> {
+): Promise<GetStructureResult> {
   const { rootDir } = options;
   const { frontmatter, content } = parseFrontmatter(input);
 
