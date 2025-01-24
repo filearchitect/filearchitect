@@ -1,5 +1,5 @@
 import { FSError } from "../errors.js";
-import type { StructureOperation } from "../types/operations.js";
+import type { StructureOperation } from "../types.js";
 
 export function validateOperation(operation: StructureOperation): void {
   if (operation.type === "copy" || operation.type === "move") {

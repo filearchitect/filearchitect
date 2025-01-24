@@ -1,12 +1,12 @@
 import path from "path";
-import {
+import type {
   DirectoryEntry,
   FileNameReplacement,
   FileStat,
   FileSystem,
   FileSystemOptions,
   Warning,
-} from "./types.js";
+} from "../types.js";
 import { createMessage } from "./warnings.js";
 
 /**

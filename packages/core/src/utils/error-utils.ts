@@ -2,8 +2,7 @@
  * Centralized error handling utilities
  */
 import { FSError } from "../errors.js";
-import type { FileSystemError } from "../types/filesystem.js";
-import type { Warning } from "../types/warnings.js";
+import type { FileSystemError, Warning } from "../types.js";
 
 export function handleOperationError(
   error: unknown,

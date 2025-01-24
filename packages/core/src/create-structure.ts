@@ -1,7 +1,7 @@
 import path from "path";
 import process from "process";
 import { getStructureFromString } from "./get-structure.js";
-import {
+import type {
   CreateStructureOptions,
   FileNameReplacement,
   FileSystem,
