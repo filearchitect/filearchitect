@@ -23,20 +23,6 @@ export function resolveSourcePath(sourcePath: string): string {
 }
 
 /**
- * Gets the parent directory of a path.
- */
-export function getParentDirectory(filePath: string): string {
-  return path.dirname(filePath);
-}
-
-/**
- * Gets the base name of a path.
- */
-export function getBaseName(filePath: string): string {
-  return path.basename(filePath);
-}
-
-/**
  * Joins path segments.
  */
 export function joinPaths(...paths: string[]): string {
@@ -72,4 +58,12 @@ export function validatePathSegments(...segments: string[]): string {
 
 export function sanitizeFileName(name: string): string {
   return name.replace(/[^a-z0-9\-_.]/gi, "_");
+}
+
+export function ensureValidPath(...segments: string[]): string {
+  return validatePathSegments(...segments);
+}
+
+export function sanitizedJoin(...segments: string[]): string {
+  return joinPaths(...segments.map(sanitizeFileName));
 }

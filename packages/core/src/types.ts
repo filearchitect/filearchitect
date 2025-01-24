@@ -7,9 +7,11 @@ import { Messages } from "./warnings.js";
 /* File System Types */
 export interface FileSystemOptions {
   recursive?: boolean;
-  withFileTypes?: boolean;
-  fileNameReplacements?: FileNameReplacement[];
-  folderNameReplacements?: FileNameReplacement[];
+  replacements?: {
+    files?: FileNameReplacement[];
+    folders?: FileNameReplacement[];
+  };
+  force?: boolean;
 }
 
 export interface DirectoryEntry {

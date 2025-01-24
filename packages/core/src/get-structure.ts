@@ -12,30 +12,9 @@ import type {
   StructureOperation,
 } from "./types.js";
 import { handleOperationError } from "./utils/error-utils.js";
+import { applyReplacements } from "./utils/replacements.js";
 import { validateOperation } from "./utils/validation.js";
 import { createMessage } from "./warnings.js";
-
-/**
- * Applies file name replacements to a given name.
- *
- * @param name The name to apply replacements to
- * @param replacements The replacements to apply
- * @returns The name with replacements applied
- */
-function applyFileNameReplacements(
-  name: string,
-  replacements?: FileNameReplacement[]
-): string {
-  if (!replacements || replacements.length === 0) {
-    return name;
-  }
-
-  let result = name;
-  for (const { search, replace } of replacements) {
-    result = result.split(search).join(replace);
-  }
-  return result;
-}
 
 /**
  * Parses a line into an operation and indentation level.
@@ -135,7 +114,7 @@ async function listDirectoryContents(
 
   for (const entry of entries) {
     const isDirectory = entry.isDirectory();
-    const replacedName = applyFileNameReplacements(
+    const replacedName = applyReplacements(
       entry.name,
       isDirectory
         ? options.folderNameReplacements
@@ -200,7 +179,7 @@ async function processLine(
       : !path.extname(operation.name);
 
   // Apply replacements based on whether it's a file or directory
-  const replacedName = applyFileNameReplacements(
+  const replacedName = applyReplacements(
     operation.name,
     isDirectory ? folderNameReplacements : fileNameReplacements
   );

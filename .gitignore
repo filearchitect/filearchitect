@@ -22,3 +22,4 @@ node_modules/
 output/
 structure.txt
 tsconfig.tsbuildinfo
+notes.md

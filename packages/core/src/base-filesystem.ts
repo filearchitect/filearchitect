@@ -1,12 +1,13 @@
 import path from "path";
 import type {
   DirectoryEntry,
-  FileNameReplacement,
   FileStat,
   FileSystem,
   FileSystemOptions,
   Warning,
-} from "../types.js";
+} from "./types.js";
+import { handleOperationError } from "./utils/error-utils.js";
+import { applyReplacements } from "./utils/replacements.js";
 import { createMessage } from "./warnings.js";
 
 /**
@@ -436,9 +437,10 @@ export abstract class BaseFileSystem implements FileSystem {
       const isDirectory = entry.isDirectory();
 
       // Apply replacements based on whether it's a file or directory
-      const replacedName = isDirectory
-        ? this.applyReplacements(entry.name, folderNameReplacements)
-        : this.applyReplacements(entry.name, fileNameReplacements);
+      const replacedName = applyReplacements(
+        entry.name,
+        isDirectory ? folderNameReplacements : fileNameReplacements
+      );
 
       const destPath = path.join(dest, replacedName);
 
@@ -452,14 +454,21 @@ export abstract class BaseFileSystem implements FileSystem {
     }
   }
 
-  protected applyReplacements(
-    name: string,
-    replacements: FileNameReplacement[]
-  ): string {
-    let result = name;
-    for (const { search, replace } of replacements) {
-      result = result.split(search).join(replace);
+  protected async handleFileOperation<T>(
+    operation: () => Promise<T>,
+    path: string,
+    fallbackType: "file" | "directory"
+  ): Promise<T> {
+    try {
+      return await operation();
+    } catch (error) {
+      const fsError = handleOperationError(error, path, fallbackType, this);
+      this.emitWarning({
+        type: "operation_failed",
+        message: fsError.message,
+        path,
+      });
+      throw fsError;
     }
-    return result;
   }
 }
