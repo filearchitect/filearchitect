@@ -256,10 +256,10 @@ replace-file:
     replace: ".ts"
 ---
 root
-  old-folder
-    old-file.js
-    temp
-      test.js`;
+    old-folder
+        old-file.js
+        temp
+            test.js`;
 
     const result = await getStructureFromString(input, {
       rootDir: "/test",
@@ -322,8 +322,8 @@ replace-file:
     replace: ".ts"
 ---
 root
-  [src/old-dir] > target-old-dir
-  [src/test.js] > target.js`;
+    [src/old-dir] > target-old-dir
+    [src/test.js] > target.js`;
 
     const result = await getStructureFromString(input, {
       rootDir: "/test",
@@ -365,8 +365,8 @@ replace-file:
     replace: ".ts"
 ---
 root
-  (src/old-dir) > target-old-dir
-  (src/test.js) > target.js`;
+    (src/old-dir) > target-old-dir
+    (src/test.js) > target.js`;
 
     const result = await getStructureFromString(input, {
       rootDir: "/test",
@@ -408,8 +408,8 @@ replace-file:
     replace: ".ts"
 ---
 root
-  old-dir
-    test.js`;
+    old-dir
+        test.js`;
 
     const result = await getStructureFromString(input, {
       rootDir: "/test",

@@ -1,6 +1,7 @@
 import os from "os";
 import path from "path";
 import process from "process";
+import { FSError } from "./errors.js";
 
 /**
  * Resolves a path that may contain a tilde (~) to represent the home directory.
@@ -9,7 +10,7 @@ export function resolveTildePath(filePath: string): string {
   if (filePath.startsWith("~")) {
     return path.join(os.homedir(), filePath.slice(1));
   }
-  return filePath;
+  return path.resolve(filePath);
 }
 
 /**
@@ -54,4 +55,21 @@ export function hasFileExtension(filePath: string): boolean {
  */
 export function getFileExtension(filePath: string): string {
   return path.extname(filePath);
+}
+
+export function validatePathSegments(...segments: string[]): string {
+  const fullPath = path.join(...segments);
+
+  if (/(^|\/)\.[^\/]|\.\.($|\/)/.test(fullPath)) {
+    throw new FSError("Invalid path containing . or .. segments", {
+      code: "EINVAL",
+      path: fullPath,
+    });
+  }
+
+  return fullPath;
+}
+
+export function sanitizeFileName(name: string): string {
+  return name.replace(/[^a-z0-9\-_.]/gi, "_");
 }

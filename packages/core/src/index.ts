@@ -10,7 +10,6 @@ export { NodeFileSystem } from "./node-filesystem.js";
 // Types
 export type {
   BaseStructureOptions,
-  CreateOptions,
   CreateStructureOptions,
   DirectoryEntry,
   FileNameReplacement,
@@ -21,8 +20,6 @@ export type {
   FileSystemOptions,
   GetStructureOptions,
   GetStructureResult,
-  LogOptions,
-  OperationResult,
   OperationType,
   StructureFrontmatter,
   StructureOperation,

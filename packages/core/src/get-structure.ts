@@ -11,6 +11,7 @@ import type {
   StructureFrontmatter,
   StructureOperation,
 } from "./types.js";
+import { handleOperationError } from "./utils/error-utils.js";
 import { createMessage } from "./warnings.js";
 
 /**
@@ -217,6 +218,17 @@ async function processLine(
   // If it's a directory, add it to the stack for nesting
   if (structureOperation.isDirectory) {
     stack.push(targetPath);
+  }
+
+  try {
+    // ... existing code ...
+  } catch (error) {
+    throw handleOperationError(
+      error,
+      structureOperation.targetPath,
+      structureOperation.isDirectory ? "directory" : "file",
+      fs
+    );
   }
 
   return structureOperation;
