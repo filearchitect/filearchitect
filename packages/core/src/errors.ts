@@ -46,12 +46,6 @@ export class FSError extends Error implements FileSystemError {
     });
   }
 
-  static invalidArgument(message: string): FSError {
-    return new FSError(`Invalid argument: ${message}`, {
-      code: "EINVAL",
-    });
-  }
-
   static operationFailed(message: string, path?: string): FSError {
     return new FSError(`Operation failed: ${message}`, {
       code: "EFAIL",

@@ -36,9 +36,8 @@ export async function createStructureFromString(
   }
 
   // Create the root directory if it doesn't exist
-  if (!(await filesystem.exists(rootDir))) {
-    await filesystem.mkdir(rootDir, { recursive: true });
-  }
+  const resolvedRoot = path.resolve(process.cwd(), rootDir);
+  await filesystem.ensureDir(resolvedRoot);
 
   // Get the structure operations
   const result = await getStructureFromString(input, {

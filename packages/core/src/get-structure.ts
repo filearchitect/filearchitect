@@ -12,6 +12,7 @@ import type {
   StructureOperation,
 } from "./types.js";
 import { handleOperationError } from "./utils/error-utils.js";
+import { validateOperation } from "./utils/validation.js";
 import { createMessage } from "./warnings.js";
 
 /**
@@ -220,6 +221,8 @@ async function processLine(
     stack.push(targetPath);
   }
 
+  validateOperation(structureOperation);
+
   try {
     // ... existing code ...
   } catch (error) {
@@ -358,14 +361,14 @@ export async function getStructureFromString(
   const { rootDir } = options;
   const { frontmatter, content } = parseFrontmatter(input);
 
-  // Merge frontmatter replacements with options
+  // Update the replacement merging to prioritize frontmatter
   const fileNameReplacements = [
-    ...(options.fileNameReplacements || []),
-    ...(frontmatter?.["replace-file"] || []),
+    ...(frontmatter?.["replace-file"] || []), // Frontmatter first
+    ...(options.fileNameReplacements || []), // Then options
   ];
   const folderNameReplacements = [
-    ...(options.folderNameReplacements || []),
-    ...(frontmatter?.["replace-folder"] || []),
+    ...(frontmatter?.["replace-folder"] || []), // Frontmatter first
+    ...(options.folderNameReplacements || []), // Then options
   ];
 
   // Create merged options with the replacements

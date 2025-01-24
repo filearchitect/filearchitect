@@ -20,7 +20,6 @@ export type {
   FileSystemOptions,
   GetStructureOptions,
   GetStructureResult,
-  OperationType,
   StructureFrontmatter,
   StructureOperation,
   Warning,

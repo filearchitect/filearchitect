@@ -2,9 +2,14 @@
  * Warning types and interfaces
  */
 
+export type WarningType =
+  | "missing_source"
+  | "operation_failed"
+  | "permission_denied";
+
 export interface Warning {
   /** Type of warning */
-  type: "missing_source" | "operation_failed" | "permission_denied" | "other";
+  type: WarningType;
   /** Descriptive message */
   message: string;
   /** Related path */

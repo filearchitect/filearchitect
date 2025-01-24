@@ -24,19 +24,9 @@ export class NodeFileSystem extends BaseFileSystem {
     }
   }
 
-  async mkdir(path: string, options: FileSystemOptions): Promise<void> {
+  async mkdir(path: string): Promise<void> {
     const resolvedPath = resolveTildePath(path);
-    try {
-      await fsPromises.mkdir(resolvedPath, { recursive: options.recursive });
-    } catch (error: any) {
-      if (error.code === "EEXIST") {
-        throw FSError.alreadyExists(path);
-      }
-      if (error.code === "EACCES") {
-        throw FSError.permissionDenied(path);
-      }
-      throw FSError.operationFailed(error.message, path);
-    }
+    await fsPromises.mkdir(resolvedPath, { recursive: true });
   }
 
   async writeFile(path: string, data: string): Promise<void> {
