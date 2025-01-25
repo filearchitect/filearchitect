@@ -3,38 +3,30 @@ name: Publish to npm
 on:
   push:
     tags:
-      - "v*.*.*" # Trigger only on version tags
+      - "v*.*.*"
 
 jobs:
-  release:
-    name: Publish to npm
+  publish:
     runs-on: ubuntu-latest
 
     steps:
-      # Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
-      # Setup Node.js and pnpm
-      - name: Setup Node.js and pnpm
+      - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "lts/*"
-          cache: "pnpm"
 
       - name: Install pnpm
         run: npm install -g pnpm
 
-      # Install dependencies using pnpm
       - name: Install dependencies
         run: pnpm install
 
-      # Build the package
-      - name: Build the package
-        run: pnpm run build # Adjust this if you have a different build script
-
-      # Publish to npm
-      - name: Publish to npm
-        run: pnpm publish --access public
+      - name: Build and publish
+        run: |
+          pnpm run build
+          pnpm publish --access public
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
