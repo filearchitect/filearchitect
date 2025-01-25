@@ -83,14 +83,14 @@ await createStructure(structure, "./my-project", {
 
 ## Syntax Guide
 
-| Syntax              | Description                                        | Example                         |
-| ------------------- | -------------------------------------------------- | ------------------------------- |
-| `name.ext`          | Creates an empty file                              | `file.txt`                      |
-| `name`              | Creates a directory                                | `folder`                        |
-| `[source]`          | Copies a file or folder with its contents          | `[~/config.json]`               |
-| `[source] > target` | Copies and renames a file or folder                | `[~/config.json] > config.json` |
-| `(source)`          | Moves (imports) a file or folder with its contents | `(~/old.txt)`                   |
-| `(source) > target` | Moves and renames a file or folder                 | `(~/old.txt) > new.txt`         |
+| Syntax                | Description                                        | Example                                 |
+| --------------------- | -------------------------------------------------- | --------------------------------------- |
+| `name.ext`            | Creates an empty file                              | `file.txt`                              |
+| `name`                | Creates a directory                                | `folder`                                |
+| `[source]`            | Copies a file or folder with its contents          | `[~/path/to/config.json]`               |
+| `[souce] > name.ext`  | Copies and renames a file or folder                | `[~/path/to/config.json] > config.json` |
+| `(source)`            | Moves (imports) a file or folder with its contents | `(~/path/to/file.txt)`                  |
+| `(source) > name.ext` | Moves and renames a file or folder                 | `(~/old.txt) > new.txt`                 |
 
 ### YAML Frontmatter
 
