@@ -7,6 +7,7 @@ import { Messages } from "./warnings.js";
 /* File System Types */
 export interface FileSystemOptions {
   recursive?: boolean;
+  withFileTypes?: boolean;
   replacements?: {
     files?: FileNameReplacement[];
     folders?: FileNameReplacement[];
@@ -86,6 +87,9 @@ export interface FileSystem {
   ): Promise<boolean>;
   getAllFiles(dirPath: string): Promise<string[]>;
   getAllDirectories(dirPath: string): Promise<string[]>;
+
+  // Add to interface
+  emitWarning?(warning: Warning): void;
 }
 
 /* Structure Operations */
@@ -99,8 +103,10 @@ export interface FileOperation {
 
 export interface BaseStructureOptions {
   fs?: FileSystem;
-  fileNameReplacements?: FileNameReplacement[];
-  folderNameReplacements?: FileNameReplacement[];
+  replacements?: {
+    files?: FileNameReplacement[];
+    folders?: FileNameReplacement[];
+  };
   recursive?: boolean;
 }
 
@@ -121,6 +127,10 @@ export interface StructureOperation {
 export interface GetStructureResult {
   operations: StructureOperation[];
   options: Required<GetStructureOptions>;
+}
+
+export interface CreateStructureOptions extends BaseStructureOptions {
+  fs?: FileSystem;
 }
 
 /* Warnings and Messages */

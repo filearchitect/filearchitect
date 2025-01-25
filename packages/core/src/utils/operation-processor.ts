@@ -1,3 +1,5 @@
+import type { FileSystem, StructureOperation } from "../types.js";
+
 export class OperationProcessor {
   constructor(private fs: FileSystem) {}
 
@@ -18,5 +20,15 @@ export class OperationProcessor {
     } else {
       await this.fs.writeFile(op.targetPath, "");
     }
+  }
+
+  private async handleCopy(op: StructureOperation) {
+    if (!op.sourcePath) throw new Error("Copy operation requires sourcePath");
+    await this.fs.copy(op.sourcePath, op.targetPath);
+  }
+
+  private async handleMove(op: StructureOperation) {
+    if (!op.sourcePath) throw new Error("Move operation requires sourcePath");
+    await this.fs.move(op.sourcePath, op.targetPath);
   }
 }

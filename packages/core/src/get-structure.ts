@@ -138,7 +138,10 @@ async function listDirectoryContents(
         currentSourcePath,
         currentTargetPath,
         baseDepth + 1,
-        options
+        {
+          fileNameReplacements: options.fileNameReplacements,
+          folderNameReplacements: options.folderNameReplacements,
+        }
       );
       results.push(...subContents);
     }
@@ -160,11 +163,9 @@ async function processLine(
   stack: string[],
   options: GetStructureOptions
 ): Promise<StructureOperation | null> {
-  const {
-    fileNameReplacements = [],
-    folderNameReplacements = [],
-    fs,
-  } = options;
+  const fileNameReplacements = options.replacements?.files || [];
+  const folderNameReplacements = options.replacements?.folders || [];
+  const { fs } = options;
   const { level, operation } = parseLine(line);
   if (!operation) return null;
 
@@ -209,7 +210,7 @@ async function processLine(
       error,
       structureOperation.targetPath,
       structureOperation.isDirectory ? "directory" : "file",
-      fs
+      { emitWarning: fs?.emitWarning?.bind(fs) }
     );
   }
 
@@ -246,8 +247,8 @@ async function handleDirectoryContents(
           operation.targetPath,
           operation.depth,
           {
-            fileNameReplacements: options.fileNameReplacements,
-            folderNameReplacements: options.folderNameReplacements,
+            fileNameReplacements: options.replacements?.files || [],
+            folderNameReplacements: options.replacements?.folders || [],
           }
         );
         operations.push(...contents);
@@ -340,22 +341,24 @@ export async function getStructureFromString(
   const { rootDir } = options;
   const { frontmatter, content } = parseFrontmatter(input);
 
-  // Update the replacement merging to prioritize frontmatter
+  // Update replacement merging to combine frontmatter and options
   const fileNameReplacements = [
-    ...(frontmatter?.["replace-file"] || []), // Frontmatter first
-    ...(options.fileNameReplacements || []), // Then options
+    ...(options.replacements?.files || []),
+    ...(frontmatter?.["replace-file"] || []),
   ];
   const folderNameReplacements = [
-    ...(frontmatter?.["replace-folder"] || []), // Frontmatter first
-    ...(options.folderNameReplacements || []), // Then options
+    ...(options.replacements?.folders || []),
+    ...(frontmatter?.["replace-folder"] || []),
   ];
 
   // Create merged options with the replacements
   const fs = options.fs || new NodeFileSystem();
   const mergedOptions: GetStructureOptions = {
     ...options,
-    fileNameReplacements,
-    folderNameReplacements,
+    replacements: {
+      files: fileNameReplacements,
+      folders: folderNameReplacements,
+    },
     fs,
   };
 
@@ -383,8 +386,10 @@ export async function getStructureFromString(
     operations,
     options: {
       rootDir,
-      fileNameReplacements,
-      folderNameReplacements,
+      replacements: {
+        files: fileNameReplacements,
+        folders: folderNameReplacements,
+      },
       recursive: options.recursive ?? true,
       fs,
     },

@@ -419,17 +419,18 @@ export abstract class BaseFileSystem implements FileSystem {
     dest: string,
     options: FileSystemOptions = {}
   ): Promise<void> {
-    const {
-      recursive = true,
-      fileNameReplacements = [],
-      folderNameReplacements = [],
-    } = options;
+    const { recursive = true } = options;
+    const fileNameReplacements = options.replacements?.files || [];
+    const folderNameReplacements = options.replacements?.folders || [];
 
     // Create the destination directory
     await this.mkdir(dest, { recursive: true });
 
     // Read the source directory
-    const entries = await this.readdir(src, { withFileTypes: true });
+    const entries = await this.readdir(src, {
+      withFileTypes: true,
+      recursive,
+    });
 
     // Copy each entry
     for (const entry of entries) {

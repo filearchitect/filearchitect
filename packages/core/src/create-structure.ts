@@ -26,8 +26,7 @@ export async function createStructureFromString(
 ): Promise<void> {
   const {
     fs: filesystem,
-    fileNameReplacements,
-    folderNameReplacements,
+    replacements = { files: [], folders: [] },
     recursive,
   } = options;
 
@@ -40,16 +39,18 @@ export async function createStructureFromString(
   await filesystem.ensureDir(resolvedRoot);
 
   // Get the structure operations
-  const result = await getStructureFromString(input, {
+  const { operations } = await getStructureFromString(input, {
     rootDir,
     fs: filesystem,
-    fileNameReplacements,
-    folderNameReplacements,
+    replacements,
     recursive,
   });
 
+  const fileNameReplacements = replacements.files || [];
+  const folderNameReplacements = replacements.folders || [];
+
   // Execute each operation
-  for (const operation of result.operations) {
+  for (const operation of operations) {
     try {
       const destinationDir = path.dirname(operation.targetPath);
       if (!(await filesystem.exists(destinationDir))) {
@@ -71,8 +72,10 @@ export async function createStructureFromString(
           }
           await copyFile(operation.sourcePath, operation.targetPath, {
             fs: filesystem,
-            fileNameReplacements,
-            folderNameReplacements,
+            replacements: {
+              files: fileNameReplacements,
+              folders: folderNameReplacements,
+            },
           });
           break;
 
@@ -82,8 +85,10 @@ export async function createStructureFromString(
           }
           await moveFile(operation.sourcePath, operation.targetPath, {
             fs: filesystem,
-            fileNameReplacements,
-            folderNameReplacements,
+            replacements: {
+              files: fileNameReplacements,
+              folders: folderNameReplacements,
+            },
           });
           break;
 
@@ -153,15 +158,13 @@ async function copyFile(
   targetPath: string,
   options: {
     fs: FileSystem;
-    fileNameReplacements?: FileNameReplacement[];
-    folderNameReplacements?: FileNameReplacement[];
+    replacements: {
+      files?: FileNameReplacement[];
+      folders?: FileNameReplacement[];
+    };
   }
 ): Promise<void> {
-  const {
-    fs: filesystem,
-    fileNameReplacements,
-    folderNameReplacements,
-  } = options;
+  const { fs: filesystem, replacements } = options;
 
   const resolvedSource = path.isAbsolute(sourcePath)
     ? sourcePath
@@ -172,8 +175,7 @@ async function copyFile(
 
   if (isDirectory) {
     await filesystem.copyFolder(resolvedSource, targetPath, {
-      fileNameReplacements,
-      folderNameReplacements,
+      replacements,
     });
   } else {
     await filesystem.copyFile(resolvedSource, targetPath);
@@ -188,15 +190,13 @@ async function moveFile(
   targetPath: string,
   options: {
     fs: FileSystem;
-    fileNameReplacements?: FileNameReplacement[];
-    folderNameReplacements?: FileNameReplacement[];
+    replacements: {
+      files?: FileNameReplacement[];
+      folders?: FileNameReplacement[];
+    };
   }
 ): Promise<void> {
-  const {
-    fs: filesystem,
-    fileNameReplacements,
-    folderNameReplacements,
-  } = options;
+  const { fs: filesystem, replacements } = options;
 
   const resolvedSource = path.isAbsolute(sourcePath)
     ? sourcePath
@@ -207,8 +207,7 @@ async function moveFile(
 
   if (isDirectory) {
     await filesystem.moveFolder(resolvedSource, targetPath, {
-      fileNameReplacements,
-      folderNameReplacements,
+      replacements,
     });
   } else {
     await filesystem.rename(resolvedSource, targetPath);

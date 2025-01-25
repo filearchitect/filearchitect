@@ -190,9 +190,10 @@ src
 `;
 
     const result = await getStructureFromString(input, {
-      rootDir: "/test",
-      fileNameReplacements: [{ search: "NAME", replace: "replaced" }],
-      fs: new MockFileSystem({}),
+      rootDir: "/test/root",
+      replacements: {
+        files: [{ search: "NAME", replace: "replaced" }],
+      },
     });
 
     expect(result.operations[1]).toMatchObject({
@@ -267,11 +268,11 @@ root
     });
 
     // Check if replacements were parsed correctly
-    expect(result.options.folderNameReplacements).toEqual([
+    expect(result.options.replacements.folders).toEqual([
       { search: "old-folder", replace: "new-folder" },
       { search: "temp", replace: "permanent" },
     ]);
-    expect(result.options.fileNameReplacements).toEqual([
+    expect(result.options.replacements.files).toEqual([
       { search: "old-file", replace: "new-file" },
       { search: ".js", replace: ".ts" },
     ]);
@@ -412,10 +413,12 @@ root
         test.js`;
 
     const result = await getStructureFromString(input, {
-      rootDir: "/test",
-      fs,
-      fileNameReplacements: [{ search: "test", replace: "spec" }],
-      folderNameReplacements: [{ search: "dir", replace: "folder" }],
+      rootDir: "/test/root",
+      replacements: {
+        files: [{ search: "test", replace: "spec" }],
+        folders: [{ search: "dir", replace: "folder" }],
+      },
+      fs: new NodeFileSystem(),
     });
 
     const operations = result.operations.map((op) => ({
@@ -427,17 +430,17 @@ root
     expect(operations).toEqual([
       {
         type: "create",
-        targetPath: "/test/root",
+        targetPath: "/test/root/root",
         isDirectory: true,
       },
       {
         type: "create",
-        targetPath: "/test/root/new-folder",
+        targetPath: "/test/root/root/new-folder",
         isDirectory: true,
       },
       {
         type: "create",
-        targetPath: "/test/root/new-folder/spec.ts",
+        targetPath: "/test/root/root/new-folder/spec.ts",
         isDirectory: false,
       },
     ]);

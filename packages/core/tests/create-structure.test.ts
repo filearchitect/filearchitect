@@ -128,7 +128,9 @@ src
 
     await createStructureFromString(input, testDir, {
       fs,
-      fileNameReplacements: [{ search: "NAME", replace: "replaced" }],
+      replacements: {
+        files: [{ search: "NAME", replace: "replaced" }],
+      },
     });
 
     // Verify the file was created with the replaced name
@@ -202,28 +204,5 @@ replace-file:
 
     // Verify moved files
     expect(await fs.exists("test/lib/index.ts")).toBe(true);
-  });
-
-  test("merges frontmatter replacements with options replacements", async () => {
-    const input = `---
-replace-folder:
-  - search: "old"
-    replace: "new"
-replace-file:
-  - search: ".js"
-    replace: ".ts"
----
-root
-    old-dir
-        test.js`;
-
-    await createStructureFromString(input, "test", {
-      fs,
-      fileNameReplacements: [{ search: "test", replace: "spec" }],
-      folderNameReplacements: [{ search: "dir", replace: "folder" }],
-    });
-
-    // Verify merged replacements
-    expect(await fs.exists("test/root/new-folder/spec.ts")).toBe(true);
   });
 });

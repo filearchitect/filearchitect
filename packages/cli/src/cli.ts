@@ -122,8 +122,10 @@ async function main() {
       // Create the structure using the same options from the result
       await createStructureFromString(structure, absoluteOutput, {
         fs,
-        fileNameReplacements: result.options.fileNameReplacements,
-        folderNameReplacements: result.options.folderNameReplacements,
+        replacements: {
+          files: result.options.replacements.files,
+          folders: result.options.replacements.folders,
+        },
       });
 
       console.log("\nOperations performed:\n");
