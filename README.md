@@ -140,10 +140,10 @@ my-project/
 filearchitect create structure.txt output
 
 # Replace text in file names
-filearchitect create structure.txt output --replace-file user:admin
+filearchitect create structure.txt output --fileReplacements user:admin
 
 # Replace text in folder names
-filearchitect create structure.txt output --replace-folder api:rest
+filearchitect create structure.txt output --folderReplacements api:rest
 
 # Validate without creating
 filearchitect validate structure.txt

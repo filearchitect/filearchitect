@@ -344,11 +344,11 @@ export async function getStructure(
   // Update replacement merging to combine frontmatter and options
   const fileNameReplacements = [
     ...(options.replacements?.files || []),
-    ...(frontmatter?.["replace-file"] || []),
+    ...(frontmatter?.["fileReplacements"] || []),
   ];
   const folderNameReplacements = [
     ...(options.replacements?.folders || []),
-    ...(frontmatter?.["replace-folder"] || []),
+    ...(frontmatter?.["folderReplacements"] || []),
   ];
 
   // Create merged options with the replacements

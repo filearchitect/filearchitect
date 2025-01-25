@@ -2,11 +2,16 @@
  * File system interfaces and related types
  */
 
+import type { Warning } from "./warnings.js";
+
 export interface FileSystemOptions {
   recursive?: boolean;
   withFileTypes?: boolean;
-  fileNameReplacements?: FileNameReplacement[];
-  folderNameReplacements?: FileNameReplacement[];
+  replacements?: {
+    files?: FileNameReplacement[];
+    folders?: FileNameReplacement[];
+  };
+  force?: boolean;
 }
 
 export interface DirectoryEntry {
@@ -70,5 +75,30 @@ export interface FileSystem {
     options?: FileSystemOptions
   ): Promise<void>;
 
-  // ... rest of FileSystem methods remain the same ...
+  // Convenience methods
+  ensureDir(path: string): Promise<void>;
+  emptyDir(path: string): Promise<void>;
+  copy(src: string, dest: string, options?: FileSystemOptions): Promise<void>;
+  move(src: string, dest: string, options?: FileSystemOptions): Promise<void>;
+  existsAs(path: string, type: "file" | "directory"): Promise<boolean>;
+  ensureFile(path: string): Promise<void>;
+  remove(path: string): Promise<void>;
+  isEmptyDir(path: string): Promise<boolean>;
+  readFileOrDefault(path: string, defaultContent?: string): Promise<string>;
+  ensureEmptyDir(path: string): Promise<void>;
+  copyIfNotExists(
+    src: string,
+    dest: string,
+    options?: FileSystemOptions
+  ): Promise<boolean>;
+  moveIfNotExists(
+    src: string,
+    dest: string,
+    options?: FileSystemOptions
+  ): Promise<boolean>;
+  getAllFiles(dirPath: string): Promise<string[]>;
+  getAllDirectories(dirPath: string): Promise<string[]>;
+
+  // Warning emission
+  emitWarning?(warning: Warning): void;
 }

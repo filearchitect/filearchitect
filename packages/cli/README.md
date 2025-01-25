@@ -20,10 +20,10 @@ filearchitect create structure.txt output
 
 
 # Create a structure with file name replacements
-filearchitect create structure.txt output --replace-file user:admin
+filearchitect create structure.txt output --fileReplacements user:admin
 
 # Create a structure with folder name replacements
-filearchitect create structure.txt output --replace-folder api:rest
+filearchitect create structure.txt output --folderReplacements api:rest
 
 # Validate a structure file
 filearchitect validate structure.txt
@@ -58,16 +58,16 @@ src/
 
 # Replace in file/folder names
 src/
-  user-profile.tsx     # With --replace-file user:admin -> admin-profile.tsx
-  api/                 # With --replace-folder api:rest -> rest/
+  user-profile.tsx     # With --fileReplacements user:admin -> admin-profile.tsx
+  api/                 # With --folderReplacements api:rest -> rest/
 ```
 
 ## Options
 
-- `--replace-file <pattern>`: Replace text in file names (e.g. --replace-file user:admin)
-- `--replace-folder <pattern>`: Replace text in folder names (e.g. --replace-folder api:rest)
-- `-h, --help`: Show help message
-- `-v, --version`: Show version
+-   `--fileReplacements <pattern>`: Replace text in file names (e.g. --fileReplacements user:admin)
+-   `--folderReplacements <pattern>`: Replace text in folder names (e.g. --folderReplacements api:rest)
+-   `-h, --help`: Show help message
+-   `-v, --version`: Show version
 
 ## Local Development
 
@@ -107,4 +107,4 @@ node dist/cli.js create structure.txt output
 
 ## Related Packages
 
-- [@filearchitect/core](https://www.npmjs.com/package/@filearchitect/core): Core library for programmatic usage
+-   [@filearchitect/core](https://www.npmjs.com/package/@filearchitect/core): Core library for programmatic usage

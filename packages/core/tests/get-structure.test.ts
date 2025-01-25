@@ -245,12 +245,12 @@ src
 
   test("parses frontmatter with replacements", async () => {
     const input = `---
-replace-folder:
+folderReplacements:
   - search: "old-folder"
     replace: "new-folder"
   - search: "temp"
     replace: "permanent"
-replace-file:
+fileReplacements:
   - search: "old-file"
     replace: "new-file"
   - search: ".js"
@@ -315,10 +315,10 @@ root
 
   test("applies replacements to copied files and directories", async () => {
     const input = `---
-replace-folder:
+folderReplacements:
   - search: "old"
     replace: "new"
-replace-file:
+fileReplacements:
   - search: ".js"
     replace: ".ts"
 ---
@@ -358,10 +358,10 @@ root
 
   test("applies replacements to moved files and directories", async () => {
     const input = `---
-replace-folder:
+folderReplacements:
   - search: "old"
     replace: "new"
-replace-file:
+fileReplacements:
   - search: ".js"
     replace: ".ts"
 ---

@@ -157,7 +157,7 @@ src
 
   test("creates structure with frontmatter replacements", async () => {
     const input = `---
-replace-file:
+fileReplacements:
   - search: ".js"
     replace: ".ts"
 ---
@@ -174,7 +174,7 @@ src
 
   test("applies replacements to copied files and directories", async () => {
     const input = `---
-replace-file:
+fileReplacements:
   - search: ".js"
     replace: ".ts"
 ---
@@ -191,7 +191,7 @@ replace-file:
 
   test("applies replacements to moved files and directories", async () => {
     const input = `---
-replace-file:
+fileReplacements:
   - search: ".js"
     replace: ".ts"
 ---
