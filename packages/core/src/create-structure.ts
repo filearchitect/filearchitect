@@ -1,6 +1,7 @@
 import path from "path";
 import process from "process";
 import { getStructure } from "./get-structure.js";
+import { NodeFileSystem } from "./node-filesystem.js";
 import type {
   CreateStructureOptions,
   FileNameReplacement,
@@ -22,17 +23,13 @@ import type {
 export async function createStructure(
   input: string,
   rootDir: string,
-  options: CreateStructureOptions
+  options: CreateStructureOptions = {}
 ): Promise<void> {
   const {
-    fs: filesystem,
+    fs: filesystem = new NodeFileSystem(),
     replacements = { files: [], folders: [] },
     recursive,
   } = options;
-
-  if (!filesystem) {
-    throw new Error("Filesystem implementation is required");
-  }
 
   // Create the root directory if it doesn't exist
   const resolvedRoot = path.resolve(process.cwd(), rootDir);

@@ -9,6 +9,8 @@ Create file and directory structures from simple text descriptions. Perfect for 
 -   🔄 Move (import) files from other projects
 -   🔧 Replace file and folder names using patterns
 -   🚀 Available as both a CLI tool and a TypeScript/JavaScript library
+-   🌐 Works in both Node.js and browser environments
+-   🔍 Validates operations before execution
 -   ⚡ Supports YAML frontmatter for configuration
 
 ## Installation
@@ -57,7 +59,7 @@ filearchitect create structure.txt my-project
 ### Using the Library
 
 ```typescript
-import { createStructure, NodeFileSystem } from "@filearchitect/core";
+import { createStructure } from "@filearchitect/core";
 
 const structure = `
 src
@@ -68,8 +70,14 @@ src
         global.css
 `;
 
+// Uses Node.js filesystem by default
+await createStructure(structure, "./my-project");
+
+// Or with options
 await createStructure(structure, "./my-project", {
-    fs: new NodeFileSystem(),
+    replacements: {
+        files: [{ search: ".js", replace: ".ts" }],
+    },
 });
 ```
 
@@ -179,15 +187,13 @@ filearchitect show structure.txt output
 ## Library Usage
 
 ```typescript
-import {
-    createStructure,
-    NodeFileSystem,
-    getStructure,
-} from "@filearchitect/core";
+import { createStructure } from "@filearchitect/core";
 
-// Create a structure
+// Basic usage with Node.js filesystem (default)
+await createStructure(structureText, "./output");
+
+// With replacements
 await createStructure(structureText, "./output", {
-    fs: new NodeFileSystem(),
     replacements: {
         files: [{ search: ".js", replace: ".ts" }],
         folders: [{ search: "api", replace: "rest" }],
@@ -195,11 +201,10 @@ await createStructure(structureText, "./output", {
 });
 
 // Preview operations
-const result = await getStructure(structureText, {
+const { operations } = await getStructure(structureText, {
     rootDir: "./output",
-    fs: new NodeFileSystem(),
 });
-console.log(result.operations);
+console.log(operations);
 ```
 
 ## Browser Usage
@@ -211,8 +216,9 @@ import { createStructure, BrowserFileSystem } from "@filearchitect/core";
 
 const fs = new BrowserFileSystem();
 
+// Browser requires explicit filesystem
 await createStructure(structureText, "/", {
-    fs,
+    fs, // Browser filesystem must be provided explicitly
     replacements: {
         files: [{ search: ".js", replace: ".ts" }],
     },
