@@ -1,4 +1,4 @@
-name: Publish to npm
+name: Publish Monorepo Packages
 
 on:
   push:
@@ -6,31 +6,40 @@ on:
       - "v*.*.*"
 
 jobs:
-  publish:
+  release:
     runs-on: ubuntu-latest
 
     steps:
+      # Checkout the repository
       - name: Checkout code
         uses: actions/checkout@v3
 
+      # Setup Node.js
       - name: Setup Node.js
         uses: actions/setup-node@v3
         with:
           node-version: "lts/*"
 
+      # Install pnpm
       - name: Install pnpm
         run: npm install -g pnpm
 
-      - name: Authenticate npm
-        run: |
-          echo "//registry.npmjs.org/:_authToken=${{ secrets.NPM_TOKEN }}" > ~/.npmrc
-
+      # Install dependencies
       - name: Install dependencies
         run: pnpm install
 
-      - name: Build and publish
-        run: |
-          pnpm run build
-          pnpm publish --access public --no-git-checks
+      # Build all packages
+      - name: Build packages
+        run: pnpm -r build
+
+      # Publish @filearchitect/core
+      - name: Publish @filearchitect/core
+        run: pnpm --filter @filearchitect/core publish --no-git-checks
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      # Publish @your-scope/cli
+      - name: Publish @filearchitect/cli
+        run: pnpm --filter @filearchitect/cli publish --no-git-checks
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
