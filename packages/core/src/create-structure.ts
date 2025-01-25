@@ -1,6 +1,6 @@
 import path from "path";
 import process from "process";
-import { getStructureFromString } from "./get-structure.js";
+import { getStructure } from "./get-structure.js";
 import type {
   CreateStructureOptions,
   FileNameReplacement,
@@ -19,7 +19,7 @@ import type {
  * @param rootDir The root directory to create the structure in
  * @param options Additional options for structure creation
  */
-export async function createStructureFromString(
+export async function createStructure(
   input: string,
   rootDir: string,
   options: CreateStructureOptions
@@ -39,7 +39,7 @@ export async function createStructureFromString(
   await filesystem.ensureDir(resolvedRoot);
 
   // Get the structure operations
-  const { operations } = await getStructureFromString(input, {
+  const { operations } = await getStructure(input, {
     rootDir,
     fs: filesystem,
     replacements,

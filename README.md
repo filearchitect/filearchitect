@@ -47,7 +47,7 @@ npm install @filearchitect/core
 2. Use in your code:
 
 ```typescript
-import { createStructureFromString } from "@filearchitect/core";
+import { createStructure } from "@filearchitect/core";
 
 const structure = `
 src
@@ -58,7 +58,7 @@ src
         global.css
 `;
 
-await createStructureFromString(structure, "./my-project");
+await createStructure(structure, "./my-project");
 ```
 
 ## Syntax Guide
@@ -152,19 +152,19 @@ filearchitect validate structure.txt
 ## Library Usage
 
 ```typescript
-import { createStructureFromString } from "@filearchitect/core";
+import { createStructure } from "@filearchitect/core";
 
 // Create a structure
-await createStructureFromString(structureText, "./output");
+await createStructure(structureText, "./output");
 
 // Replace names
-await createStructureFromString(structureText, "./output", {
+await createStructure(structureText, "./output", {
     replaceInFiles: { user: "admin" },
     replaceInFolders: { api: "rest" },
 });
 
 // Validate only
-await createStructureFromString(structureText, "./output", {
+await createStructure(structureText, "./output", {
     validate: true,
 });
 ```

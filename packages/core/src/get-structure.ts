@@ -334,7 +334,7 @@ function parseFrontmatter(input: string): {
  * @param options Options for getting structure operations
  * @returns The structure result containing operations and options used
  */
-export async function getStructureFromString(
+export async function getStructure(
   input: string,
   options: GetStructureOptions
 ): Promise<GetStructureResult> {

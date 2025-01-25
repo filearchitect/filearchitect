@@ -3,8 +3,8 @@ import { Table } from "console-table-printer";
 import { readFile } from "node:fs/promises";
 import { resolve } from "node:path";
 import {
-  createStructureFromString,
-  getStructureFromString,
+  createStructure,
+  getStructure,
   GetStructureResult,
   NodeFileSystem,
 } from "../../core/src/index.js";
@@ -109,7 +109,7 @@ async function main() {
     const absoluteOutput = resolve(outputDir);
 
     // Get the structure operations first to parse frontmatter
-    const result = await getStructureFromString(structure, {
+    const result = await getStructure(structure, {
       rootDir: absoluteOutput,
       fs,
     });
@@ -120,7 +120,7 @@ async function main() {
       console.log("\nNo changes were made to the filesystem.");
     } else {
       // Create the structure using the same options from the result
-      await createStructureFromString(structure, absoluteOutput, {
+      await createStructure(structure, absoluteOutput, {
         fs,
         replacements: {
           files: result.options.replacements.files,

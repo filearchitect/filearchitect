@@ -134,16 +134,7 @@ export interface CreateStructureOptions extends BaseStructureOptions {
 }
 
 /* Warnings and Messages */
-export type WarningType =
-  | "missing_source"
-  | "operation_failed"
-  | "permission_denied";
-
-export interface Warning {
-  type: WarningType;
-  message: string;
-  path?: string;
-}
+export type { Warning, WarningType } from "./warnings.js";
 
 export type MessageType = keyof typeof Messages;
 
@@ -152,3 +143,12 @@ export interface StructureFrontmatter {
   "replace-folder"?: FileNameReplacement[];
   "replace-file"?: FileNameReplacement[];
 }
+
+// Remove concrete definitions, only re-export
+export type {
+  BaseStructureOptions,
+  FileOperation,
+  GetStructureOptions,
+  StructureOperation,
+  StructureOperationType,
+} from "./operations.js";

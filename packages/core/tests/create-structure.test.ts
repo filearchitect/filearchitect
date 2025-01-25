@@ -1,12 +1,12 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { createStructureFromString } from "../src/create-structure.js";
+import { createStructure } from "../src/create-structure.js";
 import { NodeFileSystem } from "../src/node-filesystem.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-describe("createStructureFromString", () => {
+describe("createStructure", () => {
   const testDir = path.join(__dirname, "test-output");
   const sourceDir = path.join(__dirname, "test-source");
   const fs = new NodeFileSystem();
@@ -31,7 +31,7 @@ src
         helpers.ts
 `;
 
-    await createStructureFromString(input, testDir, {
+    await createStructure(input, testDir, {
       fs,
     });
 
@@ -57,7 +57,7 @@ src
     [${sourceFile}] > copied.ts
 `;
 
-    await createStructureFromString(input, testDir, {
+    await createStructure(input, testDir, {
       fs,
     });
 
@@ -78,7 +78,7 @@ src
     (${sourceFile}) > moved.ts
 `;
 
-    await createStructureFromString(input, testDir, {
+    await createStructure(input, testDir, {
       fs,
     });
 
@@ -101,7 +101,7 @@ src
     [${sourceDir}] > copied
 `;
 
-    await createStructureFromString(input, testDir, {
+    await createStructure(input, testDir, {
       fs,
     });
 
@@ -126,7 +126,7 @@ src
     file-NAME-test.ts
 `;
 
-    await createStructureFromString(input, testDir, {
+    await createStructure(input, testDir, {
       fs,
       replacements: {
         files: [{ search: "NAME", replace: "replaced" }],
@@ -145,7 +145,7 @@ src
     [/non/existent/file.ts] > copied.ts
 `;
 
-    await createStructureFromString(input, testDir, {
+    await createStructure(input, testDir, {
       fs,
     });
 
@@ -164,7 +164,7 @@ replace-file:
 src
     index.ts`;
 
-    await createStructureFromString(input, "test", {
+    await createStructure(input, "test", {
       fs,
     });
 
@@ -181,7 +181,7 @@ replace-file:
 [src] > lib
     [index.js] > index.ts`;
 
-    await createStructureFromString(input, "test", {
+    await createStructure(input, "test", {
       fs,
     });
 
@@ -198,7 +198,7 @@ replace-file:
 (src) > lib
     (index.js) > index.ts`;
 
-    await createStructureFromString(input, "test", {
+    await createStructure(input, "test", {
       fs,
     });
 

@@ -1,6 +1,6 @@
 // Core functionality
-export { createStructureFromString } from "./create-structure.js";
-export { getStructureFromString } from "./get-structure.js";
+export { createStructure } from "./create-structure.js";
+export { getStructure } from "./get-structure.js";
 export { Messages, createMessage } from "./warnings.js";
 
 // Filesystem implementations

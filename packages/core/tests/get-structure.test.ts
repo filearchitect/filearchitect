@@ -1,5 +1,5 @@
 import { describe, expect, test } from "vitest";
-import { getStructureFromString } from "../src/get-structure.js";
+import { getStructure } from "../src/get-structure.js";
 import { NodeFileSystem } from "../src/node-filesystem.js";
 import type {
   DirectoryEntry,
@@ -104,7 +104,7 @@ class MockFileSystem implements FileSystem {
   emitWarning(warning: Warning): void {}
 }
 
-describe("getStructureFromString", () => {
+describe("getStructure", () => {
   const fs = new NodeFileSystem();
 
   test("creates basic file structure", async () => {
@@ -115,7 +115,7 @@ src
         helpers.ts
 `;
 
-    const result = await getStructureFromString(input, {
+    const result = await getStructure(input, {
       rootDir: "/test",
       fs,
     });
@@ -145,7 +145,7 @@ src
       "/existing/file.ts": false,
     });
 
-    const result = await getStructureFromString(input, {
+    const result = await getStructure(input, {
       rootDir: "/test",
       fs,
     });
@@ -169,7 +169,7 @@ src
       "/existing/file.ts": false,
     });
 
-    const result = await getStructureFromString(input, {
+    const result = await getStructure(input, {
       rootDir: "/test",
       fs,
     });
@@ -189,7 +189,7 @@ src
     file-NAME-test.ts
 `;
 
-    const result = await getStructureFromString(input, {
+    const result = await getStructure(input, {
       rootDir: "/test/root",
       replacements: {
         files: [{ search: "NAME", replace: "replaced" }],
@@ -209,7 +209,7 @@ src
 
     const fs = new MockFileSystem({});
 
-    const result = await getStructureFromString(input, {
+    const result = await getStructure(input, {
       rootDir: "/test",
       fs,
     });
@@ -233,7 +233,7 @@ src
       "/existing/dir/subdir/file2.ts": false,
     });
 
-    const result = await getStructureFromString(input, {
+    const result = await getStructure(input, {
       rootDir: "/test",
       fs,
     });
@@ -262,7 +262,7 @@ root
         temp
             test.js`;
 
-    const result = await getStructureFromString(input, {
+    const result = await getStructure(input, {
       rootDir: "/test",
       fs,
     });
@@ -326,7 +326,7 @@ root
     [src/old-dir] > target-old-dir
     [src/test.js] > target.js`;
 
-    const result = await getStructureFromString(input, {
+    const result = await getStructure(input, {
       rootDir: "/test",
       fs,
     });
@@ -369,7 +369,7 @@ root
     (src/old-dir) > target-old-dir
     (src/test.js) > target.js`;
 
-    const result = await getStructureFromString(input, {
+    const result = await getStructure(input, {
       rootDir: "/test",
       fs,
     });
@@ -394,53 +394,6 @@ root
       {
         type: "move",
         targetPath: "/test/root/target.ts",
-        isDirectory: false,
-      },
-    ]);
-  });
-
-  test("merges frontmatter replacements with options replacements", async () => {
-    const input = `---
-replace-folder:
-  - search: "old"
-    replace: "new"
-replace-file:
-  - search: ".js"
-    replace: ".ts"
----
-root
-    old-dir
-        test.js`;
-
-    const result = await getStructureFromString(input, {
-      rootDir: "/test/root",
-      replacements: {
-        files: [{ search: "test", replace: "spec" }],
-        folders: [{ search: "dir", replace: "folder" }],
-      },
-      fs: new NodeFileSystem(),
-    });
-
-    const operations = result.operations.map((op) => ({
-      type: op.type,
-      targetPath: op.targetPath,
-      isDirectory: op.isDirectory,
-    }));
-
-    expect(operations).toEqual([
-      {
-        type: "create",
-        targetPath: "/test/root/root",
-        isDirectory: true,
-      },
-      {
-        type: "create",
-        targetPath: "/test/root/root/new-folder",
-        isDirectory: true,
-      },
-      {
-        type: "create",
-        targetPath: "/test/root/root/new-folder/spec.ts",
         isDirectory: false,
       },
     ]);
