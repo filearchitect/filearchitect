@@ -1,12 +1,12 @@
 import path from "path";
 import { fileURLToPath } from "url";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
-import { createStructureFromString } from "../src/create-structure.js";
+import { createStructure } from "../src/create-structure.js";
 import { NodeFileSystem } from "../src/node-filesystem.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
-describe("createStructureFromString", () => {
+describe("createStructure", () => {
   const testDir = path.join(__dirname, "test-output");
   const sourceDir = path.join(__dirname, "test-source");
   const fs = new NodeFileSystem();
@@ -31,7 +31,7 @@ src
         helpers.ts
 `;
 
-    await createStructureFromString(input, testDir, {
+    await createStructure(input, testDir, {
       fs,
     });
 
@@ -57,7 +57,7 @@ src
     [${sourceFile}] > copied.ts
 `;
 
-    await createStructureFromString(input, testDir, {
+    await createStructure(input, testDir, {
       fs,
     });
 
@@ -78,7 +78,7 @@ src
     (${sourceFile}) > moved.ts
 `;
 
-    await createStructureFromString(input, testDir, {
+    await createStructure(input, testDir, {
       fs,
     });
 
@@ -101,7 +101,7 @@ src
     [${sourceDir}] > copied
 `;
 
-    await createStructureFromString(input, testDir, {
+    await createStructure(input, testDir, {
       fs,
     });
 
@@ -126,9 +126,11 @@ src
     file-NAME-test.ts
 `;
 
-    await createStructureFromString(input, testDir, {
+    await createStructure(input, testDir, {
       fs,
-      fileNameReplacements: [{ search: "NAME", replace: "replaced" }],
+      replacements: {
+        files: [{ search: "NAME", replace: "replaced" }],
+      },
     });
 
     // Verify the file was created with the replaced name
@@ -143,7 +145,7 @@ src
     [/non/existent/file.ts] > copied.ts
 `;
 
-    await createStructureFromString(input, testDir, {
+    await createStructure(input, testDir, {
       fs,
     });
 
@@ -151,5 +153,56 @@ src
     const targetPath = path.join(testDir, "src", "copied.ts");
     expect(fs.exists(targetPath)).resolves.toBe(true);
     expect(fs.readFile(targetPath)).resolves.toBe("");
+  });
+
+  test("creates structure with frontmatter replacements", async () => {
+    const input = `---
+fileReplacements:
+  - search: ".js"
+    replace: ".ts"
+---
+src
+    index.ts`;
+
+    await createStructure(input, "test", {
+      fs,
+    });
+
+    // Verify created files
+    expect(await fs.exists("test/src/index.ts")).toBe(true);
+  });
+
+  test("applies replacements to copied files and directories", async () => {
+    const input = `---
+fileReplacements:
+  - search: ".js"
+    replace: ".ts"
+---
+[src] > lib
+    [index.js] > index.ts`;
+
+    await createStructure(input, "test", {
+      fs,
+    });
+
+    // Verify copied files
+    expect(await fs.exists("test/lib/index.ts")).toBe(true);
+  });
+
+  test("applies replacements to moved files and directories", async () => {
+    const input = `---
+fileReplacements:
+  - search: ".js"
+    replace: ".ts"
+---
+(src) > lib
+    (index.js) > index.ts`;
+
+    await createStructure(input, "test", {
+      fs,
+    });
+
+    // Verify moved files
+    expect(await fs.exists("test/lib/index.ts")).toBe(true);
   });
 });

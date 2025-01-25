@@ -1,10 +1,13 @@
-import {
+import path from "path";
+import type {
   DirectoryEntry,
   FileStat,
   FileSystem,
   FileSystemOptions,
   Warning,
 } from "./types.js";
+import { handleOperationError } from "./utils/error-utils.js";
+import { applyReplacements } from "./utils/replacements.js";
 import { createMessage } from "./warnings.js";
 
 /**
@@ -409,5 +412,64 @@ export abstract class BaseFileSystem implements FileSystem {
     }
 
     return commonParts.join("/") || "/";
+  }
+
+  protected async copyFolderWithReplacements(
+    src: string,
+    dest: string,
+    options: FileSystemOptions = {}
+  ): Promise<void> {
+    const { recursive = true } = options;
+    const fileNameReplacements = options.replacements?.files || [];
+    const folderNameReplacements = options.replacements?.folders || [];
+
+    // Create the destination directory
+    await this.mkdir(dest, { recursive: true });
+
+    // Read the source directory
+    const entries = await this.readdir(src, {
+      withFileTypes: true,
+      recursive,
+    });
+
+    // Copy each entry
+    for (const entry of entries) {
+      const srcPath = path.join(src, entry.name);
+      const isDirectory = entry.isDirectory();
+
+      // Apply replacements based on whether it's a file or directory
+      const replacedName = applyReplacements(
+        entry.name,
+        isDirectory ? folderNameReplacements : fileNameReplacements
+      );
+
+      const destPath = path.join(dest, replacedName);
+
+      if (isDirectory) {
+        if (recursive) {
+          await this.copyFolderWithReplacements(srcPath, destPath, options);
+        }
+      } else {
+        await this.copyFile(srcPath, destPath);
+      }
+    }
+  }
+
+  protected async handleFileOperation<T>(
+    operation: () => Promise<T>,
+    path: string,
+    fallbackType: "file" | "directory"
+  ): Promise<T> {
+    try {
+      return await operation();
+    } catch (error) {
+      const fsError = handleOperationError(error, path, fallbackType, this);
+      this.emitWarning({
+        type: "operation_failed",
+        message: fsError.message,
+        path,
+      });
+      throw fsError;
+    }
   }
 }

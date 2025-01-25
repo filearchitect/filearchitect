@@ -1,8 +1,12 @@
 import path from "path";
 import process from "process";
-import { BaseFileSystem } from "./base-filesystem.js";
-import { getStructureFromString } from "./get-structure.js";
-import { CreateStructureOptions, FileSystem } from "./types.js";
+import { getStructure } from "./get-structure.js";
+import { NodeFileSystem } from "./node-filesystem.js";
+import type {
+  CreateStructureOptions,
+  FileNameReplacement,
+  FileSystem,
+} from "./types.js";
 
 /**
  * Creates a file or directory structure from a tab-indented string.
@@ -16,37 +20,34 @@ import { CreateStructureOptions, FileSystem } from "./types.js";
  * @param rootDir The root directory to create the structure in
  * @param options Additional options for structure creation
  */
-export async function createStructureFromString(
+export async function createStructure(
   input: string,
   rootDir: string,
-  options: CreateStructureOptions
+  options: CreateStructureOptions = {}
 ): Promise<void> {
-  const { fs: filesystem, fileNameReplacements, onWarning } = options;
-
-  if (!filesystem) {
-    throw new Error("Filesystem implementation is required");
-  }
-
-  // Set up warning handler if provided
-  if (filesystem instanceof BaseFileSystem && onWarning) {
-    filesystem.setWarningHandler(onWarning);
-  }
+  const {
+    fs: filesystem = new NodeFileSystem(),
+    replacements = { files: [], folders: [] },
+    recursive,
+  } = options;
 
   // Create the root directory if it doesn't exist
-  if (!(await filesystem.exists(rootDir))) {
-    await filesystem.mkdir(rootDir, { recursive: true });
-  }
+  const resolvedRoot = path.resolve(process.cwd(), rootDir);
+  await filesystem.ensureDir(resolvedRoot);
 
   // Get the structure operations
-  const result = await getStructureFromString(input, {
+  const { operations } = await getStructure(input, {
     rootDir,
-    fileNameReplacements,
-    recursive: true,
     fs: filesystem,
+    replacements,
+    recursive,
   });
 
+  const fileNameReplacements = replacements.files || [];
+  const folderNameReplacements = replacements.folders || [];
+
   // Execute each operation
-  for (const operation of result.operations) {
+  for (const operation of operations) {
     try {
       const destinationDir = path.dirname(operation.targetPath);
       if (!(await filesystem.exists(destinationDir))) {
@@ -68,6 +69,10 @@ export async function createStructureFromString(
           }
           await copyFile(operation.sourcePath, operation.targetPath, {
             fs: filesystem,
+            replacements: {
+              files: fileNameReplacements,
+              folders: folderNameReplacements,
+            },
           });
           break;
 
@@ -77,6 +82,10 @@ export async function createStructureFromString(
           }
           await moveFile(operation.sourcePath, operation.targetPath, {
             fs: filesystem,
+            replacements: {
+              files: fileNameReplacements,
+              folders: folderNameReplacements,
+            },
           });
           break;
 
@@ -144,9 +153,15 @@ async function createDirectory(
 async function copyFile(
   sourcePath: string,
   targetPath: string,
-  options: { fs: FileSystem }
+  options: {
+    fs: FileSystem;
+    replacements: {
+      files?: FileNameReplacement[];
+      folders?: FileNameReplacement[];
+    };
+  }
 ): Promise<void> {
-  const { fs: filesystem } = options;
+  const { fs: filesystem, replacements } = options;
 
   const resolvedSource = path.isAbsolute(sourcePath)
     ? sourcePath
@@ -156,7 +171,9 @@ async function copyFile(
   const isDirectory = stat.isDirectory();
 
   if (isDirectory) {
-    await filesystem.copyFolder(resolvedSource, targetPath);
+    await filesystem.copyFolder(resolvedSource, targetPath, {
+      replacements,
+    });
   } else {
     await filesystem.copyFile(resolvedSource, targetPath);
   }
@@ -168,9 +185,15 @@ async function copyFile(
 async function moveFile(
   sourcePath: string,
   targetPath: string,
-  options: { fs: FileSystem }
+  options: {
+    fs: FileSystem;
+    replacements: {
+      files?: FileNameReplacement[];
+      folders?: FileNameReplacement[];
+    };
+  }
 ): Promise<void> {
-  const { fs: filesystem } = options;
+  const { fs: filesystem, replacements } = options;
 
   const resolvedSource = path.isAbsolute(sourcePath)
     ? sourcePath
@@ -180,7 +203,9 @@ async function moveFile(
   const isDirectory = stat.isDirectory();
 
   if (isDirectory) {
-    await filesystem.moveFolder(resolvedSource, targetPath);
+    await filesystem.moveFolder(resolvedSource, targetPath, {
+      replacements,
+    });
   } else {
     await filesystem.rename(resolvedSource, targetPath);
   }

@@ -1,6 +1,6 @@
 // Core functionality
-export { createStructureFromString } from "./create-structure.js";
-export { getStructureFromString } from "./get-structure.js";
+export { createStructure } from "./create-structure.js";
+export { getStructure } from "./get-structure.js";
 export { Messages, createMessage } from "./warnings.js";
 
 // Filesystem implementations
@@ -9,21 +9,18 @@ export { NodeFileSystem } from "./node-filesystem.js";
 
 // Types
 export type {
-  // Core types
+  BaseStructureOptions,
   CreateStructureOptions,
   DirectoryEntry,
-  // Utility types
   FileNameReplacement,
   FileOperation,
   FileStat,
-  // Filesystem types
   FileSystem,
+  FileSystemError,
   FileSystemOptions,
   GetStructureOptions,
-  LogOptions,
-  // Operation types
-  OperationType,
+  GetStructureResult,
+  StructureFrontmatter,
   StructureOperation,
-  StructureResult,
   Warning,
 } from "./types.js";

@@ -24,19 +24,9 @@ export class NodeFileSystem extends BaseFileSystem {
     }
   }
 
-  async mkdir(path: string, options: FileSystemOptions): Promise<void> {
+  async mkdir(path: string): Promise<void> {
     const resolvedPath = resolveTildePath(path);
-    try {
-      await fsPromises.mkdir(resolvedPath, { recursive: options.recursive });
-    } catch (error: any) {
-      if (error.code === "EEXIST") {
-        throw FSError.alreadyExists(path);
-      }
-      if (error.code === "EACCES") {
-        throw FSError.permissionDenied(path);
-      }
-      throw FSError.operationFailed(error.message, path);
-    }
+    await fsPromises.mkdir(resolvedPath, { recursive: true });
   }
 
   async writeFile(path: string, data: string): Promise<void> {
@@ -218,38 +208,7 @@ export class NodeFileSystem extends BaseFileSystem {
     dest: string,
     options?: FileSystemOptions
   ): Promise<void> {
-    const resolvedSrc = resolveTildePath(src);
-    const resolvedDest = resolveTildePath(dest);
-
-    try {
-      // Create destination directory if it doesn't exist
-      await this.mkdir(resolvedDest, { recursive: true });
-
-      // Read source directory contents
-      const entries = await this.readdir(resolvedSrc, { withFileTypes: true });
-
-      // Copy each entry
-      for (const entry of entries) {
-        const srcPath = pathPromises.join(resolvedSrc, entry.name);
-        const destPath = pathPromises.join(resolvedDest, entry.name);
-
-        if (entry.isDirectory()) {
-          // Recursively copy subdirectories
-          await this.copyFolder(srcPath, destPath, options);
-        } else {
-          // Copy files
-          await this.copyFile(srcPath, destPath);
-        }
-      }
-    } catch (error: any) {
-      if (error.code === "ENOENT") {
-        throw FSError.notFound(src);
-      }
-      if (error.code === "EACCES") {
-        throw FSError.permissionDenied(src);
-      }
-      throw FSError.operationFailed(error.message, src);
-    }
+    return this.copyFolderWithReplacements(src, dest, options);
   }
 
   /**
@@ -275,7 +234,11 @@ export class NodeFileSystem extends BaseFileSystem {
     } catch (error: any) {
       // If rename fails (e.g., across devices), fall back to copy + delete
       if (error.code === "EXDEV") {
-        await this.copyFolder(resolvedSrc, resolvedDest, options);
+        await this.copyFolderWithReplacements(
+          resolvedSrc,
+          resolvedDest,
+          options
+        );
         await this.rm(resolvedSrc, { recursive: true });
       } else {
         if (error.code === "ENOENT") {

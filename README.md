@@ -4,22 +4,42 @@ Create file and directory structures from simple text descriptions. Perfect for 
 
 ## Features
 
--   Create directory structures using a simple, indentation-based syntax
--   Copy files and directories from existing locations
--   Import (move) files from other projects
--   Available as both a CLI tool and a TypeScript/JavaScript library
+-   📁 Create directory structures using a simple, indentation-based syntax
+-   📋 Copy files and directories from existing locations
+-   🔄 Move (import) files from other projects
+-   🔧 Replace file and folder names using patterns
+-   🚀 Available as both a CLI tool and a TypeScript/JavaScript library
+-   🌐 Works in both Node.js and browser environments
+-   🔍 Validates operations before execution
+-   ⚡ Supports YAML frontmatter for configuration
+
+## Installation
+
+### CLI Tool
+
+```bash
+npm install -g @filearchitect/cli
+# or
+pnpm add -g @filearchitect/cli
+# or
+yarn global add @filearchitect/cli
+```
+
+### Library
+
+```bash
+npm install @filearchitect/core
+# or
+pnpm add @filearchitect/core
+# or
+yarn add @filearchitect/core
+```
 
 ## Quick Start
 
 ### Using the CLI
 
-1. Install globally:
-
-```bash
-npm install -g @filearchitect/cli
-```
-
-2. Create a structure file (`structure.txt`):
+1. Create a structure file (`structure.txt`):
 
 ```txt
 src
@@ -30,7 +50,7 @@ src
         global.css
 ```
 
-3. Create the structure:
+2. Create the structure:
 
 ```bash
 filearchitect create structure.txt my-project
@@ -38,16 +58,8 @@ filearchitect create structure.txt my-project
 
 ### Using the Library
 
-1. Install the package:
-
-```bash
-npm install @filearchitect/core
-```
-
-2. Use in your code:
-
 ```typescript
-import { createStructureFromString } from "@filearchitect/core";
+import { createStructure } from "@filearchitect/core";
 
 const structure = `
 src
@@ -58,25 +70,54 @@ src
         global.css
 `;
 
-await createStructureFromString(structure, "./my-project");
+// Uses Node.js filesystem by default
+await createStructure(structure, "./my-project");
+
+// Or with options
+await createStructure(structure, "./my-project", {
+    replacements: {
+        files: [{ search: ".js", replace: ".ts" }],
+    },
+});
 ```
 
 ## Syntax Guide
 
-| Syntax              | Description                                                       | Example                         |
-| ------------------- | ----------------------------------------------------------------- | ------------------------------- |
-| `name.ext`          | Creates an empty file                                             | `file.txt`                      |
-| `name`              | Creates a directory                                               | `folder`                        |
-| `[source]`          | Copies a file or folder with its contents                         | `[~/config.json]`               |
-| `[source] > target` | Copies a file or folder with its contents and renames it          | `[~/config.json] > config.json` |
-| `(source)`          | Moves (imports) a file or folder with its contents                | `(~/old.txt)`                   |
-| `(source) > target` | Moves (imports) a file or folder with its contents and renames it | `(~/old.txt) > new.txt`         |
+| Syntax              | Description                                        | Example                         |
+| ------------------- | -------------------------------------------------- | ------------------------------- |
+| `name.ext`          | Creates an empty file                              | `file.txt`                      |
+| `name`              | Creates a directory                                | `folder`                        |
+| `[source]`          | Copies a file or folder with its contents          | `[~/config.json]`               |
+| `[source] > target` | Copies and renames a file or folder                | `[~/config.json] > config.json` |
+| `(source)`          | Moves (imports) a file or folder with its contents | `(~/old.txt)`                   |
+| `(source) > target` | Moves and renames a file or folder                 | `(~/old.txt) > new.txt`         |
 
-### Full Example
+### YAML Frontmatter
 
-Create a complete project structure with file creation, copying, and importing. Learn more on how the syntax works in the [docs](https://filearchitect.com/docs).
+You can include YAML frontmatter at the start of your structure file to configure replacements:
+
+```yaml
+---
+fileReplacements:
+    - search: ".js"
+      replace: ".ts"
+folderReplacements:
+    - search: "api"
+      replace: "rest"
+---
+src
+api
+index.js
+```
+
+### Complete Example
 
 ```txt
+---
+fileReplacements:
+  - search: ".js"
+    replace: ".ts"
+---
 src
     components
         Button.tsx
@@ -88,7 +129,7 @@ src
         global.css
         components.css
     utils
-        api.ts
+        [~/templates/api.js] > api.ts
         helpers.ts
     types
         index.d.ts
@@ -119,18 +160,18 @@ my-project/
 │   │   ├── global.css
 │   │   └── components.css
 │   ├── utils/
-│   │   ├── api.ts
+│   │   ├── api.ts        # Copied and renamed from ~/templates/api.js
 │   │   └── helpers.ts
 │   └── types/
 │       └── index.d.ts
 ├── config/
-│   ├── base.json          # Copied from ~/configs/base.json
-│   └── template/          # Copied from ~/templates/react
+│   ├── base.json         # Copied from ~/configs/base.json
+│   └── template/         # Copied from ~/templates/react
 └── tests/
     ├── components/
-    │   └── Button.test.tsx  # Imported from ~/old-project/components/Button.test.tsx
+    │   └── Button.test.tsx  # Moved from ~/old-project/components/Button.test.tsx
     └── utils/
-        └── helpers.test.ts  # Imported from ~/old-project/utils/helpers.test.ts
+        └── helpers.test.ts  # Moved from ~/old-project/utils/helpers.test.ts
 ```
 
 ## CLI Usage
@@ -139,40 +180,54 @@ my-project/
 # Create a structure
 filearchitect create structure.txt output
 
-# Replace text in file names
-filearchitect create structure.txt output --replace-file user:admin
-
-# Replace text in folder names
-filearchitect create structure.txt output --replace-folder api:rest
-
-# Validate without creating
-filearchitect validate structure.txt
+# Preview operations without creating
+filearchitect show structure.txt output
 ```
 
 ## Library Usage
 
 ```typescript
-import { createStructureFromString } from "@filearchitect/core";
+import { createStructure } from "@filearchitect/core";
 
-// Create a structure
-await createStructureFromString(structureText, "./output");
+// Basic usage with Node.js filesystem (default)
+await createStructure(structureText, "./output");
 
-// Replace names
-await createStructureFromString(structureText, "./output", {
-    replaceInFiles: { user: "admin" },
-    replaceInFolders: { api: "rest" },
+// With replacements
+await createStructure(structureText, "./output", {
+    replacements: {
+        files: [{ search: ".js", replace: ".ts" }],
+        folders: [{ search: "api", replace: "rest" }],
+    },
 });
 
-// Validate only
-await createStructureFromString(structureText, "./output", {
-    validate: true,
+// Preview operations
+const { operations } = await getStructure(structureText, {
+    rootDir: "./output",
 });
+console.log(operations);
 ```
 
-## Packages
+## Browser Usage
 
--   [@filearchitect/cli](packages/cli/README.md): Command-line interface
--   [@filearchitect/core](packages/core/README.md): Core library for programmatic usage
+File Architect also works in the browser with an in-memory filesystem:
+
+```typescript
+import { createStructure, BrowserFileSystem } from "@filearchitect/core";
+
+const fs = new BrowserFileSystem();
+
+// Browser requires explicit filesystem
+await createStructure(structureText, "/", {
+    fs, // Browser filesystem must be provided explicitly
+    replacements: {
+        files: [{ search: ".js", replace: ".ts" }],
+    },
+});
+
+// Access the in-memory files
+const files = fs.getFiles();
+const directories = fs.getDirectories();
+```
 
 ## Contributing
 
@@ -200,3 +255,7 @@ pnpm build
 ```bash
 pnpm cli create structure.txt output
 ```
+
+## License
+
+MIT

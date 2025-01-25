@@ -14,7 +14,7 @@
     "clean": "pnpm -r exec rm -rf dist node_modules",
     "patch": "git add . && git commit -m \"prepare for version bump\" || true && npm --no-git-tag-version version patch && VERSION=$(npm pkg get version | sed 's/\"//g') && pnpm -r exec npm version $VERSION --no-git-tag-version --allow-same-version && git add . && git commit -m \"version bump to $VERSION\" && git tag -f v$VERSION && git push && git push --tags -f && pnpm install && pnpm build && pnpm publish -r --filter @filearchitect/core --filter @filearchitect/cli",
     "publish": "pnpm build && pnpm publish -r --filter @filearchitect/core --filter @filearchitect/cli",
-    "try": "echo 'temp' > temp.txt && pnpm --filter @filearchitect/cli dev create structure.txt output --replace-file main:bar --replace-folder client-name:foo && open packages/cli/output",
+    "try": "rm -rf output && echo 'temp' > temp.txt && pnpm dlx tsx packages/cli/src/cli.ts create structure.txt output && open output",
     "preview": "pnpm dlx tsx packages/cli/src/cli.ts show structure.txt"
   },
   "engines": {

@@ -25,7 +25,7 @@ yarn add @filearchitect/core
 ## Basic Usage
 
 ```typescript
-import { createStructureFromString } from "@filearchitect/core";
+import { createStructure } from "@filearchitect/core";
 import nodeFileSystem from "@filearchitect/core/node";
 
 // Create a directory structure
@@ -39,7 +39,7 @@ src/
     index.ts
 `;
 
-await createStructureFromString(structure, "./my-project", {
+await createStructure(structure, "./my-project", {
     fs: nodeFileSystem,
     isCLI: true,
 });
@@ -197,7 +197,7 @@ src/
     (~/old-utils/helpers.ts) > utils/helpers.ts
 `;
 
-await createStructureFromString(structure, "./my-project", {
+await createStructure(structure, "./my-project", {
     fs: nodeFileSystem,
     isCLI: true,
     fileNameReplacements: [
