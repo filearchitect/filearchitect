@@ -4,13 +4,15 @@ import { NodeFileSystem } from "./node-filesystem.js";
 import { resolveTildePath } from "./path-utils.js";
 import type {
   FileNameReplacement,
-  FileOperation,
   FileSystem,
   GetStructureOptions,
   GetStructureResult,
   StructureFrontmatter,
   StructureOperation,
+  StructureOperationLine,
+  StructureOperationType,
 } from "./types.js";
+import { Replacements } from "./types/operations.js";
 import { handleOperationError } from "./utils/error-utils.js";
 import { applyReplacements } from "./utils/replacements.js";
 import { validateOperation } from "./utils/validation.js";
@@ -31,7 +33,10 @@ function parseLine(
   }
 ): {
   level: number;
-  operation: FileOperation | null;
+  operation: {
+    name: string;
+    sourcePath?: string;
+  } | null;
 } {
   const indentation = line.match(/^\s+/)?.[0] || "";
   const level = indentation.includes("\t")
@@ -69,45 +74,34 @@ function parseOperation(
   line: string,
   fileNameReplacements: FileNameReplacement[],
   folderNameReplacements: FileNameReplacement[]
-): FileOperation {
-  // Move operation (with parentheses)
+): StructureOperationLine | null {
+  // Move operation
   const moveMatch = line.match(/^\((.+?)\)(?:\s*>\s*(.+))?$/);
   if (moveMatch) {
-    const sourcePath = resolveTildePath(moveMatch[1].trim());
-    const result: FileOperation = {
+    return {
       type: "move",
-      sourcePath,
-      name: moveMatch[2]?.trim() || path.basename(sourcePath),
+      sourcePath: resolveTildePath(moveMatch[1].trim()),
+      name: moveMatch[2]?.trim() || path.basename(moveMatch[1].trim()),
     };
-    return result;
   }
 
-  // Copy operation (with or without rename)
+  // Copy operation
   const copyMatch = line.match(/^\[(.+?)\](?:\s*>\s*(.+))?$/);
   if (copyMatch) {
-    const sourcePath = resolveTildePath(copyMatch[1].trim());
-    const targetName = copyMatch[2]?.trim();
-    const result: FileOperation = {
+    return {
       type: "copy",
-      sourcePath,
-      name: targetName || path.basename(sourcePath),
+      sourcePath: resolveTildePath(copyMatch[1].trim()),
+      name: copyMatch[2]?.trim() || path.basename(copyMatch[1].trim()),
     };
-    return result;
   }
 
-  // Regular file or directory - apply replacements immediately
-  const rawName = applyReplacements(
-    line,
-    line.includes(".") ? fileNameReplacements : folderNameReplacements
-  );
-
-  const result: FileOperation = {
+  // Create operation
+  const isDirectory = !path.extname(line);
+  return {
     type: "create",
-    name: rawName,
-    isDirectory: !path.extname(rawName),
-  };
-
-  return result;
+    name: line,
+    isDirectory,
+  } satisfies StructureOperationLine;
 }
 
 /**
@@ -199,7 +193,7 @@ async function processLine(
     files: fileNameReplacements,
     folders: folderNameReplacements,
   });
-  if (!operation) return null;
+  if (!operation || !("type" in operation)) return null;
 
   adjustStack(stack, level);
   const currentDir = stack[stack.length - 1];
@@ -233,9 +227,9 @@ async function processLine(
   );
   const targetPath = path.join(currentDir, replacedName);
 
-  // Create the structure operation
+  // Create the structure operation with proper type assertion
   const structureOperation: StructureOperation = {
-    type: operation.type,
+    type: operation.type as StructureOperationType,
     targetPath,
     sourcePath: operation.sourcePath,
     isDirectory,
@@ -360,7 +354,16 @@ function parseFrontmatter(input: string): {
 
   try {
     const yamlContent = match[1].replace(/\t/g, "  ");
-    const frontmatter = yaml.parse(yamlContent) as StructureFrontmatter;
+
+    const parsed = yaml.parse(yamlContent);
+    const frontmatter = {
+      replacements: {
+        files: parsed.fileReplacements || [],
+        folders: parsed.folderReplacements || [],
+        all: parsed.allReplacements || [],
+      },
+    };
+
     return { frontmatter, content: match[2] };
   } catch (error) {
     // If YAML parsing fails, treat the whole input as content
@@ -369,52 +372,28 @@ function parseFrontmatter(input: string): {
 }
 
 function mergeReplacements(
-  frontmatter: StructureFrontmatter | undefined,
+  frontmatter: StructureFrontmatter | null,
   options: GetStructureOptions
-): {
-  files: FileNameReplacement[];
-  folders: FileNameReplacement[];
-} {
+): Replacements {
+  // De-duplicate replacements with priority: options > frontmatter
+  const allReplacements = [
+    ...(frontmatter?.replacements?.all || []),
+    ...(options.replacements?.all || []),
+  ].filter((v, i, a) => a.findIndex((t) => t.search === v.search) === i);
+
   return {
     files: [
+      ...allReplacements,
       ...(frontmatter?.replacements?.files || []),
       ...(options.replacements?.files || []),
     ],
     folders: [
+      ...allReplacements,
       ...(frontmatter?.replacements?.folders || []),
       ...(options.replacements?.folders || []),
     ],
+    all: allReplacements,
   };
-}
-
-async function processFrontmatter(
-  lines: string[],
-  options: GetStructureOptions
-): Promise<{
-  frontmatter?: StructureFrontmatter;
-  remainingLines: string[];
-}> {
-  if (lines.length > 0 && lines[0].startsWith("---")) {
-    const endIndex = lines.slice(1).findIndex((line) => line.startsWith("---"));
-    if (endIndex !== -1) {
-      const frontmatterLines = lines.slice(1, endIndex + 1);
-      const frontmatter = yaml.parse(
-        frontmatterLines.join("\n")
-      ) as StructureFrontmatter;
-
-      // Merge frontmatter replacements with options
-      const merged = mergeReplacements(frontmatter, options);
-
-      return {
-        frontmatter: {
-          ...frontmatter,
-          replacements: merged,
-        },
-        remainingLines: lines.slice(endIndex + 2),
-      };
-    }
-  }
-  return { frontmatter: undefined, remainingLines: lines };
 }
 
 /**
@@ -438,20 +417,7 @@ export async function getStructure(
   const { frontmatter, content } = parseFrontmatter(input);
 
   // Merge frontmatter and options replacements here
-  const mergedReplacements = {
-    files: [
-      ...(frontmatter?.["allReplacements"] || []),
-      ...(options.replacements?.all || []),
-      ...(frontmatter?.["fileReplacements"] || []),
-      ...(options.replacements?.files || []),
-    ],
-    folders: [
-      ...(frontmatter?.["allReplacements"] || []),
-      ...(options.replacements?.all || []),
-      ...(frontmatter?.["folderReplacements"] || []),
-      ...(options.replacements?.folders || []),
-    ],
-  };
+  const mergedReplacements = mergeReplacements(frontmatter, options);
 
   const mergedOptions: GetStructureOptions = {
     ...options,
@@ -481,8 +447,26 @@ export async function getStructure(
     );
   }
 
-  // Ensure operations are sorted by depth
-  operations.sort((a, b) => a.depth - b.depth);
+  // Replace this:
+  // operations.sort((a, b) => a.depth - b.depth);
+
+  // With depth-first ordering logic:
+  operations.sort((a, b) => {
+    // Split paths into parts for comparison
+    const aParts = a.targetPath.split(path.sep);
+    const bParts = b.targetPath.split(path.sep);
+
+    // Compare path components one by one
+    for (let i = 0; i < Math.min(aParts.length, bParts.length); i++) {
+      if (aParts[i] !== bParts[i]) {
+        // If paths diverge, sort alphabetically at divergence point
+        return aParts[i].localeCompare(bParts[i]);
+      }
+    }
+
+    // If one is parent of the other, parent comes first
+    return aParts.length - bParts.length;
+  });
 
   return {
     operations,

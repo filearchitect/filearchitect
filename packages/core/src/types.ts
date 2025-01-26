@@ -16,10 +16,10 @@ export type {
 
 export type {
   BaseStructureOptions,
-  FileOperation,
   GetStructureOptions,
   GetStructureResult,
   StructureOperation,
+  StructureOperationLine,
   StructureOperationType,
 } from "./types/operations.d.ts";
 
@@ -28,9 +28,11 @@ export type { MessageType, Warning, WarningType } from "./types/warnings.d.ts";
 export { Messages } from "./warnings.js";
 
 export interface StructureFrontmatter {
-  folderReplacements?: FileNameReplacement[];
-  fileReplacements?: FileNameReplacement[];
-  allReplacements?: FileNameReplacement[];
+  replacements?: {
+    folders?: FileNameReplacement[];
+    files?: FileNameReplacement[];
+    all?: FileNameReplacement[];
+  };
 }
 
 export interface CreateStructureOptions extends BaseStructureOptions {

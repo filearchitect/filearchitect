@@ -408,8 +408,8 @@ fileReplacements:
   - search: "file"
     replace: "doc"
 folderReplacements:
-  - search: "folder"
-    replace: "dir"
+    - search: "folder"
+      replace: "dir"
 ---
 root
     global-folder

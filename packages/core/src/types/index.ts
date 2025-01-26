@@ -15,10 +15,10 @@ export type {
 // Operation types
 export type {
   BaseStructureOptions,
-  FileOperation,
   GetStructureOptions,
   GetStructureResult,
   StructureOperation,
+  StructureOperationLine,
   StructureOperationType,
 } from "./operations.js";
 

@@ -4,20 +4,23 @@
 
 import type { FileNameReplacement, FileSystem } from "./filesystem.js";
 
-export type StructureOperationType = "copy" | "move" | "included" | "create";
+export type StructureOperationType = "copy" | "move" | "create" | "included";
 
-/**
- * Represents a file operation parsed from a line in the structure file
- */
-export interface FileOperation {
-  /** Type of operation to perform */
-  type: StructureOperationType;
-  /** Target name for the file/directory */
-  name: string;
-  /** Source path for copy/move operations */
-  sourcePath?: string;
+export interface Replacements {
+  all?: FileNameReplacement[];
+  files?: FileNameReplacement[];
+  folders?: FileNameReplacement[];
 }
 
+export interface StructureOperationLine {
+  /** Type of operation to perform */
+  type: StructureOperationType;
+  /** Source path for copy/move operations */
+  sourcePath?: string;
+  /** Target name for the file/directory */
+  name: string;
+  isDirectory?: boolean;
+}
 /**
  * Base options shared between structure operations
  */
@@ -25,11 +28,7 @@ export interface BaseStructureOptions {
   /** Filesystem implementation to use */
   fs?: FileSystem;
   /** Replacements for file and folder names */
-  replacements?: {
-    all?: FileNameReplacement[];
-    files?: FileNameReplacement[];
-    folders?: FileNameReplacement[];
-  };
+  replacements?: Replacements;
   /** Include recursive contents of directories (default: true) */
   recursive?: boolean;
 }

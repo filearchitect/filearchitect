@@ -215,26 +215,22 @@ fileReplacements:
   test("applies all replacements to both files and folders", async () => {
     const input = `
 src
-    foo-folder
-        foo-file.js
+    client-name-folder
+        client-name_file.ts
 `;
 
-    var create = await createStructure(input, testDir, {
+    await createStructure(input, testDir, {
       replacements: {
-        all: [{ search: "foo", replace: "bar" }],
-        files: [{ search: ".js", replace: ".ts" }],
+        all: [{ search: "client-name", replace: "foo" }],
+        folders: [{ search: "folder", replace: "bar" }],
+        files: [{ search: "_file", replace: "-file" }],
       },
     });
 
-    console.log(create);
-    // Verify directory hierarchy
-
-    const dirPath = path.join(testDir, "src/bar-folder");
+    const dirPath = path.join(testDir, "src/foo-bar");
     expect(await fs.exists(dirPath)).toBe(true);
-    // expect(await fs.isDirectory(dirPath)).toBe(true);
 
-    // Verify file
-    const filePath = path.join(dirPath, "bar-file.ts");
+    const filePath = path.join(dirPath, "foo-file.ts");
     expect(await fs.exists(filePath)).toBe(true);
   });
 
@@ -254,8 +250,6 @@ src
       },
     });
 
-    expect(await fs.exists(path.join(testDir, "src", "document.txt"))).toBe(
-      true
-    );
+    expect(await fs.exists(path.join(testDir, "src/document.txt"))).toBe(true);
   });
 });
