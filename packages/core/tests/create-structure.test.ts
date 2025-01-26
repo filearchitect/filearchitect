@@ -1,3 +1,4 @@
+import os from "os";
 import path from "path";
 import { fileURLToPath } from "url";
 import { afterEach, beforeEach, describe, expect, test } from "vitest";
@@ -7,19 +8,25 @@ import { NodeFileSystem } from "../src/node-filesystem.js";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 describe("createStructure", () => {
-  const testDir = path.join(__dirname, "test-output");
+  let testDir: string;
   const sourceDir = path.join(__dirname, "test-source");
   const fs = new NodeFileSystem();
 
   // Create test directories before each test
   beforeEach(async () => {
-    await fs.ensureEmptyDir(testDir);
+    // Use a unique test directory for each test
+    testDir = path.join(
+      os.tmpdir(),
+      `fa-test-${Date.now()}-${Math.random().toString(36).substring(2, 8)}`
+    );
+    await fs.ensureDir(testDir);
     await fs.ensureEmptyDir(sourceDir);
   });
 
   // Clean up test directories after each test
   afterEach(async () => {
-    await fs.remove(testDir);
+    // Cleanup test directory
+    await fs.remove(testDir).catch(() => {});
     await fs.remove(sourceDir);
   });
 
@@ -127,7 +134,6 @@ src
 `;
 
     await createStructure(input, testDir, {
-      fs,
       replacements: {
         files: [{ search: "NAME", replace: "replaced" }],
       },
@@ -208,26 +214,27 @@ fileReplacements:
 
   test("applies all replacements to both files and folders", async () => {
     const input = `
-src/
-    old-folder/
-        old-file.js
+src
+    foo-folder
+        foo-file.js
 `;
 
-    await createStructure(input, testDir, {
-      fs,
+    var create = await createStructure(input, testDir, {
       replacements: {
-        all: [{ search: "old", replace: "new" }],
+        all: [{ search: "foo", replace: "bar" }],
         files: [{ search: ".js", replace: ".ts" }],
       },
     });
 
+    console.log(create);
     // Verify directory hierarchy
-    const dirPath = path.join(testDir, "src/new-folder");
-    // expect(await fs.exists(dirPath)).toBe(true);
+
+    const dirPath = path.join(testDir, "src/bar-folder");
+    expect(await fs.exists(dirPath)).toBe(true);
     // expect(await fs.isDirectory(dirPath)).toBe(true);
 
     // Verify file
-    const filePath = path.join(dirPath, "new-file.ts");
+    const filePath = path.join(dirPath, "bar-file.ts");
     expect(await fs.exists(filePath)).toBe(true);
   });
 
@@ -238,7 +245,6 @@ src
 `;
 
     await createStructure(input, testDir, {
-      fs,
       replacements: {
         all: [{ search: "test-", replace: "" }],
         files: [

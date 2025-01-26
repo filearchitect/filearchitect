@@ -20,9 +20,16 @@ import { createMessage } from "./warnings.js";
  * Parses a line into an operation and indentation level.
  *
  * @param line The line to parse
+ * @param replacements The replacements for the line
  * @returns The indentation level and parsed operation
  */
-function parseLine(line: string): {
+function parseLine(
+  line: string,
+  replacements: {
+    files: FileNameReplacement[];
+    folders: FileNameReplacement[];
+  }
+): {
   level: number;
   operation: FileOperation | null;
 } {
@@ -36,7 +43,14 @@ function parseLine(line: string): {
     return { level, operation: null };
   }
 
-  return { level, operation: parseOperation(trimmedLine) };
+  return {
+    level,
+    operation: parseOperation(
+      trimmedLine,
+      replacements.files,
+      replacements.folders
+    ),
+  };
 }
 
 /**
@@ -47,9 +61,15 @@ function parseLine(line: string): {
  * - name : Regular file/directory creation
  *
  * @param line The trimmed line to parse
+ * @param fileNameReplacements The replacements for file names
+ * @param folderNameReplacements The replacements for folder names
  * @returns The parsed file operation
  */
-function parseOperation(line: string): FileOperation {
+function parseOperation(
+  line: string,
+  fileNameReplacements: FileNameReplacement[],
+  folderNameReplacements: FileNameReplacement[]
+): FileOperation {
   // Move operation (with parentheses)
   const moveMatch = line.match(/^\((.+?)\)(?:\s*>\s*(.+))?$/);
   if (moveMatch) {
@@ -75,12 +95,18 @@ function parseOperation(line: string): FileOperation {
     return result;
   }
 
-  // Regular file or directory
+  // Regular file or directory - apply replacements immediately
+  const rawName = applyReplacements(
+    line,
+    line.includes(".") ? fileNameReplacements : folderNameReplacements
+  );
+
   const result: FileOperation = {
     type: "create",
-    // type: path.extname(line) ? "file" : "directory",
-    name: line,
+    name: rawName,
+    isDirectory: !path.extname(rawName),
   };
+
   return result;
 }
 
@@ -169,7 +195,10 @@ async function processLine(
   const folderNameReplacements = options.replacements?.folders || [];
 
   const { fs } = options;
-  const { level, operation } = parseLine(line);
+  const { level, operation } = parseLine(line, {
+    files: fileNameReplacements,
+    folders: folderNameReplacements,
+  });
   if (!operation) return null;
 
   adjustStack(stack, level);
@@ -337,6 +366,55 @@ function parseFrontmatter(input: string): {
     // If YAML parsing fails, treat the whole input as content
     return { frontmatter: null, content: input };
   }
+}
+
+function mergeReplacements(
+  frontmatter: StructureFrontmatter | undefined,
+  options: GetStructureOptions
+): {
+  files: FileNameReplacement[];
+  folders: FileNameReplacement[];
+} {
+  return {
+    files: [
+      ...(frontmatter?.replacements?.files || []),
+      ...(options.replacements?.files || []),
+    ],
+    folders: [
+      ...(frontmatter?.replacements?.folders || []),
+      ...(options.replacements?.folders || []),
+    ],
+  };
+}
+
+async function processFrontmatter(
+  lines: string[],
+  options: GetStructureOptions
+): Promise<{
+  frontmatter?: StructureFrontmatter;
+  remainingLines: string[];
+}> {
+  if (lines.length > 0 && lines[0].startsWith("---")) {
+    const endIndex = lines.slice(1).findIndex((line) => line.startsWith("---"));
+    if (endIndex !== -1) {
+      const frontmatterLines = lines.slice(1, endIndex + 1);
+      const frontmatter = yaml.parse(
+        frontmatterLines.join("\n")
+      ) as StructureFrontmatter;
+
+      // Merge frontmatter replacements with options
+      const merged = mergeReplacements(frontmatter, options);
+
+      return {
+        frontmatter: {
+          ...frontmatter,
+          replacements: merged,
+        },
+        remainingLines: lines.slice(endIndex + 2),
+      };
+    }
+  }
+  return { frontmatter: undefined, remainingLines: lines };
 }
 
 /**

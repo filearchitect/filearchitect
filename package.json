@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
     "build": "pnpm -r build",
-    "test": "vitest run --config ./vitest.config.ts",
+    "test": "vitest run --config ./vitest.config.ts --reporter verbose",
     "test:watch": "vitest --config ./vitest.config.ts",
     "demo": "pnpm --filter browser-demo dev",
     "dev": "pnpm --filter @filearchitect/core dev",

@@ -7,7 +7,10 @@ import type {
   CreateStructureOptions,
   FileNameReplacement,
   FileSystem,
+  GetStructureResult,
+  StructureOperation,
 } from "./types.js";
+import { applyReplacements } from "./utils/replacements.js";
 
 /**
  * Creates a file or directory structure from a tab-indented string.
@@ -25,42 +28,48 @@ export async function createStructure(
   input: string,
   rootDir: string,
   options: CreateStructureOptions = {}
-): Promise<void> {
-  const {
-    fs: filesystem = new NodeFileSystem(),
-    replacements = { files: [], folders: [], all: [] },
-    recursive,
-  } = options;
+): Promise<GetStructureResult> {
+  const fs = options.fs || new NodeFileSystem();
+  const operations: StructureOperation[] = [];
 
-  // Create the root directory if it doesn't exist
-  const resolvedRoot = path.resolve(process.cwd(), rootDir);
-  await filesystem.ensureDir(resolvedRoot);
-
-  // Get the structure operations
-  const { operations } = await getStructure(input, {
+  // Apply replacements to root directory if needed
+  const replacedRoot = applyReplacements(
     rootDir,
-    fs: filesystem,
-    replacements,
-    recursive,
+    options.replacements?.folders || []
+  );
+
+  // Ensure root directory exists and is empty
+  await fs.ensureEmptyDir(replacedRoot);
+
+  // Process structure
+  const result = await getStructure(input, {
+    ...options,
+    rootDir: replacedRoot,
+    fs,
   });
+
+  const { operations: structureOperations } = result;
+
+  const { replacements = { files: [], folders: [], all: [] }, recursive } =
+    options;
 
   const fileNameReplacements = replacements.files || [];
   const folderNameReplacements = replacements.folders || [];
 
   // Execute each operation
-  for (const operation of operations) {
+  for (const operation of structureOperations) {
     try {
       const destinationDir = path.dirname(operation.targetPath);
-      if (!(await filesystem.exists(destinationDir))) {
-        await createDirectory(destinationDir, { fs: filesystem });
+      if (!(await fs.exists(destinationDir))) {
+        await createDirectory(destinationDir, { fs });
       }
 
       switch (operation.type) {
         case "create":
           if (operation.isDirectory) {
-            await createDirectory(operation.targetPath, { fs: filesystem });
+            await createDirectory(operation.targetPath, { fs });
           } else {
-            await createEmptyFile(operation.targetPath, { fs: filesystem });
+            await createEmptyFile(operation.targetPath, { fs });
           }
           break;
 
@@ -69,7 +78,7 @@ export async function createStructure(
             throw new Error("Source path is required for copy operations");
           }
           await copyFile(operation.sourcePath, operation.targetPath, {
-            fs: filesystem,
+            fs,
             replacements: {
               all: replacements.all || [],
               files: fileNameReplacements,
@@ -83,7 +92,7 @@ export async function createStructure(
             throw new Error("Source path is required for move operations");
           }
           await moveFile(operation.sourcePath, operation.targetPath, {
-            fs: filesystem,
+            fs,
             replacements: {
               all: replacements.all || [],
               files: fileNameReplacements,
@@ -97,21 +106,21 @@ export async function createStructure(
           break;
       }
     } catch (error: any) {
-      if (filesystem.emitWarning) {
+      if (fs.emitWarning) {
         if (error.code === "ENOENT") {
-          filesystem.emitWarning({
+          fs.emitWarning({
             type: "missing_source",
             message: `Source path not found: ${error.path}`,
             path: error.path,
           });
           // Create empty file/directory as fallback
           if (operation.isDirectory) {
-            await createDirectory(operation.targetPath, { fs: filesystem });
+            await createDirectory(operation.targetPath, { fs });
           } else {
-            await createEmptyFile(operation.targetPath, { fs: filesystem });
+            await createEmptyFile(operation.targetPath, { fs });
           }
         } else {
-          filesystem.emitWarning({
+          fs.emitWarning({
             type: "operation_failed",
             message: error.message,
             path: operation.targetPath,
@@ -120,6 +129,8 @@ export async function createStructure(
       }
     }
   }
+
+  return result;
 }
 
 /**
