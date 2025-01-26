@@ -367,15 +367,6 @@ export abstract class BaseFileSystem implements FileSystem {
   }
 
   /**
-   * Watches a path for changes.
-   * Returns a function to stop watching.
-   */
-  abstract watch(
-    path: string,
-    callback: (eventType: "add" | "change" | "unlink", path: string) => void
-  ): Promise<() => void>;
-
-  /**
    * Checks if a path matches a glob pattern.
    */
   matchesPattern(path: string, pattern: string): boolean {

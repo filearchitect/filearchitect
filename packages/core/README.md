@@ -9,7 +9,7 @@ Core functionality for FileArchitect, providing a unified filesystem interface t
 -   🌐 Works in both Node.js and browser environments
 -   🛡️ Type-safe with TypeScript
 -   🧰 Rich set of filesystem utilities
--   🔍 Glob pattern matching and file watching
+-   🔍 Glob pattern matching
 -   🛠️ Advanced path manipulation utilities
 
 ## Installation
@@ -155,11 +155,10 @@ The package provides a rich set of filesystem operations through the `FileSystem
 -   `getAllFiles(dirPath)` - Get all files in a directory recursively
 -   `getAllDirectories(dirPath)` - Get all directories in a directory recursively
 
-### Path Manipulation and Watching
+### Path Manipulation and Patterns
 
 -   `getRelativePath(from, to)` - Get relative path between two absolute paths
 -   `glob(pattern)` - Find files matching a glob pattern
--   `watch(path, callback)` - Watch for file system changes
 -   `matchesPattern(path, pattern)` - Check if a path matches a glob pattern
 -   `getCommonParent(...paths)` - Get common parent directory of multiple paths
 
@@ -230,16 +229,11 @@ console.log("All source directories:", dirs);
 const config = await nodeFileSystem.readFileOrDefault("./config.json", "{}");
 ```
 
-### Using Glob Patterns and File Watching
+### Using Glob Patterns
 
 ```typescript
 // Find all TypeScript files in src directory
 const tsFiles = await nodeFileSystem.glob("src/**/*.ts");
-
-// Watch for changes in the src directory
-const stopWatching = await nodeFileSystem.watch("src", (eventType, path) => {
-    console.log(`${eventType} event for ${path}`);
-});
 
 // Get relative path between directories
 const relativePath = await nodeFileSystem.getRelativePath("/a/b/c", "/a/d/e");

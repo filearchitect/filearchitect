@@ -92,9 +92,6 @@ class MockFileSystem implements FileSystem {
   async glob(): Promise<string[]> {
     return [];
   }
-  async watch(): Promise<() => void> {
-    return () => {};
-  }
   matchesPattern(): boolean {
     return false;
   }

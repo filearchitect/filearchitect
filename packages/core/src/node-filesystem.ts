@@ -1,6 +1,4 @@
-import { watch as fsWatch } from "node:fs";
 import * as fsPromises from "node:fs/promises";
-import * as pathPromises from "node:path";
 import { BaseFileSystem } from "./base-filesystem.js";
 import { FSError } from "./errors.js";
 import { resolveTildePath } from "./path-utils.js";
@@ -250,41 +248,6 @@ export class NodeFileSystem extends BaseFileSystem {
         throw FSError.operationFailed(error.message, src);
       }
     }
-  }
-
-  /**
-   * Watch a file or directory for changes
-   * @param path The path to watch
-   * @param callback Callback to be called when changes occur
-   * @returns A function to stop watching
-   */
-  async watch(
-    path: string,
-    callback: (eventType: "add" | "change" | "unlink", path: string) => void
-  ): Promise<() => void> {
-    const watcher = fsWatch(
-      path,
-      { recursive: true },
-      (eventType, filename) => {
-        if (!filename) return;
-
-        // Map fs.watch events to our event types
-        switch (eventType) {
-          case "rename":
-            // For rename, we need to check if the file exists to determine if it's an add or unlink
-            fsPromises
-              .access(pathPromises.join(path, filename))
-              .then(() => callback("add", filename))
-              .catch(() => callback("unlink", filename));
-            break;
-          case "change":
-            callback("change", filename);
-            break;
-        }
-      }
-    );
-
-    return () => watcher.close();
   }
 }
 
