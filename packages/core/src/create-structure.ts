@@ -10,7 +10,6 @@ import type {
   GetStructureResult,
   StructureOperation,
 } from "./types.js";
-import { applyReplacements } from "./utils/replacements.js";
 
 /**
  * Creates a file or directory structure from a tab-indented string.
@@ -32,11 +31,8 @@ export async function createStructure(
   const fs = options.fs || new NodeFileSystem();
   const operations: StructureOperation[] = [];
 
-  // Apply replacements to root directory if needed
-  const replacedRoot = applyReplacements(
-    rootDir,
-    options.replacements?.folders || []
-  );
+  // Remove replacements from root directory processing
+  const replacedRoot = rootDir;
 
   // Ensure root directory exists and is empty
   await fs.ensureEmptyDir(replacedRoot);
