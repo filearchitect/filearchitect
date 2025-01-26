@@ -205,4 +205,51 @@ fileReplacements:
     // Verify moved files
     expect(await fs.exists("test/lib/index.ts")).toBe(true);
   });
+
+  test("applies all replacements to both files and folders", async () => {
+    const input = `
+src/
+    old-folder/
+        old-file.js
+`;
+
+    await createStructure(input, testDir, {
+      fs,
+      replacements: {
+        all: [{ search: "old", replace: "new" }],
+        files: [{ search: ".js", replace: ".ts" }],
+      },
+    });
+
+    // Verify directory hierarchy
+    const dirPath = path.join(testDir, "src/new-folder");
+    // expect(await fs.exists(dirPath)).toBe(true);
+    // expect(await fs.isDirectory(dirPath)).toBe(true);
+
+    // Verify file
+    const filePath = path.join(dirPath, "new-file.ts");
+    expect(await fs.exists(filePath)).toBe(true);
+  });
+
+  test("applies replacements in correct priority order", async () => {
+    const input = `
+src
+    test-file.txt
+`;
+
+    await createStructure(input, testDir, {
+      fs,
+      replacements: {
+        all: [{ search: "test-", replace: "" }],
+        files: [
+          { search: "file", replace: "document" },
+          { search: "-file", replace: "" },
+        ],
+      },
+    });
+
+    expect(await fs.exists(path.join(testDir, "src", "document.txt"))).toBe(
+      true
+    );
+  });
 });

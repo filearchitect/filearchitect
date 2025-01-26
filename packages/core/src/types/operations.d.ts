@@ -26,6 +26,7 @@ export interface BaseStructureOptions {
   fs?: FileSystem;
   /** Replacements for file and folder names */
   replacements?: {
+    all?: FileNameReplacement[];
     files?: FileNameReplacement[];
     folders?: FileNameReplacement[];
   };

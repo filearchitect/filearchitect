@@ -398,4 +398,65 @@ root
       },
     ]);
   });
+
+  test("applies all replacements from frontmatter and options", async () => {
+    const input = `---
+allReplacements:
+  - search: "global"
+    replace: "replaced"
+fileReplacements:
+  - search: "file"
+    replace: "doc"
+folderReplacements:
+  - search: "folder"
+    replace: "dir"
+---
+root
+    global-folder
+        global-file.txt
+`;
+
+    const result = await getStructure(input, {
+      rootDir: "/test",
+      fs,
+      replacements: {
+        all: [{ search: "replaced", replace: "all-option" }],
+        files: [{ search: "doc", replace: "document" }],
+      },
+    });
+
+    const operations = result.operations.map((op) => op.targetPath);
+
+    expect(operations).toEqual([
+      "/test/root",
+      "/test/root/all-option-dir",
+      "/test/root/all-option-dir/all-option-document.txt",
+    ]);
+  });
+
+  test("combines all replacements with type-specific", async () => {
+    const input = `
+src
+    (shared/component) > old-component
+`;
+
+    const fs = new MockFileSystem({
+      "/shared/component": true,
+    });
+
+    const result = await getStructure(input, {
+      rootDir: "/test",
+      fs,
+      replacements: {
+        all: [{ search: "old", replace: "new" }],
+        folders: [{ search: "component", replace: "module" }],
+      },
+    });
+
+    expect(result.operations[1]).toMatchObject({
+      type: "move",
+      targetPath: "/test/src/new-module",
+      isDirectory: true,
+    });
+  });
 });

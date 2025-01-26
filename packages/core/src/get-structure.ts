@@ -105,8 +105,8 @@ async function listDirectoryContents(
   targetPath: string,
   baseDepth: number,
   options: {
-    fileNameReplacements?: FileNameReplacement[];
-    folderNameReplacements?: FileNameReplacement[];
+    fileNameReplacements: FileNameReplacement[];
+    folderNameReplacements: FileNameReplacement[];
   }
 ): Promise<StructureOperation[]> {
   const results: StructureOperation[] = [];
@@ -120,6 +120,7 @@ async function listDirectoryContents(
         ? options.folderNameReplacements
         : options.fileNameReplacements
     );
+
     const currentSourcePath = path.join(sourcePath, entry.name);
     const currentTargetPath = path.join(targetPath, replacedName);
 
@@ -163,14 +164,31 @@ async function processLine(
   stack: string[],
   options: GetStructureOptions
 ): Promise<StructureOperation | null> {
+  // Get pre-merged replacements from options
   const fileNameReplacements = options.replacements?.files || [];
   const folderNameReplacements = options.replacements?.folders || [];
+
   const { fs } = options;
   const { level, operation } = parseLine(line);
   if (!operation) return null;
 
   adjustStack(stack, level);
   const currentDir = stack[stack.length - 1];
+
+  // Handle directory markers with explicit trailing slash
+  const directoryMatch = line.match(/^(\s*)(.*\/)\s*$/);
+  if (directoryMatch) {
+    const rawName = directoryMatch[2].trim().replace(/\/$/, "");
+    const replacedName = applyReplacements(rawName, folderNameReplacements);
+
+    return {
+      type: "create",
+      name: replacedName + "/",
+      targetPath: path.join(currentDir, replacedName),
+      isDirectory: true,
+      depth: directoryMatch[1].length / 2,
+    };
+  }
 
   // For copy/move operations, check the target name (operation.name)
   // For create operations, check the line itself to handle directories correctly
@@ -341,25 +359,25 @@ export async function getStructure(
   const { rootDir } = options;
   const { frontmatter, content } = parseFrontmatter(input);
 
-  // Update replacement merging to combine frontmatter and options
-  const fileNameReplacements = [
-    ...(options.replacements?.files || []),
-    ...(frontmatter?.["fileReplacements"] || []),
-  ];
-  const folderNameReplacements = [
-    ...(options.replacements?.folders || []),
-    ...(frontmatter?.["folderReplacements"] || []),
-  ];
+  // Merge frontmatter and options replacements here
+  const mergedReplacements = {
+    files: [
+      ...(frontmatter?.["allReplacements"] || []),
+      ...(options.replacements?.all || []),
+      ...(frontmatter?.["fileReplacements"] || []),
+      ...(options.replacements?.files || []),
+    ],
+    folders: [
+      ...(frontmatter?.["allReplacements"] || []),
+      ...(options.replacements?.all || []),
+      ...(frontmatter?.["folderReplacements"] || []),
+      ...(options.replacements?.folders || []),
+    ],
+  };
 
-  // Create merged options with the replacements
-  const fs = options.fs || new NodeFileSystem();
   const mergedOptions: GetStructureOptions = {
     ...options,
-    replacements: {
-      files: fileNameReplacements,
-      folders: folderNameReplacements,
-    },
-    fs,
+    replacements: mergedReplacements,
   };
 
   const operations: StructureOperation[] = [];
@@ -374,24 +392,27 @@ export async function getStructure(
 
     const directoryContents = await handleDirectoryContents(
       structureOperation,
-      fs,
+      mergedOptions.fs || new NodeFileSystem(),
       mergedOptions
     );
     operations.push(...directoryContents);
 
-    await handleFileSourceCheck(structureOperation, fs);
+    await handleFileSourceCheck(
+      structureOperation,
+      mergedOptions.fs || new NodeFileSystem()
+    );
   }
+
+  // Ensure operations are sorted by depth
+  operations.sort((a, b) => a.depth - b.depth);
 
   return {
     operations,
     options: {
       rootDir,
-      replacements: {
-        files: fileNameReplacements,
-        folders: folderNameReplacements,
-      },
+      replacements: mergedReplacements,
       recursive: options.recursive ?? true,
-      fs,
+      fs: mergedOptions.fs || new NodeFileSystem(),
     },
   };
 }

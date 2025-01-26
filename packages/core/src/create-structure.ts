@@ -1,4 +1,5 @@
 import path from "path";
+
 import process from "process";
 import { getStructure } from "./get-structure.js";
 import { NodeFileSystem } from "./node-filesystem.js";
@@ -27,7 +28,7 @@ export async function createStructure(
 ): Promise<void> {
   const {
     fs: filesystem = new NodeFileSystem(),
-    replacements = { files: [], folders: [] },
+    replacements = { files: [], folders: [], all: [] },
     recursive,
   } = options;
 
@@ -70,6 +71,7 @@ export async function createStructure(
           await copyFile(operation.sourcePath, operation.targetPath, {
             fs: filesystem,
             replacements: {
+              all: replacements.all || [],
               files: fileNameReplacements,
               folders: folderNameReplacements,
             },
@@ -83,6 +85,7 @@ export async function createStructure(
           await moveFile(operation.sourcePath, operation.targetPath, {
             fs: filesystem,
             replacements: {
+              all: replacements.all || [],
               files: fileNameReplacements,
               folders: folderNameReplacements,
             },
@@ -156,6 +159,7 @@ async function copyFile(
   options: {
     fs: FileSystem;
     replacements: {
+      all?: FileNameReplacement[];
       files?: FileNameReplacement[];
       folders?: FileNameReplacement[];
     };
@@ -188,6 +192,7 @@ async function moveFile(
   options: {
     fs: FileSystem;
     replacements: {
+      all?: FileNameReplacement[];
       files?: FileNameReplacement[];
       folders?: FileNameReplacement[];
     };

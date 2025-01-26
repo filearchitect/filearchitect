@@ -2,8 +2,8 @@
  * Consolidated type definitions for File Architect Core
  */
 
-import type { FileNameReplacement, FileSystem } from "./types/filesystem.js";
-import type { BaseStructureOptions } from "./types/operations.js";
+import type { FileNameReplacement, FileSystem } from "./types/filesystem.d.ts";
+import type { BaseStructureOptions } from "./types/operations.d.ts";
 
 export type {
   DirectoryEntry,
@@ -12,7 +12,7 @@ export type {
   FileSystem,
   FileSystemError,
   FileSystemOptions,
-} from "./types/filesystem.js";
+} from "./types/filesystem.d.ts";
 
 export type {
   BaseStructureOptions,
@@ -21,15 +21,16 @@ export type {
   GetStructureResult,
   StructureOperation,
   StructureOperationType,
-} from "./types/operations.js";
+} from "./types/operations.d.ts";
 
-export type { MessageType, Warning, WarningType } from "./types/warnings.js";
+export type { MessageType, Warning, WarningType } from "./types/warnings.d.ts";
 
 export { Messages } from "./warnings.js";
 
 export interface StructureFrontmatter {
   folderReplacements?: FileNameReplacement[];
   fileReplacements?: FileNameReplacement[];
+  allReplacements?: FileNameReplacement[];
 }
 
 export interface CreateStructureOptions extends BaseStructureOptions {

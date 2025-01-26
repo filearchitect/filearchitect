@@ -8,6 +8,7 @@ export interface FileSystemOptions {
   recursive?: boolean;
   withFileTypes?: boolean;
   replacements?: {
+    all?: FileNameReplacement[];
     files?: FileNameReplacement[];
     folders?: FileNameReplacement[];
   };
