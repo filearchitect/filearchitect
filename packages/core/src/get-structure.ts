@@ -4,12 +4,13 @@ import { NodeFileSystem } from "./node-filesystem.js";
 import { resolveTildePath } from "./path-utils.js";
 import type {
   FileNameReplacement,
-  FileOperation,
   FileSystem,
   GetStructureOptions,
   GetStructureResult,
   StructureFrontmatter,
   StructureOperation,
+  StructureOperationLine,
+  StructureOperationType,
 } from "./types.js";
 import { Replacements } from "./types/operations.js";
 import { handleOperationError } from "./utils/error-utils.js";
@@ -32,7 +33,10 @@ function parseLine(
   }
 ): {
   level: number;
-  operation: FileOperation | null;
+  operation: {
+    name: string;
+    sourcePath?: string;
+  } | null;
 } {
   const indentation = line.match(/^\s+/)?.[0] || "";
   const level = indentation.includes("\t")
@@ -70,52 +74,34 @@ function parseOperation(
   line: string,
   fileNameReplacements: FileNameReplacement[],
   folderNameReplacements: FileNameReplacement[]
-): FileOperation {
-  // Move operation (with parentheses)
+): StructureOperationLine | null {
+  // Move operation
   const moveMatch = line.match(/^\((.+?)\)(?:\s*>\s*(.+))?$/);
   if (moveMatch) {
-    const sourcePath = resolveTildePath(moveMatch[1].trim());
-    const result: FileOperation = {
+    return {
       type: "move",
-      sourcePath,
-      name: moveMatch[2]?.trim() || path.basename(sourcePath),
+      sourcePath: resolveTildePath(moveMatch[1].trim()),
+      name: moveMatch[2]?.trim() || path.basename(moveMatch[1].trim()),
     };
-    return result;
   }
 
-  // Copy operation (with or without rename)
+  // Copy operation
   const copyMatch = line.match(/^\[(.+?)\](?:\s*>\s*(.+))?$/);
   if (copyMatch) {
-    const sourcePath = resolveTildePath(copyMatch[1].trim());
-    const targetName = copyMatch[2]?.trim();
-    const result: FileOperation = {
+    return {
       type: "copy",
-      sourcePath,
-      name: targetName || path.basename(sourcePath),
+      sourcePath: resolveTildePath(copyMatch[1].trim()),
+      name: copyMatch[2]?.trim() || path.basename(copyMatch[1].trim()),
     };
-    return result;
   }
 
-  // Regular file or directory - apply replacements immediately
-  const rawName = applyReplacements(
-    line,
-    line.includes(".") ? fileNameReplacements : folderNameReplacements
-  );
-
-  const result: FileOperation = {
+  // Create operation
+  const isDirectory = !path.extname(line);
+  return {
     type: "create",
-    name: rawName,
-    isDirectory: !path.extname(rawName),
-  };
-
-  // Apply replacements based on operation type
-  const isDirectory = result.name.includes("/") || !path.extname(result.name);
-  const replacements = isDirectory
-    ? folderNameReplacements
-    : fileNameReplacements;
-  result.name = applyReplacements(result.name, replacements);
-
-  return result;
+    name: line,
+    isDirectory,
+  } satisfies StructureOperationLine;
 }
 
 /**
@@ -207,7 +193,7 @@ async function processLine(
     files: fileNameReplacements,
     folders: folderNameReplacements,
   });
-  if (!operation) return null;
+  if (!operation || !("type" in operation)) return null;
 
   adjustStack(stack, level);
   const currentDir = stack[stack.length - 1];
@@ -241,9 +227,9 @@ async function processLine(
   );
   const targetPath = path.join(currentDir, replacedName);
 
-  // Create the structure operation
+  // Create the structure operation with proper type assertion
   const structureOperation: StructureOperation = {
-    type: operation.type,
+    type: operation.type as StructureOperationType,
     targetPath,
     sourcePath: operation.sourcePath,
     isDirectory,

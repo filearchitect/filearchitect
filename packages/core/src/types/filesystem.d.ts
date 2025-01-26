@@ -48,23 +48,19 @@ export interface FileSystemError extends Error {
  * Implemented by NodeFileSystem, BrowserFileSystem, etc.
  */
 export interface FileSystem {
-  // Basic operations
-  exists(path: string): boolean | Promise<boolean>;
-  mkdir(path: string, options?: FileSystemOptions): void | Promise<void>;
-  writeFile(path: string, data: string): void | Promise<void>;
-  readFile(path: string): string | Promise<string>;
-  stat(path: string): FileStat | Promise<FileStat>;
-  readdir(
-    path: string,
-    options?: FileSystemOptions
-  ): DirectoryEntry[] | Promise<DirectoryEntry[]>;
-  rm(path: string, options?: FileSystemOptions): void | Promise<void>;
-  unlink(path: string): void | Promise<void>;
-  rename(oldPath: string, newPath: string): void | Promise<void>;
-  isDirectory(path: string): Promise<boolean>;
+  // Core operations
+  exists(path: string): Promise<boolean>;
+  mkdir(path: string, options?: FileSystemOptions): Promise<void>;
+  writeFile(path: string, data: string): Promise<void>;
+  readFile(path: string): Promise<string>;
+  stat(path: string): Promise<FileStat>;
+  readdir(path: string, options?: FileSystemOptions): Promise<DirectoryEntry[]>;
+  rm(path: string, options?: FileSystemOptions): Promise<void>;
+  unlink(path: string): Promise<void>;
+  rename(oldPath: string, newPath: string): Promise<void>;
 
-  // High-level operations
-  copyFile(src: string, dest: string): void | Promise<void>;
+  // Extended operations
+  copyFile(src: string, dest: string): Promise<void>;
   copyFolder(
     src: string,
     dest: string,

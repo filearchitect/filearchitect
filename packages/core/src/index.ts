@@ -13,7 +13,6 @@ export type {
   CreateStructureOptions,
   DirectoryEntry,
   FileNameReplacement,
-  FileOperation,
   FileStat,
   FileSystem,
   FileSystemError,
@@ -22,5 +21,6 @@ export type {
   GetStructureResult,
   StructureFrontmatter,
   StructureOperation,
+  StructureOperationLine,
   Warning,
 } from "./types.js";

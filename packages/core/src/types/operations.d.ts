@@ -4,7 +4,7 @@
 
 import type { FileNameReplacement, FileSystem } from "./filesystem.js";
 
-export type StructureOperationType = "copy" | "move" | "included" | "create";
+export type StructureOperationType = "copy" | "move" | "create" | "included";
 
 export interface Replacements {
   all?: FileNameReplacement[];
@@ -12,6 +12,15 @@ export interface Replacements {
   folders?: FileNameReplacement[];
 }
 
+export interface StructureOperationLine {
+  /** Type of operation to perform */
+  type: StructureOperationType;
+  /** Source path for copy/move operations */
+  sourcePath?: string;
+  /** Target name for the file/directory */
+  name: string;
+  isDirectory?: boolean;
+}
 /**
  * Base options shared between structure operations
  */

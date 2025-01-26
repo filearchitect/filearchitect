@@ -96,10 +96,6 @@ export async function createStructure(
             },
           });
           break;
-
-        case "included":
-          // These are already handled by the copy/move operations
-          break;
       }
     } catch (error: any) {
       if (fs.emitWarning) {

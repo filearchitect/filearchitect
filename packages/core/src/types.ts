@@ -16,10 +16,10 @@ export type {
 
 export type {
   BaseStructureOptions,
-  FileOperation,
   GetStructureOptions,
   GetStructureResult,
   StructureOperation,
+  StructureOperationLine,
   StructureOperationType,
 } from "./types/operations.d.ts";
 

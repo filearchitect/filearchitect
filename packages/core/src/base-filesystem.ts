@@ -30,14 +30,11 @@ export abstract class BaseFileSystem implements FileSystem {
     this.onWarning?.(warning);
   }
 
-  abstract exists(path: string): boolean | Promise<boolean>;
-  abstract mkdir(
-    path: string,
-    options?: FileSystemOptions
-  ): void | Promise<void>;
-  abstract writeFile(path: string, data: string): void | Promise<void>;
-  abstract readFile(path: string): string | Promise<string>;
-  abstract copyFile(src: string, dest: string): void | Promise<void>;
+  abstract exists(path: string): Promise<boolean>;
+  abstract mkdir(path: string, options?: FileSystemOptions): Promise<void>;
+  abstract writeFile(path: string, data: string): Promise<void>;
+  abstract readFile(path: string): Promise<string>;
+  abstract copyFile(src: string, dest: string): Promise<void>;
   abstract copyFolder(
     src: string,
     dest: string,
@@ -48,14 +45,14 @@ export abstract class BaseFileSystem implements FileSystem {
     dest: string,
     options?: FileSystemOptions
   ): Promise<void>;
-  abstract stat(path: string): FileStat | Promise<FileStat>;
+  abstract stat(path: string): Promise<FileStat>;
   abstract readdir(
     path: string,
     options?: FileSystemOptions
-  ): DirectoryEntry[] | Promise<DirectoryEntry[]>;
-  abstract rm(path: string, options?: FileSystemOptions): void | Promise<void>;
-  abstract unlink(path: string): void | Promise<void>;
-  abstract rename(oldPath: string, newPath: string): void | Promise<void>;
+  ): Promise<DirectoryEntry[]>;
+  abstract rm(path: string, options?: FileSystemOptions): Promise<void>;
+  abstract unlink(path: string): Promise<void>;
+  abstract rename(oldPath: string, newPath: string): Promise<void>;
   abstract isDirectory(path: string): Promise<boolean>;
 
   /**
