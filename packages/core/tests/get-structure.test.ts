@@ -401,15 +401,16 @@ root
 
   test("applies all replacements from frontmatter and options", async () => {
     const input = `---
-allReplacements:
-  - search: "global"
-    replace: "replaced"
-fileReplacements:
-  - search: "file"
-    replace: "doc"
-folderReplacements:
-  - search: "folder"
-    replace: "dir"
+replacements:
+  all:
+    - search: "global"
+      replace: "replaced"
+  files:
+    - search: "file"
+      replace: "doc"
+  folders:
+    - search: "folder"
+      replace: "dir"
 ---
 root
     global-folder

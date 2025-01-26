@@ -11,6 +11,7 @@ import type {
   StructureFrontmatter,
   StructureOperation,
 } from "./types.js";
+import { Replacements } from "./types/operations.js";
 import { handleOperationError } from "./utils/error-utils.js";
 import { applyReplacements } from "./utils/replacements.js";
 import { validateOperation } from "./utils/validation.js";
@@ -106,6 +107,13 @@ function parseOperation(
     name: rawName,
     isDirectory: !path.extname(rawName),
   };
+
+  // Apply replacements based on operation type
+  const isDirectory = result.name.includes("/") || !path.extname(result.name);
+  const replacements = isDirectory
+    ? folderNameReplacements
+    : fileNameReplacements;
+  result.name = applyReplacements(result.name, replacements);
 
   return result;
 }
@@ -360,7 +368,16 @@ function parseFrontmatter(input: string): {
 
   try {
     const yamlContent = match[1].replace(/\t/g, "  ");
-    const frontmatter = yaml.parse(yamlContent) as StructureFrontmatter;
+
+    const parsed = yaml.parse(yamlContent);
+    const frontmatter = {
+      replacements: {
+        files: parsed.fileReplacements || [],
+        folders: parsed.folderReplacements || [],
+        all: parsed.allReplacements || [],
+      },
+    };
+
     return { frontmatter, content: match[2] };
   } catch (error) {
     // If YAML parsing fails, treat the whole input as content
@@ -369,52 +386,28 @@ function parseFrontmatter(input: string): {
 }
 
 function mergeReplacements(
-  frontmatter: StructureFrontmatter | undefined,
+  frontmatter: StructureFrontmatter | null,
   options: GetStructureOptions
-): {
-  files: FileNameReplacement[];
-  folders: FileNameReplacement[];
-} {
+): Replacements {
+  // De-duplicate replacements with priority: options > frontmatter
+  const allReplacements = [
+    ...(frontmatter?.replacements?.all || []),
+    ...(options.replacements?.all || []),
+  ].filter((v, i, a) => a.findIndex((t) => t.search === v.search) === i);
+
   return {
     files: [
+      ...allReplacements,
       ...(frontmatter?.replacements?.files || []),
       ...(options.replacements?.files || []),
     ],
     folders: [
+      ...allReplacements,
       ...(frontmatter?.replacements?.folders || []),
       ...(options.replacements?.folders || []),
     ],
+    all: allReplacements,
   };
-}
-
-async function processFrontmatter(
-  lines: string[],
-  options: GetStructureOptions
-): Promise<{
-  frontmatter?: StructureFrontmatter;
-  remainingLines: string[];
-}> {
-  if (lines.length > 0 && lines[0].startsWith("---")) {
-    const endIndex = lines.slice(1).findIndex((line) => line.startsWith("---"));
-    if (endIndex !== -1) {
-      const frontmatterLines = lines.slice(1, endIndex + 1);
-      const frontmatter = yaml.parse(
-        frontmatterLines.join("\n")
-      ) as StructureFrontmatter;
-
-      // Merge frontmatter replacements with options
-      const merged = mergeReplacements(frontmatter, options);
-
-      return {
-        frontmatter: {
-          ...frontmatter,
-          replacements: merged,
-        },
-        remainingLines: lines.slice(endIndex + 2),
-      };
-    }
-  }
-  return { frontmatter: undefined, remainingLines: lines };
 }
 
 /**
@@ -438,20 +431,7 @@ export async function getStructure(
   const { frontmatter, content } = parseFrontmatter(input);
 
   // Merge frontmatter and options replacements here
-  const mergedReplacements = {
-    files: [
-      ...(frontmatter?.["allReplacements"] || []),
-      ...(options.replacements?.all || []),
-      ...(frontmatter?.["fileReplacements"] || []),
-      ...(options.replacements?.files || []),
-    ],
-    folders: [
-      ...(frontmatter?.["allReplacements"] || []),
-      ...(options.replacements?.all || []),
-      ...(frontmatter?.["folderReplacements"] || []),
-      ...(options.replacements?.folders || []),
-    ],
-  };
+  const mergedReplacements = mergeReplacements(frontmatter, options);
 
   const mergedOptions: GetStructureOptions = {
     ...options,
