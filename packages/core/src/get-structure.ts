@@ -447,8 +447,26 @@ export async function getStructure(
     );
   }
 
-  // Ensure operations are sorted by depth
-  operations.sort((a, b) => a.depth - b.depth);
+  // Replace this:
+  // operations.sort((a, b) => a.depth - b.depth);
+
+  // With depth-first ordering logic:
+  operations.sort((a, b) => {
+    // Split paths into parts for comparison
+    const aParts = a.targetPath.split(path.sep);
+    const bParts = b.targetPath.split(path.sep);
+
+    // Compare path components one by one
+    for (let i = 0; i < Math.min(aParts.length, bParts.length); i++) {
+      if (aParts[i] !== bParts[i]) {
+        // If paths diverge, sort alphabetically at divergence point
+        return aParts[i].localeCompare(bParts[i]);
+      }
+    }
+
+    // If one is parent of the other, parent comes first
+    return aParts.length - bParts.length;
+  });
 
   return {
     operations,
