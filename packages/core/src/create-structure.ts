@@ -1,6 +1,4 @@
 import path from "path";
-
-import process from "process";
 import { getStructure } from "./get-structure.js";
 import { NodeFileSystem } from "./node-filesystem.js";
 import type {
@@ -8,7 +6,6 @@ import type {
   FileNameReplacement,
   FileSystem,
   GetStructureResult,
-  StructureOperation,
 } from "./types.js";
 
 /**
@@ -29,28 +26,19 @@ export async function createStructure(
   options: CreateStructureOptions = {}
 ): Promise<GetStructureResult> {
   const fs = options.fs || new NodeFileSystem();
-  const operations: StructureOperation[] = [];
-
-  // Remove replacements from root directory processing
-  const replacedRoot = rootDir;
 
   // Ensure root directory exists and is empty
-  await fs.ensureEmptyDir(replacedRoot);
+  await fs.ensureEmptyDir(rootDir);
 
   // Process structure
   const result = await getStructure(input, {
     ...options,
-    rootDir: replacedRoot,
+    rootDir,
     fs,
   });
 
   const { operations: structureOperations } = result;
-
-  const { replacements = { files: [], folders: [], all: [] }, recursive } =
-    options;
-
-  const fileNameReplacements = replacements.files || [];
-  const folderNameReplacements = replacements.folders || [];
+  const { replacements = { files: [], folders: [], all: [] } } = options;
 
   // Execute each operation
   for (const operation of structureOperations) {
@@ -75,11 +63,7 @@ export async function createStructure(
           }
           await copyFile(operation.sourcePath, operation.targetPath, {
             fs,
-            replacements: {
-              all: replacements.all || [],
-              files: fileNameReplacements,
-              folders: folderNameReplacements,
-            },
+            replacements,
           });
           break;
 
@@ -89,11 +73,7 @@ export async function createStructure(
           }
           await moveFile(operation.sourcePath, operation.targetPath, {
             fs,
-            replacements: {
-              all: replacements.all || [],
-              files: fileNameReplacements,
-              folders: folderNameReplacements,
-            },
+            replacements,
           });
           break;
       }
@@ -170,19 +150,15 @@ async function copyFile(
 ): Promise<void> {
   const { fs: filesystem, replacements } = options;
 
-  const resolvedSource = path.isAbsolute(sourcePath)
-    ? sourcePath
-    : path.resolve(process.cwd(), sourcePath);
-
-  const stat = await filesystem.stat(resolvedSource);
+  const stat = await filesystem.stat(sourcePath);
   const isDirectory = stat.isDirectory();
 
   if (isDirectory) {
-    await filesystem.copyFolder(resolvedSource, targetPath, {
+    await filesystem.copyFolder(sourcePath, targetPath, {
       replacements,
     });
   } else {
-    await filesystem.copyFile(resolvedSource, targetPath);
+    await filesystem.copyFile(sourcePath, targetPath);
   }
 }
 
@@ -203,18 +179,14 @@ async function moveFile(
 ): Promise<void> {
   const { fs: filesystem, replacements } = options;
 
-  const resolvedSource = path.isAbsolute(sourcePath)
-    ? sourcePath
-    : path.resolve(process.cwd(), sourcePath);
-
-  const stat = await filesystem.stat(resolvedSource);
+  const stat = await filesystem.stat(sourcePath);
   const isDirectory = stat.isDirectory();
 
   if (isDirectory) {
-    await filesystem.moveFolder(resolvedSource, targetPath, {
+    await filesystem.moveFolder(sourcePath, targetPath, {
       replacements,
     });
   } else {
-    await filesystem.rename(resolvedSource, targetPath);
+    await filesystem.rename(sourcePath, targetPath);
   }
 }
