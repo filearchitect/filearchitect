@@ -79,9 +79,10 @@ async function displayStructure(): Promise<{
   const emptyDirs: string[] = [];
 
   // List actual files from memory
-  async function listFiles(dir: string): Promise<string[]> {
+  async function listFiles(dir: string): Promise<[string[], boolean]> {
     const entries = await fs.readdir(dir);
     const result: string[] = [];
+    let hasContent = false;
 
     for (const entry of entries) {
       const fullPath = `${dir}/${entry.name}`;
@@ -92,26 +93,29 @@ async function displayStructure(): Promise<{
         // Add the directory path itself
         result.push(`📁 ${relativePath}/`);
         // Get nested files and add them with proper indentation
-        const nestedFiles = await listFiles(fullPath);
+        const [nestedFiles, hasNestedContent] = await listFiles(fullPath);
 
-        // If directory has no files, mark it as empty
-        if (nestedFiles.length === 0) {
+        // If directory has no content, mark it as empty
+        if (!hasNestedContent) {
           emptyDirs.push(fullPath);
+        } else {
+          hasContent = true;
         }
 
-        result.push(...nestedFiles.map((file) => file));
+        result.push(...nestedFiles);
       } else {
         result.push(`📄 ${relativePath}`);
         allFiles.push(fullPath);
+        hasContent = true;
       }
     }
 
-    return result;
+    return [result, hasContent];
   }
 
-  const files = await listFiles("output");
+  const [files] = await listFiles("output");
   // Sort files to ensure consistent order and proper nesting
-  const sortedFiles = files.sort((a, b) => {
+  const sortedFiles = files.sort((a: string, b: string) => {
     const aPath = a.replace(/^[📁📄]\s+/, "");
     const bPath = b.replace(/^[📁📄]\s+/, "");
     return aPath.localeCompare(bPath);
@@ -134,7 +138,9 @@ async function createAndDownloadZip(files: string[], emptyDirs: string[]) {
 
   // Add empty directories to the archive
   for (const dir of emptyDirs) {
-    await archiver.addDirectory(dir);
+    // Ensure the path ends with a slash to be recognized as a directory
+    const dirPath = dir.endsWith("/") ? dir : `${dir}/`;
+    await archiver.addDirectory(dirPath);
   }
 
   // Generate the zip file as a blob

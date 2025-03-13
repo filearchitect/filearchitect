@@ -65,7 +65,11 @@ export class ZipArchiver {
    */
   async addDirectory(path: string): Promise<void> {
     const relativePath = this.getRelativePath(path);
-    this.zip.folder(relativePath);
+    // Ensure the path ends with a slash to be recognized as a directory
+    const dirPath = relativePath.endsWith("/")
+      ? relativePath
+      : `${relativePath}/`;
+    this.zip.folder(dirPath);
   }
 
   /**
