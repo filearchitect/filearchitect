@@ -1,4 +1,5 @@
 import { BrowserFileSystem } from "@filearchitect/core/browser";
+import JSZip from "jszip";
 
 interface FileNode {
   name: string;
@@ -18,6 +19,7 @@ const structureTextarea = document.getElementById(
 ) as HTMLTextAreaElement;
 const createButton = document.getElementById("create") as HTMLButtonElement;
 const testButton = document.getElementById("test") as HTMLButtonElement;
+const downloadButton = document.getElementById("download") as HTMLButtonElement;
 const output = document.getElementById("output") as HTMLPreElement;
 
 // Initialize filesystem
@@ -36,18 +38,43 @@ async function createStructure(node: Node, parentPath: string): Promise<void> {
   const fullPath = `output/${nodePath}`;
 
   if (node.type === "file") {
-    await fs.mkdir(`output/${parentPath}`, { recursive: true });
-    await fs.writeFile(fullPath, "");
+    // Ensure the parent directory exists first
+    const parentDir = `output/${parentPath}`;
+    await fs.mkdir(parentDir, { recursive: true });
+
+    // Add appropriate default content based on file type
+    let content = "";
+    if (node.name.endsWith(".tsx")) {
+      content = `import React from 'react';\n\nexport const ${node.name.replace(
+        ".tsx",
+        ""
+      )} = () => {\n  return (\n    <div>\n      {/* Add your component content here */}\n    </div>\n  );\n};\n`;
+    } else if (node.name.endsWith(".ts")) {
+      content = `// Add your TypeScript code here\n`;
+    } else if (node.name.endsWith(".css")) {
+      content = `/* Add your styles here */\n`;
+    } else if (node.name.endsWith(".d.ts")) {
+      content = `// Add your type definitions here\n`;
+    }
+
+    // Write the file with its content
+    await fs.writeFile(fullPath, content);
+    console.log(`Created file: ${fullPath}`);
   } else {
+    // Create the directory
     await fs.mkdir(fullPath, { recursive: true });
+    console.log(`Created directory: ${fullPath}`);
+
+    // Process all children
     for (const child of node.children) {
       await createStructure(child, nodePath);
     }
   }
 }
 
-async function displayStructure(): Promise<void> {
+async function displayStructure(): Promise<string[]> {
   let result = "Created structure:\n\n";
+  const allFiles: string[] = [];
 
   // List actual files from memory
   async function listFiles(dir: string): Promise<string[]> {
@@ -60,10 +87,14 @@ async function displayStructure(): Promise<void> {
       const stat = await fs.stat(fullPath);
 
       if (stat.isDirectory()) {
-        result.push(`📁 ${relativePath}`);
-        result.push(...(await listFiles(fullPath)));
+        // Add the directory path itself
+        result.push(`📁 ${relativePath}/`);
+        // Get nested files and add them with proper indentation
+        const nestedFiles = await listFiles(fullPath);
+        result.push(...nestedFiles.map((file) => file));
       } else {
         result.push(`📄 ${relativePath}`);
+        allFiles.push(fullPath);
       }
     }
 
@@ -71,19 +102,68 @@ async function displayStructure(): Promise<void> {
   }
 
   const files = await listFiles("output");
-  result += files.sort().join("\n");
+  // Sort files to ensure consistent order and proper nesting
+  const sortedFiles = files.sort((a, b) => {
+    const aPath = a.replace(/^[📁📄]\s+/, "");
+    const bPath = b.replace(/^[📁📄]\s+/, "");
+    return aPath.localeCompare(bPath);
+  });
+
+  result += sortedFiles.join("\n");
   output.textContent = result;
+  return allFiles;
+}
+
+async function createAndDownloadZip(files: string[]) {
+  const zip = new JSZip();
+
+  // Add all files to the zip
+  for (const file of files) {
+    const content = await fs.readFile(file);
+    const relativePath = file.replace(/^output\//, "");
+
+    // Create folder structure
+    const pathParts = relativePath.split("/");
+    let currentPath = "";
+
+    // Create each folder in the path
+    for (let i = 0; i < pathParts.length - 1; i++) {
+      currentPath += (currentPath ? "/" : "") + pathParts[i];
+      if (!zip.folder(currentPath)) {
+        zip.folder(currentPath);
+      }
+    }
+
+    // Add the file with its full path
+    zip.file(relativePath, content);
+  }
+
+  // Generate the zip file
+  const blob = await zip.generateAsync({ type: "blob" });
+
+  // Create download link and trigger download
+  const downloadUrl = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = downloadUrl;
+  link.download = "file-structure.zip";
+  document.body.appendChild(link);
+  link.click();
+  document.body.removeChild(link);
+  URL.revokeObjectURL(downloadUrl);
 }
 
 createButton.addEventListener("click", async () => {
   try {
     const structure = structureTextarea.value;
 
+    // Clear previous output
+    output.textContent = "Creating structure...\n\n";
+
     // Ensure output directory exists
     await ensureOutputDir();
 
     // Parse the indented structure
-    const lines = structure.split("\n");
+    const lines = structure.split("\n").filter((line) => line.trim());
     const root: FolderNode = { name: "root", type: "folder", children: [] };
     const stack: Array<{ node: FolderNode; indent: number }> = [
       { node: root, indent: -1 },
@@ -94,11 +174,12 @@ createButton.addEventListener("click", async () => {
       if (indent === -1) continue;
 
       const name = line.trim();
-      const isFile = !name.endsWith("/");
+      const isFile = name.includes("."); // Check for file extension
       const node: Node = isFile
         ? { name, type: "file" }
-        : { name: name.slice(0, -1), type: "folder", children: [] };
+        : { name, type: "folder", children: [] };
 
+      // Find the appropriate parent based on indentation
       while (stack.length > 1 && stack[stack.length - 1].indent >= indent) {
         stack.pop();
       }
@@ -116,8 +197,12 @@ createButton.addEventListener("click", async () => {
       await createStructure(child, "");
     }
 
-    // Display the structure
-    await displayStructure();
+    // Display the structure and store file list for download
+    const files = await displayStructure();
+
+    // Enable download button
+    downloadButton.onclick = () => createAndDownloadZip(files);
+    downloadButton.disabled = false;
   } catch (error) {
     if (error instanceof Error) {
       output.textContent = `Error: ${error.message}`;
@@ -128,6 +213,9 @@ createButton.addEventListener("click", async () => {
     }
   }
 });
+
+// Initially disable download button
+downloadButton.disabled = true;
 
 // Run tests when test button is clicked
 testButton.addEventListener("click", async () => {
