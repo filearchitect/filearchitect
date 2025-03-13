@@ -70,9 +70,13 @@ async function createStructure(node: Node, parentPath: string): Promise<void> {
   }
 }
 
-async function displayStructure(): Promise<string[]> {
+async function displayStructure(): Promise<{
+  files: string[];
+  emptyDirs: string[];
+}> {
   let result = "Created structure:\n\n";
   const allFiles: string[] = [];
+  const emptyDirs: string[] = [];
 
   // List actual files from memory
   async function listFiles(dir: string): Promise<string[]> {
@@ -89,6 +93,12 @@ async function displayStructure(): Promise<string[]> {
         result.push(`📁 ${relativePath}/`);
         // Get nested files and add them with proper indentation
         const nestedFiles = await listFiles(fullPath);
+
+        // If directory has no files, mark it as empty
+        if (nestedFiles.length === 0) {
+          emptyDirs.push(fullPath);
+        }
+
         result.push(...nestedFiles.map((file) => file));
       } else {
         result.push(`📄 ${relativePath}`);
@@ -109,10 +119,10 @@ async function displayStructure(): Promise<string[]> {
 
   result += sortedFiles.join("\n");
   output.textContent = result;
-  return allFiles;
+  return { files: allFiles, emptyDirs };
 }
 
-async function createAndDownloadZip(files: string[]) {
+async function createAndDownloadZip(files: string[], emptyDirs: string[]) {
   // Create a new ZipArchiver instance with our filesystem and base path
   const archiver = new ZipArchiver({
     fs,
@@ -121,6 +131,11 @@ async function createAndDownloadZip(files: string[]) {
 
   // Add all files to the archive
   await archiver.addFromFileSystem(files);
+
+  // Add empty directories to the archive
+  for (const dir of emptyDirs) {
+    await archiver.addDirectory(dir);
+  }
 
   // Generate the zip file as a blob
   const { data: blob } = await archiver.generate("blob");
@@ -182,10 +197,10 @@ createButton.addEventListener("click", async () => {
     }
 
     // Display the structure and store file list for download
-    const files = await displayStructure();
+    const { files, emptyDirs } = await displayStructure();
 
     // Enable download button
-    downloadButton.onclick = () => createAndDownloadZip(files);
+    downloadButton.onclick = () => createAndDownloadZip(files, emptyDirs);
     downloadButton.disabled = false;
   } catch (error) {
     if (error instanceof Error) {
