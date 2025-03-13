@@ -424,7 +424,8 @@ export async function getStructure(
     replacements: mergedReplacements,
   };
 
-  const operations: StructureOperation[] = [];
+  const operations: (StructureOperation & { orderIndex: number })[] = [];
+  let orderIndex = 0;
   const lines = content.split("\n").filter((line) => line.trim().length > 0);
   const stack: string[] = [rootDir];
 
@@ -432,14 +433,18 @@ export async function getStructure(
     const structureOperation = await processLine(line, stack, mergedOptions);
     if (!structureOperation) continue;
 
-    operations.push(structureOperation);
+    operations.push({ ...structureOperation, orderIndex: orderIndex++ });
 
     const directoryContents = await handleDirectoryContents(
       structureOperation,
       mergedOptions.fs || new NodeFileSystem(),
       mergedOptions
     );
-    operations.push(...directoryContents);
+
+    // Add directory contents with incrementing order indices
+    for (const content of directoryContents) {
+      operations.push({ ...content, orderIndex: orderIndex++ });
+    }
 
     await handleFileSourceCheck(
       structureOperation,
@@ -447,29 +452,21 @@ export async function getStructure(
     );
   }
 
-  // Replace this:
-  // operations.sort((a, b) => a.depth - b.depth);
-
-  // With depth-first ordering logic:
+  // Sort operations to maintain parent-child relationships while preserving original order
   operations.sort((a, b) => {
-    // Split paths into parts for comparison
-    const aParts = a.targetPath.split(path.sep);
-    const bParts = b.targetPath.split(path.sep);
+    // If one path is a parent of the other, parent comes first
+    if (b.targetPath.startsWith(a.targetPath + path.sep)) return -1;
+    if (a.targetPath.startsWith(b.targetPath + path.sep)) return 1;
 
-    // Compare path components one by one
-    for (let i = 0; i < Math.min(aParts.length, bParts.length); i++) {
-      if (aParts[i] !== bParts[i]) {
-        // If paths diverge, sort alphabetically at divergence point
-        return aParts[i].localeCompare(bParts[i]);
-      }
-    }
-
-    // If one is parent of the other, parent comes first
-    return aParts.length - bParts.length;
+    // Otherwise preserve original order based on orderIndex
+    return a.orderIndex - b.orderIndex;
   });
 
+  // Remove the orderIndex before returning since it's not part of the StructureOperation type
+  const finalOperations = operations.map(({ orderIndex, ...op }) => op);
+
   return {
-    operations,
+    operations: finalOperations,
     options: {
       rootDir,
       replacements: mergedReplacements,
