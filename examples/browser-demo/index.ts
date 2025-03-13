@@ -1,5 +1,4 @@
-import { BrowserFileSystem } from "@filearchitect/core/browser";
-import JSZip from "jszip";
+import { BrowserFileSystem, ZipArchiver } from "@filearchitect/core";
 
 interface FileNode {
   name: string;
@@ -18,7 +17,6 @@ const structureTextarea = document.getElementById(
   "structure"
 ) as HTMLTextAreaElement;
 const createButton = document.getElementById("create") as HTMLButtonElement;
-const testButton = document.getElementById("test") as HTMLButtonElement;
 const downloadButton = document.getElementById("download") as HTMLButtonElement;
 const output = document.getElementById("output") as HTMLPreElement;
 
@@ -115,34 +113,20 @@ async function displayStructure(): Promise<string[]> {
 }
 
 async function createAndDownloadZip(files: string[]) {
-  const zip = new JSZip();
+  // Create a new ZipArchiver instance with our filesystem and base path
+  const archiver = new ZipArchiver({
+    fs,
+    relativeTo: "output",
+  });
 
-  // Add all files to the zip
-  for (const file of files) {
-    const content = await fs.readFile(file);
-    const relativePath = file.replace(/^output\//, "");
+  // Add all files to the archive
+  await archiver.addFromFileSystem(files);
 
-    // Create folder structure
-    const pathParts = relativePath.split("/");
-    let currentPath = "";
-
-    // Create each folder in the path
-    for (let i = 0; i < pathParts.length - 1; i++) {
-      currentPath += (currentPath ? "/" : "") + pathParts[i];
-      if (!zip.folder(currentPath)) {
-        zip.folder(currentPath);
-      }
-    }
-
-    // Add the file with its full path
-    zip.file(relativePath, content);
-  }
-
-  // Generate the zip file
-  const blob = await zip.generateAsync({ type: "blob" });
+  // Generate the zip file as a blob
+  const { data: blob } = await archiver.generate("blob");
 
   // Create download link and trigger download
-  const downloadUrl = URL.createObjectURL(blob);
+  const downloadUrl = URL.createObjectURL(blob as Blob);
   const link = document.createElement("a");
   link.href = downloadUrl;
   link.download = "file-structure.zip";
@@ -216,49 +200,3 @@ createButton.addEventListener("click", async () => {
 
 // Initially disable download button
 downloadButton.disabled = true;
-
-// Run tests when test button is clicked
-testButton.addEventListener("click", async () => {
-  output.textContent = "Running tests...\n";
-
-  try {
-    // Test basic file operations
-    output.textContent += "\nTesting basic file operations...";
-    await fs.writeFile("test.txt", "Hello, World!");
-    const content = await fs.readFile("test.txt");
-    if (content !== "Hello, World!")
-      throw new Error("File content doesn't match");
-    if (!(await fs.exists("test.txt"))) throw new Error("File doesn't exist");
-
-    // Test directory operations
-    output.textContent += "\nTesting directory operations...";
-    await fs.mkdir("src", { recursive: true });
-    await fs.mkdir("src/components", { recursive: true });
-    if (!(await fs.isDirectory("src")))
-      throw new Error("src is not a directory");
-    if (!(await fs.isDirectory("src/components")))
-      throw new Error("src/components is not a directory");
-
-    // Test nested file creation
-    output.textContent += "\nTesting nested file creation...";
-    await fs.writeFile("src/index.ts", "// Entry point");
-    await fs.writeFile("src/components/Button.tsx", "// Button component");
-    if (!(await fs.exists("src/index.ts")))
-      throw new Error("Nested file doesn't exist");
-    if (!(await fs.exists("src/components/Button.tsx")))
-      throw new Error("Deeply nested file doesn't exist");
-
-    // Display final structure
-    output.textContent += "\n\nFinal structure:\n";
-    await displayStructure();
-    output.textContent += "\nAll tests passed! ✅";
-  } catch (error) {
-    if (error instanceof Error) {
-      output.textContent += `\n\nTest failed: ${error.message} ❌`;
-      console.error(error);
-    } else {
-      output.textContent += "\n\nAn unknown error occurred ❌";
-      console.error(error);
-    }
-  }
-});

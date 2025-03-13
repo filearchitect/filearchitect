@@ -55,10 +55,16 @@ importers:
       console-table-printer:
         specifier: ^2.12.0
         version: 2.12.1
+      jszip:
+        specifier: ^3.10.1
+        version: 3.10.1
       yaml:
         specifier: ^2.7.0
         version: 2.7.0
     devDependencies:
+      '@types/jszip':
+        specifier: ^3.4.1
+        version: 3.4.1
       '@types/node':
         specifier: ^20.17.10
         version: 20.17.10
@@ -460,6 +466,10 @@ packages:
 
   '@types/estree@1.0.6':
     resolution: {integrity: sha512-AYnb1nQyY49te+VRAVgmzfcgjYS91mY5P0TKUDCLEM+gNnA+3T6rWITXRLYCpahpqSQbN5cE+gHpnPyXjHWxcw==}
+
+  '@types/jszip@3.4.1':
+    resolution: {integrity: sha512-TezXjmf3lj+zQ651r6hPqvSScqBLvyPI9FxdXBqpEwBijNGQ2NXpaFW/7joGzveYkKQUil7iiDHLo6LV71Pc0A==}
+    deprecated: This is a stub types definition. jszip provides its own type definitions, so you do not need this installed.
 
   '@types/node@20.17.10':
     resolution: {integrity: sha512-/jrvh5h6NXhEauFFexRin69nA0uHJ5gwk4iDivp/DeoEua3uwCUto6PC86IpRITBOs4+6i2I56K5x5b6WYGXHA==}
@@ -1052,6 +1062,10 @@ snapshots:
   '@sinclair/typebox@0.27.8': {}
 
   '@types/estree@1.0.6': {}
+
+  '@types/jszip@3.4.1':
+    dependencies:
+      jszip: 3.10.1
 
   '@types/node@20.17.10':
     dependencies:

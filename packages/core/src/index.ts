@@ -2,6 +2,7 @@
 export { createStructure } from "./create-structure.js";
 export { getStructure } from "./get-structure.js";
 export { Messages, createMessage } from "./warnings.js";
+export { ZipArchiver } from "./zip-archiver.js";
 
 // Filesystem implementations
 export { BrowserFileSystem } from "./browser-filesystem.js";
@@ -23,4 +24,6 @@ export type {
   StructureOperation,
   StructureOperationLine,
   Warning,
+  ZipOptions,
+  ZipOutput,
 } from "./types.js";

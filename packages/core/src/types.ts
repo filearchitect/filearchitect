@@ -4,6 +4,7 @@
 
 import type { FileNameReplacement, FileSystem } from "./types/filesystem.d.ts";
 import type { BaseStructureOptions } from "./types/operations.d.ts";
+import type { ZipOptions, ZipOutput } from "./zip-archiver.js";
 
 export type {
   DirectoryEntry,
@@ -38,3 +39,5 @@ export interface StructureFrontmatter {
 export interface CreateStructureOptions extends BaseStructureOptions {
   fs?: FileSystem;
 }
+
+export type { ZipOptions, ZipOutput };

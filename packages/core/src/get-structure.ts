@@ -188,7 +188,7 @@ async function processLine(
   const fileNameReplacements = options.replacements?.files || [];
   const folderNameReplacements = options.replacements?.folders || [];
 
-  const { fs } = options;
+  const fs = options.fs || new NodeFileSystem();
   const { level, operation } = parseLine(line, {
     files: fileNameReplacements,
     folders: folderNameReplacements,
@@ -243,6 +243,9 @@ async function processLine(
   }
 
   validateOperation(structureOperation);
+
+  // Check for missing source files
+  await handleFileSourceCheck(structureOperation, fs);
 
   try {
     // ... existing code ...
@@ -445,11 +448,6 @@ export async function getStructure(
     for (const content of directoryContents) {
       operations.push({ ...content, orderIndex: orderIndex++ });
     }
-
-    await handleFileSourceCheck(
-      structureOperation,
-      mergedOptions.fs || new NodeFileSystem()
-    );
   }
 
   // Sort operations to maintain parent-child relationships while preserving original order
