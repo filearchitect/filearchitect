@@ -426,10 +426,7 @@ MIT
 
 File Architect is actively developed. Upcoming features include:
 
--   **Template Marketplace**: Share and discover templates for common project structures
--   **Visual Editor**: Create and edit structures through a browser-based interface
--   **Extended Syntax**: Support for file content generation within structure definitions
--   **More Integrations**: Direct integration with more frameworks and build tools
 -   **Remote Sources**: Import files from GitHub, npm packages, and other remote sources
+-   **Folder with dots in their names**: This is a known issue
 
 Want to contribute? Check the [issues](https://github.com/filearchitect/filearchitect/issues) for opportunities!
