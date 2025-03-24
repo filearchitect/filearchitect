@@ -5,17 +5,17 @@
   <a href="https://filearchitect.com/docs" target="_blank">Documentation</a>
 </p>
 
-Create file and directory structures from simple text descriptions. Perfect for scaffolding projects, creating templates, and organizing files.
+Create file and folder structures with plain text. Write the file and folder structures you want to create and nest them with tabs. Perfect for scaffolding projects, creating templates, and organizing files.
+
+This code powers the mac app available at [filearchitect.com](https://filearchitect.com)
 
 ## Features
 
 -   📁 Create directory structures using a simple, indentation-based syntax
 -   📋 Copy files and directories from existing locations
 -   🔄 Move (import) files from other projects
--   🔧 Replace file and folder names using patterns
 -   🚀 Available as both a CLI tool and a TypeScript/JavaScript library
 -   🌐 Works in both Node.js and browser environments
--   🔍 Validates operations before execution
 -   ⚡ Supports YAML frontmatter for configuration
 -   🔍 Preview structure operations before execution
 
