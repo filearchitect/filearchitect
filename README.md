@@ -17,6 +17,7 @@ Create file and directory structures from simple text descriptions. Perfect for 
 -   🌐 Works in both Node.js and browser environments
 -   🔍 Validates operations before execution
 -   ⚡ Supports YAML frontmatter for configuration
+-   🔍 Preview structure operations before execution
 
 ## Installation
 
@@ -192,7 +193,7 @@ filearchitect show structure.txt output
 ## Library Usage
 
 ```typescript
-import { createStructure } from "@filearchitect/core";
+import { createStructure, getStructure } from "@filearchitect/core";
 
 // Basic usage with Node.js filesystem (default)
 await createStructure(structureText, "./output");
@@ -205,11 +206,16 @@ await createStructure(structureText, "./output", {
     },
 });
 
-// Preview operations
+// Preview operations without creating files
 const { operations } = await getStructure(structureText, {
     rootDir: "./output",
 });
 console.log(operations);
+
+// Use the operations for custom processing
+operations.forEach((operation) => {
+    console.log(`${operation.type}: ${operation.targetPath}`);
+});
 ```
 
 ## Browser Usage
@@ -232,6 +238,157 @@ await createStructure(structureText, "/", {
 // Access the in-memory files
 const files = fs.getFiles();
 const directories = fs.getDirectories();
+```
+
+## Structure Operations
+
+When using `getStructure`, you get access to all planned operations before execution:
+
+```typescript
+import { getStructure } from "@filearchitect/core";
+
+const { operations } = await getStructure(structureText, {
+    rootDir: "./output",
+});
+```
+
+Each operation has the following structure:
+
+```typescript
+interface StructureOperation {
+    // Type of operation: "create", "copy", "move", or "included"
+    type: "create" | "copy" | "move" | "included";
+
+    // Target path where the file/directory will be created
+    targetPath: string;
+
+    // For copy/move operations, the source path
+    sourcePath?: string;
+
+    // Whether this is a directory or file
+    isDirectory: boolean;
+
+    // Indentation depth in the original structure
+    depth: number;
+
+    // Base name of the file/directory
+    name: string;
+
+    // Warning message if there might be an issue
+    warning?: string;
+}
+```
+
+You can use these operations to:
+
+-   Preview changes before execution
+-   Create custom validation rules
+-   Implement your own file processing logic
+-   Generate documentation about the structure
+
+## ZIP Archive Support
+
+File Architect also provides a ZIP archiver to bundle your generated files:
+
+```typescript
+import { createStructure, ZipArchiver } from "@filearchitect/core";
+
+// Create your file structure
+await createStructure(structureText, "./output");
+
+// Create a ZIP archive of the results
+const zipArchiver = new ZipArchiver({ relativeTo: "./output" });
+
+// Add specific files or directories
+await zipArchiver.addFile("./output/config.json", '{"key": "value"}');
+await zipArchiver.addDirectory("./output/src");
+
+// Add files from the filesystem
+await zipArchiver.addFromFileSystem([
+    "./output/package.json",
+    "./output/README.md",
+]);
+
+// Generate the ZIP archive
+const zipOutput = await zipArchiver.generate("buffer"); // or "blob" for browser
+
+// In Node.js, you can write the buffer to disk
+import fs from "fs";
+fs.writeFileSync("project.zip", zipOutput.data);
+```
+
+The ZIP archiver works in both Node.js and browser environments.
+
+## Practical Examples
+
+### Generate a React Component
+
+```txt
+src
+    components
+        Button
+            Button.tsx
+            Button.module.css
+            index.ts
+            Button.test.tsx
+```
+
+### Create a Project Scaffold
+
+```txt
+---
+fileReplacements:
+  - search: "MyProject"
+    replace: "TaskManager"
+---
+MyProject
+    src
+        index.ts
+        models
+            User.ts
+            Task.ts
+        services
+            api.ts
+        components
+            layout
+                Header.tsx
+                Footer.tsx
+            shared
+                Button.tsx
+                Card.tsx
+    public
+        index.html
+        assets
+            logo.svg
+    tests
+        unit
+            models
+                User.test.ts
+    README.md
+    package.json
+    tsconfig.json
+```
+
+### Import from an Existing Project
+
+```txt
+# Create a new project with files from multiple sources
+new-project
+    # Copy configuration files
+    [~/templates/typescript/tsconfig.json]
+    [~/templates/eslint/.eslintrc.js]
+
+    # Import key components from another project
+    src
+        components
+            (~/old-project/src/components/Button.tsx)
+            (~/old-project/src/components/Card.tsx)
+
+        # Add new files
+        pages
+            Home.tsx
+            About.tsx
+            Contact.tsx
 ```
 
 ## Contributing
@@ -264,3 +421,15 @@ pnpm cli create structure.txt output
 ## License
 
 MIT
+
+## Roadmap
+
+File Architect is actively developed. Upcoming features include:
+
+-   **Template Marketplace**: Share and discover templates for common project structures
+-   **Visual Editor**: Create and edit structures through a browser-based interface
+-   **Extended Syntax**: Support for file content generation within structure definitions
+-   **More Integrations**: Direct integration with more frameworks and build tools
+-   **Remote Sources**: Import files from GitHub, npm packages, and other remote sources
+
+Want to contribute? Check the [issues](https://github.com/filearchitect/filearchitect/issues) for opportunities!
