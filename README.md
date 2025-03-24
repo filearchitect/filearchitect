@@ -1,5 +1,10 @@
 # File Architect
 
+<p align="center">
+  <a href="https://filearchitect.com" target="_blank">Website</a> |
+  <a href="https://filearchitect.com/docs" target="_blank">Documentation</a>
+</p>
+
 Create file and directory structures from simple text descriptions. Perfect for scaffolding projects, creating templates, and organizing files.
 
 ## Features
