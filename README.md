@@ -19,6 +19,10 @@ This code powers the mac app available at [filearchitect.com](https://filearchit
 -   ⚡ Supports YAML frontmatter for configuration
 -   🔍 Preview structure operations before execution
 
+> ℹ️ **Note**  
+> This is still a work-in-progress and might have some breaking changes
+
+
 ## Installation
 
 ### CLI Tool
