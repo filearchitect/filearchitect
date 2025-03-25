@@ -9,6 +9,11 @@ Create file and folder structures with plain text. Write the file and folder str
 
 This code powers the mac app available at [filearchitect.com](https://filearchitect.com)
 
+## Note
+
+This is still a work-in-progress and might have some breaking changes
+
+
 ## Features
 
 -   📁 Create directory structures using a simple, indentation-based syntax
@@ -18,10 +23,6 @@ This code powers the mac app available at [filearchitect.com](https://filearchit
 -   🌐 Works in both Node.js and browser environments
 -   ⚡ Supports YAML frontmatter for configuration
 -   🔍 Preview structure operations before execution
-
-> ℹ️ **Note**  
-> This is still a work-in-progress and might have some breaking changes
-
 
 ## Installation
 
