@@ -399,7 +399,7 @@ root
   test("applies all replacements from frontmatter and options", async () => {
     const input = `---
 allReplacements:
-  - search: "global"
+  - search: "source"
     replace: "replaced"
 fileReplacements:
   - search: "file"
@@ -409,25 +409,21 @@ folderReplacements:
       replace: "dir"
 ---
 root
-    global-folder
-        global-file.txt
+    source-folder
+        source-file.txt
 `;
 
     const result = await getStructure(input, {
       rootDir: "/test",
       fs,
-      replacements: {
-        all: [{ search: "replaced", replace: "all-option" }],
-        files: [{ search: "doc", replace: "document" }],
-      },
     });
 
     const operations = result.operations.map((op) => op.targetPath);
 
     expect(operations).toEqual([
       "/test/root",
-      "/test/root/all-option-dir",
-      "/test/root/all-option-dir/all-option-document.txt",
+      "/test/root/replaced-dir",
+      "/test/root/replaced-dir/replaced-doc.txt",
     ]);
   });
 

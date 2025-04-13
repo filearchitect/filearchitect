@@ -93,8 +93,7 @@ export interface FileSystem {
     dest: string,
     options?: FileSystemOptions
   ): Promise<boolean>;
-  getAllFiles(dirPath: string): Promise<string[]>;
-  getAllDirectories(dirPath: string): Promise<string[]>;
+  // Note: getAllFiles, getAllDirectories moved to path-utils
 
   // Warning emission
   emitWarning?(warning: Warning): void;

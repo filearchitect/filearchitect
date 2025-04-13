@@ -1,4 +1,4 @@
-import path from "path";
+import * as pathUtils from "./path-utils.js"; // Import path utils
 import { getStructure } from "./get-structure.js";
 import { NodeFileSystem } from "./node-filesystem.js";
 import type {
@@ -43,8 +43,8 @@ export async function createStructure(
   // Execute each operation
   for (const operation of structureOperations) {
     try {
-      const destinationDir = path.dirname(operation.targetPath);
-      if (!(await fs.exists(destinationDir))) {
+      const destinationDir = pathUtils.getDirname(operation.targetPath); // Use pathUtils
+      if (destinationDir && destinationDir !== '.' && !(await fs.exists(destinationDir))) { // Check if dir is valid and exists
         await createDirectory(destinationDir, { fs });
       }
 
@@ -114,8 +114,8 @@ async function createEmptyFile(
 ): Promise<void> {
   const { fs: filesystem } = options;
 
-  const dir = path.dirname(filePath);
-  if (!(await filesystem.exists(dir))) {
+  const dir = pathUtils.getDirname(filePath); // Use pathUtils
+  if (dir && dir !== '.' && !(await filesystem.exists(dir))) { // Check if dir is valid and exists
     await createDirectory(dir, { fs: filesystem });
   }
 

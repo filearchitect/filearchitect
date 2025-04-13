@@ -43,6 +43,27 @@ export function getFileExtension(filePath: string): string {
   return path.extname(filePath);
 }
 
+/**
+ * Gets the directory name of a path.
+ */
+export function getDirname(filePath: string): string {
+  return path.dirname(filePath);
+}
+
+/**
+ * Gets the base name of a path.
+ */
+export function getBasename(filePath: string): string {
+  return path.basename(filePath);
+}
+
+/**
+ * The platform-specific path segment separator.
+ * '\\' on Windows, '/' on POSIX.
+ */
+export const pathSeparator = path.sep;
+
+
 export function validatePathSegments(...segments: string[]): string {
   const fullPath = path.join(...segments);
 
