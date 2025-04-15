@@ -1,19 +1,18 @@
 import { NodeFileSystem } from "./node-filesystem.js";
 import * as pathUtils from "./path-utils.js"; // Import path utils
-import {
-  parseFrontmatter,
-  mergeReplacements,
-} from "./utils/frontmatter-parser.js"; // Import frontmatter utils
 import type {
   FileNameReplacement,
   FileSystem,
   GetStructureOptions,
   GetStructureResult,
-  StructureFrontmatter,
   StructureOperation,
   StructureOperationLine,
   StructureOperationType,
 } from "./types.js";
+import {
+  mergeReplacements,
+  parseFrontmatter,
+} from "./utils/frontmatter-parser.js"; // Import frontmatter utils
 // Removed incorrect Replacements import
 import { handleOperationError } from "./utils/error-utils.js";
 import { applyReplacements } from "./utils/replacements.js";
@@ -225,10 +224,15 @@ async function processLine(
       : !pathUtils.hasFileExtension(operation.name); // Use pathUtils
 
   // Apply replacements based on whether it's a file or directory
-  const replacedName = applyReplacements(
-    operation.name,
-    isDirectory ? folderNameReplacements : fileNameReplacements
-  );
+  // Apply 'all' first, then specific type replacements
+  const allReplacements = options.replacements?.all || [];
+  const specificReplacements = isDirectory
+    ? options.replacements?.folders || []
+    : options.replacements?.files || [];
+
+  let tempName = applyReplacements(operation.name, allReplacements);
+  const replacedName = applyReplacements(tempName, specificReplacements);
+
   const targetPath = pathUtils.joinPaths(currentDir, replacedName); // Use pathUtils
 
   // Create the structure operation with proper type assertion
@@ -403,8 +407,10 @@ export async function getStructure(
   // Sort operations to maintain parent-child relationships while preserving original order
   operations.sort((a, b) => {
     // If one path is a parent of the other, parent comes first
-    if (b.targetPath.startsWith(a.targetPath + pathUtils.pathSeparator)) return -1; // Use pathUtils
-    if (a.targetPath.startsWith(b.targetPath + pathUtils.pathSeparator)) return 1; // Use pathUtils
+    if (b.targetPath.startsWith(a.targetPath + pathUtils.pathSeparator))
+      return -1; // Use pathUtils
+    if (a.targetPath.startsWith(b.targetPath + pathUtils.pathSeparator))
+      return 1; // Use pathUtils
 
     // Otherwise preserve original order based on orderIndex
     return a.orderIndex - b.orderIndex;
