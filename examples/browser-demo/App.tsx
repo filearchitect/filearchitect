@@ -1,7 +1,18 @@
-import { getStructure } from "@filearchitect/core";
+import { getBasename, getStructure } from "@filearchitect/core";
+import { File, Folder } from "lucide-react";
 import React, { useEffect, useState } from "react";
 import { Textarea } from "./components/ui/textarea";
 // We might need a Button component from Shadcn later, for now use standard HTML button
+
+// Define type for the operation (adjust based on actual structure if different)
+interface StructureOperation {
+  type: string;
+  targetPath: string;
+  sourcePath?: string;
+  isDirectory: boolean;
+  depth: number;
+  // Add other properties if needed
+}
 
 const initialStructure = `
 src
@@ -19,22 +30,41 @@ src
 
 function App() {
   const [structure, setStructure] = useState<string>(initialStructure);
-  const [output, setOutput] = useState<string>("");
+  const [previewOperations, setPreviewOperations] = useState<
+    StructureOperation[]
+  >([]);
   const [error, setError] = useState<string | null>(null);
 
-  // useEffect for live preview update
   useEffect(() => {
-    setError(null); // Clear previous errors on new input
-    try {
-      const result = getStructure(structure, {});
-      setOutput(JSON.stringify(result, null, 2));
-      setError(null); // Clear error if successful
-    } catch (err: any) {
-      // Don't clear output on error, show last valid output
-      setError(`Error parsing structure: ${err.message}`);
-      console.error(err);
-    }
-  }, [structure]); // Rerun effect when structure changes
+    const updatePreview = async () => {
+      console.log("useEffect triggered. Structure:", structure);
+      setError(null);
+      try {
+        // Assuming getStructure resolves to { operations: StructureOperation[], options: any }
+        const result = await getStructure(structure, {});
+        console.log("getStructure async result:", result);
+
+        // Validate result structure before setting state
+        if (result && Array.isArray(result.operations)) {
+          setPreviewOperations(result.operations);
+          setError(null);
+        } else {
+          console.error(
+            "Unexpected result structure from getStructure:",
+            result
+          );
+          setError("Error: Invalid data format received for preview.");
+          setPreviewOperations([]); // Clear preview on invalid data
+        }
+      } catch (err: any) {
+        console.error("Error in getStructure:", err);
+        setError(`Error parsing structure: ${err.message}`);
+        setPreviewOperations([]); // Clear preview on error
+      }
+    };
+
+    updatePreview();
+  }, [structure]);
 
   return (
     <div className="max-w-6xl mx-auto p-5 font-sans">
@@ -70,12 +100,32 @@ function App() {
               {error}
             </pre>
           )}
-          <pre className="bg-gray-100 p-4 rounded min-h-[400px] whitespace-pre-wrap break-words font-mono text-sm">
-            {output ||
-              (error
-                ? "Fix errors to see preview"
-                : "Preview will appear here...")}
-          </pre>
+          <div className="bg-gray-100 p-4 rounded min-h-[400px] font-mono text-sm overflow-auto">
+            {previewOperations.length > 0 ? (
+              previewOperations.map((op) => (
+                <div
+                  key={op.targetPath}
+                  className="flex items-center mb-1"
+                  style={{ paddingLeft: `${op.depth * 1.5}rem` }}
+                >
+                  {op.isDirectory ? (
+                    <Folder className="w-4 h-4 mr-2 text-blue-600 flex-shrink-0" />
+                  ) : (
+                    <File className="w-4 h-4 mr-2 text-gray-600 flex-shrink-0" />
+                  )}
+                  <span className="break-all">
+                    {getBasename(op.targetPath)}
+                  </span>
+                </div>
+              ))
+            ) : (
+              <span className="text-gray-500">
+                {error
+                  ? "Fix errors to see preview"
+                  : "Preview will appear here..."}
+              </span>
+            )}
+          </div>
         </div>
       </div>
     </div>
