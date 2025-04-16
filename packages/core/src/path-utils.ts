@@ -1,46 +1,92 @@
 import os from "os";
 import path from "path";
 
-/**
- * Resolves a path that may contain a tilde (~) to represent the home directory.
- */
-export function resolveTildePath(filePath: string): string {
-  if (filePath.startsWith("~")) {
-    return path.join(os.homedir(), filePath.slice(1));
-  }
-  return path.resolve(filePath);
-}
+const isBrowser = typeof window !== "undefined";
 
 /**
- * Joins path segments.
+ * The platform-specific path segment separator.
+ * '\' on Windows, '/' on POSIX/Browser.
+ */
+export const pathSeparator = isBrowser ? "/" : path.sep;
+
+/**
+ * Resolves a path that may contain a tilde (~) to represent the home directory.
+ * No-op in browser environments.
+ */
+export function resolveTildePath(filePath: string): string {
+  if (isBrowser || !filePath.startsWith("~")) {
+    return filePath; // Cannot resolve ~ in browser, or no ~ present
+  }
+  // Node.js environment with tilde
+  return path.join(os.homedir(), filePath.slice(1));
+}
+
+// --- Browser-safe path functions (using POSIX separator '/') ---
+
+function browserJoinPaths(...paths: string[]): string {
+  const relevantPaths = paths.filter((p) => p);
+  if (relevantPaths.length === 0) return ".";
+
+  let joined = relevantPaths.join("/");
+
+  // Normalize, removing redundant slashes, but preserve leading/trailing slashes if present
+  // This is a simplified normalization
+  joined = joined.replace(/\/{2,}/g, "/");
+
+  return joined;
+}
+
+function browserHasFileExtension(filePath: string): boolean {
+  const lastDotIndex = filePath.lastIndexOf(".");
+  const lastSeparatorIndex = filePath.lastIndexOf("/");
+  // Ensure dot exists, is not the only character, and appears after the last separator
+  return lastDotIndex > 0 && lastDotIndex > lastSeparatorIndex;
+}
+
+function browserGetDirname(filePath: string): string {
+  const lastSeparatorIndex = filePath.lastIndexOf("/");
+  if (lastSeparatorIndex === -1) {
+    return "."; // No directory part
+  }
+  if (lastSeparatorIndex === 0) {
+    return "/"; // Root directory
+  }
+  return filePath.substring(0, lastSeparatorIndex) || "/"; // Handle cases like '/file'
+}
+
+function browserGetBasename(filePath: string): string {
+  const lastSeparatorIndex = filePath.lastIndexOf("/");
+  return filePath.substring(lastSeparatorIndex + 1);
+}
+
+// --- Exported path functions using conditional logic ---
+
+/**
+ * Joins path segments using the appropriate separator ('/' in browser).
  */
 export function joinPaths(...paths: string[]): string {
-  return path.join(...paths);
+  return isBrowser ? browserJoinPaths(...paths) : path.join(...paths);
 }
 
 /**
  * Checks if a path has a file extension.
  */
 export function hasFileExtension(filePath: string): boolean {
-  return path.extname(filePath).length > 0;
+  return isBrowser
+    ? browserHasFileExtension(filePath)
+    : path.extname(filePath).length > 0;
 }
 
 /**
  * Gets the directory name of a path.
  */
 export function getDirname(filePath: string): string {
-  return path.dirname(filePath);
+  return isBrowser ? browserGetDirname(filePath) : path.dirname(filePath);
 }
 
 /**
  * Gets the base name of a path.
  */
 export function getBasename(filePath: string): string {
-  return path.basename(filePath);
+  return isBrowser ? browserGetBasename(filePath) : path.basename(filePath);
 }
-
-/**
- * The platform-specific path segment separator.
- * '\\' on Windows, '/' on POSIX.
- */
-export const pathSeparator = path.sep;

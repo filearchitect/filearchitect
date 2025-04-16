@@ -1,18 +1,10 @@
-import { resolve } from "path";
+import tailwindcss from "@tailwindcss/vite";
 import { defineConfig } from "vite";
-
 export default defineConfig({
   server: {
     port: 4000,
   },
-  resolve: {
-    alias: {
-      "@filearchitect/core/browser": resolve(
-        __dirname,
-        "../../packages/core/src/browser.ts"
-      ),
-    },
-  },
+  plugins: [tailwindcss()],
   optimizeDeps: {
     exclude: [
       "@filearchitect/core",
