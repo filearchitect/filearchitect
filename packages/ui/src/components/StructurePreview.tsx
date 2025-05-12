@@ -26,7 +26,11 @@ export function StructurePreview({ operations, error }: StructurePreviewProps) {
       <div className="bg-gray-100 p-4 rounded min-h-[400px] font-mono text-sm overflow-auto">
         {operations.length > 0 ? (
           operations.map((op) => (
-            <div key={op.targetPath} className="flex items-center mb-1">
+            <div
+              key={op.targetPath}
+              className="flex items-center mb-1"
+              style={{ minHeight: "20px", lineHeight: "20px" }}
+            >
               {/* Pale tab indicators */}
               {Array.from({ length: op.depth }).map((_, i) => (
                 <span
@@ -46,9 +50,15 @@ export function StructurePreview({ operations, error }: StructurePreviewProps) {
                 </span>
               ))}
               {op.isDirectory ? (
-                <Folder className="w-4 h-4 mr-2 text-blue-600 flex-shrink-0" />
+                <Folder
+                  className="w-5 h-5 mr-2 text-blue-600 flex-shrink-0"
+                  style={{ minWidth: 20, minHeight: 20 }}
+                />
               ) : (
-                <File className="w-4 h-4 mr-2 text-gray-600 flex-shrink-0" />
+                <File
+                  className="w-5 h-5 mr-2 text-gray-600 flex-shrink-0"
+                  style={{ minWidth: 20, minHeight: 20 }}
+                />
               )}
               <span className="break-all">{getBasename(op.targetPath)}</span>
             </div>

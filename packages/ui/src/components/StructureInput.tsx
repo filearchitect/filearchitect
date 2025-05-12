@@ -9,16 +9,17 @@ interface StructureInputProps {
 const TabIndicator = ({ text }: { text: string }) => {
   const lines = text.split("\n");
   const tabWidth = 2;
-  const lineHeight = 22;
+  const lineHeight = 24;
 
   return (
     <div
-      className="absolute inset-0 pointer-events-none whitespace-pre font-mono text-base z-10 overflow-hidden"
+      className="absolute inset-0 pointer-events-none whitespace-pre font-mono text-sm z-10 overflow-hidden"
       style={{
         top: 0,
         left: "10px",
         right: "1px",
         bottom: 0,
+        marginLeft: "-3px",
         padding: "16px 0px",
         color: "rgba(0, 0, 0, 0.2)",
         lineHeight: `${lineHeight}px`,
@@ -29,14 +30,16 @@ const TabIndicator = ({ text }: { text: string }) => {
         const tabs = line.match(/^\t*/)?.[0] || "";
         return (
           <div key={lineIndex} style={{ height: `${lineHeight}px` }}>
-            {tabs.split("").map((_, tabIndex) => (
+            {tabs.split("").map((_, tabIndex, arr) => (
               <span
                 key={tabIndex}
                 style={{
                   display: "inline-block",
                   width: `${tabWidth}ch`,
                   textAlign: "center",
-                  verticalAlign: "top",
+                  color: "rgba(0, 0, 0, 0.2)",
+                  fontWeight: 700,
+                  marginRight: tabIndex === arr.length - 1 ? 0 : "0.5ch",
                 }}
               >
                 |
@@ -154,11 +157,12 @@ export function StructureInput({
           onKeyDown={handleKeyDown}
           onScroll={handleScroll}
           placeholder="Define your file structure here..."
-          className="absolute inset-0 min-h-[400px] font-mono text-base border border-gray-300 rounded-lg p-4 transition-all resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="absolute inset-0 min-h-[400px] font-mono text-sm border border-gray-300 rounded-lg p-4 transition-all resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           style={{
             tabSize: 2,
-            lineHeight: "22px",
+            lineHeight: "24px",
             backgroundColor: "transparent",
+            fontSize: "0.875rem",
           }}
         />
       </div>
