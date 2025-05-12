@@ -51,16 +51,20 @@ export function StructurePreview({ operations, error }: StructurePreviewProps) {
               ))}
               {op.isDirectory ? (
                 <Folder
-                  className="w-5 h-5 mr-2 text-blue-600 flex-shrink-0"
-                  style={{ minWidth: 20, minHeight: 20 }}
+                  className="w-4.5 h-4.5 mr-2 flex-shrink-0"
+                  style={{ minWidth: 18, minHeight: 18 }}
                 />
               ) : (
                 <File
-                  className="w-5 h-5 mr-2 text-gray-600 flex-shrink-0"
-                  style={{ minWidth: 20, minHeight: 20 }}
+                  className="w-4.5 h-4.5 mr-2 flex-shrink-0"
+                  style={{ minWidth: 18, minHeight: 18 }}
                 />
               )}
-              <span className="break-all">{getBasename(op.targetPath)}</span>
+              <span
+                className={op.isDirectory ? "break-all font-bold" : "break-all"}
+              >
+                {getBasename(op.targetPath)}
+              </span>
             </div>
           ))
         ) : (
