@@ -12,6 +12,8 @@ const root = ReactDOM.createRoot(rootElement);
 
 root.render(
   <React.StrictMode>
-    <StructureEditor />
+    <div className="max-w-6xl mx-auto">
+      <StructureEditor />
+    </div>
   </React.StrictMode>
 );

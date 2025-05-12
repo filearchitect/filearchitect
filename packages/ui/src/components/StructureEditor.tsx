@@ -63,16 +63,24 @@ export function StructureEditor() {
   }, [structure]);
 
   return (
-    // Main grid layout remains
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-sans">
-      {/* Column 1: Input Component */}
-      <StructureInput
-        value={structure}
-        onStructureChange={setStructure} // Pass the setter directly
-      />
+    // Main grid layout remains, added padding
+    <div className="p-4">
+      <h2 className="text-xl font-semibold mb-2">Enter File Structure</h2>
+      <p className="text-sm text-gray-600 mb-3">
+        Use tabs for indentation. Directories are created without extensions,
+        files with extensions. Use <code>[source] &gt; target</code> for copies
+        and <code>(source) &gt; target</code> for moves.
+      </p>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-sans">
+        {/* Column 1: Input Component */}
+        <StructureInput
+          value={structure}
+          onStructureChange={setStructure} // Pass the setter directly
+        />
 
-      {/* Column 2: Preview Component */}
-      <StructurePreview operations={previewOperations} error={error} />
+        {/* Column 2: Preview Component */}
+        <StructurePreview operations={previewOperations} error={error} />
+      </div>
     </div>
   );
 }

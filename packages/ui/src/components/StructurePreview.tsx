@@ -18,7 +18,6 @@ interface StructurePreviewProps {
 export function StructurePreview({ operations, error }: StructurePreviewProps) {
   return (
     <div>
-      <h2 className="text-xl font-semibold mb-2">Live Preview</h2>
       {error && (
         <pre className="bg-red-100 text-red-700 p-4 rounded mb-4 whitespace-pre-wrap break-words">
           {error}
@@ -27,11 +26,25 @@ export function StructurePreview({ operations, error }: StructurePreviewProps) {
       <div className="bg-gray-100 p-4 rounded min-h-[400px] font-mono text-sm overflow-auto">
         {operations.length > 0 ? (
           operations.map((op) => (
-            <div
-              key={op.targetPath}
-              className="flex items-center mb-1"
-              style={{ paddingLeft: `${op.depth * 1.5}rem` }} // Indentation based on depth
-            >
+            <div key={op.targetPath} className="flex items-center mb-1">
+              {/* Pale tab indicators */}
+              {Array.from({ length: op.depth }).map((_, i) => (
+                <span
+                  key={i}
+                  style={{
+                    display: "inline-block",
+                    width: "1ch",
+                    marginLeft: "0ch",
+                    marginRight: "1ch",
+                    textAlign: "center",
+                    color: "rgba(0,0,0,0.08)",
+                    fontWeight: 700,
+                  }}
+                  aria-hidden="true"
+                >
+                  |
+                </span>
+              ))}
               {op.isDirectory ? (
                 <Folder className="w-4 h-4 mr-2 text-blue-600 flex-shrink-0" />
               ) : (
