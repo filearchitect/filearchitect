@@ -4,7 +4,7 @@ import {
   type GetStructureOptions,
   type StructureOperation,
 } from "@filearchitect/core";
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { StructureInput } from "./StructureInput";
 import { StructurePreview } from "./StructurePreview";
 
@@ -19,61 +19,54 @@ import { StructurePreview } from "./StructurePreview";
 //   // Add other properties if needed
 // }
 
-const initialStructure = `
-src
-\tcomponents
-\t\tButton.tsx
-\t\tInput.tsx
-\tstyles
-\t\tglobal.css
-\tutils
-\t\tapi.ts
-\t\thelpers.ts
-\ttypes
-\t\tindex.d.ts
-`.trim();
+interface StructureEditorProps {
+  structure: string;
+  onStructureChange: (newStructure: string) => void;
+  previewOperations: StructureOperation[];
+  onPreviewOperationsChange: (operations: StructureOperation[]) => void;
+  error: string | null;
+  onErrorChange: (error: string | null) => void;
+}
 
 // Renamed to StructureEditor
 // It orchestrates the editor and the output preview
-export function StructureEditor() {
-  const [structure, setStructure] = useState<string>(initialStructure);
-  const [previewOperations, setPreviewOperations] = useState<
-    StructureOperation[]
-  >([]);
-  const [error, setError] = useState<string | null>(null);
-
+export function StructureEditor({
+  structure,
+  onStructureChange,
+  previewOperations,
+  onPreviewOperationsChange,
+  error,
+  onErrorChange,
+}: StructureEditorProps) {
   useEffect(() => {
     const updatePreview = async () => {
-      setError(null);
+      onErrorChange(null);
       try {
-        // Instantiate BrowserFileSystem
         const fs = new BrowserFileSystem();
-        // Define options for getStructure
         const options: GetStructureOptions = {
           fs,
-          rootDir: "/", // Using root as the base
-          // recursive: true, // This is default, can be omitted unless explicitly false
+          rootDir: "/",
         };
-        const result = await getStructure(structure, options); // Pass options
+        const result = await getStructure(structure, options);
         if (result && Array.isArray(result.operations)) {
-          setPreviewOperations(result.operations);
-          setError(null);
+          onPreviewOperationsChange(result.operations);
+          onErrorChange(null);
         } else {
           console.error(
             "Unexpected result structure from getStructure:",
             result
           );
-          setError("Error: Invalid data format received for preview.");
-          setPreviewOperations([]);
+          onErrorChange("Error: Invalid data format received for preview.");
+          onPreviewOperationsChange([]);
         }
       } catch (err: any) {
         console.error("Error in getStructure:", err);
-        setError(`Error parsing structure: ${err.message}`);
-        setPreviewOperations([]);
+        onErrorChange(`Error parsing structure: ${err.message}`);
+        onPreviewOperationsChange([]);
       }
     };
     updatePreview();
-  }, [structure]);
+  }, [structure, onErrorChange, onPreviewOperationsChange]);
 
   return (
     // Main grid layout remains, added padding
@@ -82,7 +75,7 @@ export function StructureEditor() {
         {/* Column 1: Input Component */}
         <StructureInput
           value={structure}
-          onStructureChange={setStructure} // Pass the setter directly
+          onStructureChange={onStructureChange}
         />
 
         {/* Column 2: Preview Component */}
