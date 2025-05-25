@@ -13,7 +13,6 @@ This code powers the mac app available at [filearchitect.com](https://filearchit
 
 This is still a work-in-progress and might have some breaking changes
 
-
 ## Features
 
 -   📁 Create directory structures using a simple, indentation-based syntax
@@ -82,10 +81,13 @@ src
 `;
 
 // Uses Node.js filesystem by default
-await createStructure(structure, "./my-project");
+await createStructure(structure, {
+    rootDir: "./my-project",
+});
 
-// Or with options
-await createStructure(structure, "./my-project", {
+// Or with additional options
+await createStructure(structure, {
+    rootDir: "./my-project",
     replacements: {
         files: [{ search: ".js", replace: ".ts" }],
     },
@@ -198,30 +200,70 @@ filearchitect show structure.txt output
 ## Library Usage
 
 ```typescript
-import { createStructure, getStructure } from "@filearchitect/core";
+import { createStructure } from "@filearchitect/core";
 
-// Basic usage with Node.js filesystem (default)
-await createStructure(structureText, "./output");
+const structure = `
+src
+    components
+        Button.tsx
+        Card.tsx
+    styles
+        global.css
+`;
 
-// With replacements
-await createStructure(structureText, "./output", {
+// Uses Node.js filesystem by default
+await createStructure(structure, {
+    rootDir: "./my-project",
+});
+
+// Or with additional options
+await createStructure(structure, {
+    rootDir: "./my-project",
     replacements: {
         files: [{ search: ".js", replace: ".ts" }],
-        folders: [{ search: "api", replace: "rest" }],
     },
 });
-
-// Preview operations without creating files
-const { operations } = await getStructure(structureText, {
-    rootDir: "./output",
-});
-console.log(operations);
-
-// Use the operations for custom processing
-operations.forEach((operation) => {
-    console.log(`${operation.type}: ${operation.targetPath}`);
-});
 ```
+
+## API Reference
+
+### createStructure(input: string, options: CreateStructureOptions)
+
+Creates a file structure from a text description.
+
+#### Parameters
+
+-   `input`: The text description of the structure to create
+-   `options`: Configuration options
+    -   `rootDir`: The root directory where the structure will be created (required)
+    -   `fs`: Custom filesystem implementation (optional)
+    -   `replacements`: File and folder name replacements (optional)
+        -   `files`: Replacements for file names
+        -   `folders`: Replacements for folder names
+        -   `all`: Replacements applied to both files and folders
+
+#### Returns
+
+A promise that resolves to a `GetStructureResult` containing the operations performed.
+
+### getStructure(input: string, options: GetStructureOptions)
+
+Parses a structure description and returns the operations that would be performed.
+
+#### Parameters
+
+-   `input`: The text description of the structure
+-   `options`: Configuration options
+    -   `rootDir`: The root directory where the structure would be created (required)
+    -   `fs`: Custom filesystem implementation (optional)
+    -   `replacements`: File and folder name replacements (optional)
+        -   `files`: Replacements for file names
+        -   `folders`: Replacements for folder names
+        -   `all`: Replacements applied to both files and folders
+
+#### Returns
+
+A promise that resolves to a `GetStructureResult` containing the operations that would be performed.
 
 ## Browser Usage
 

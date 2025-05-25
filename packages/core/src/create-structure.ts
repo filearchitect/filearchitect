@@ -1,11 +1,12 @@
-import path from "path";
 import { getStructure } from "./get-structure.js";
 import { NodeFileSystem } from "./node-filesystem.js";
+import * as pathUtils from "./path-utils.js"; // Import path utils
 import type {
   CreateStructureOptions,
   FileNameReplacement,
   FileSystem,
   GetStructureResult,
+  StructureOperation, // Import StructureOperation
 } from "./types.js";
 
 /**
@@ -17,176 +18,241 @@ import type {
  * - Tab or space indentation for nesting
  *
  * @param input The tab-indented string describing the structure
- * @param rootDir The root directory to create the structure in
  * @param options Additional options for structure creation
  */
 export async function createStructure(
   input: string,
-  rootDir: string,
-  options: CreateStructureOptions = {}
+  options: CreateStructureOptions
 ): Promise<GetStructureResult> {
   const fs = options.fs || new NodeFileSystem();
+  const { rootDir, replacements = { files: [], folders: [], all: [] } } =
+    options;
 
-  // Ensure root directory exists and is empty
-  await fs.ensureEmptyDir(rootDir);
-
-  // Process structure
+  // 1. Get the structure plan (operations) from getStructure
   const result = await getStructure(input, {
-    ...options,
     rootDir,
     fs,
+    replacements, // Pass replacements for parsing phase
+    // Pass recursive only if it exists in CreateStructureOptions (though not standard)
+    ...(options.hasOwnProperty("recursive") && {
+      recursive: (options as any).recursive,
+    }),
   });
 
-  const { operations: structureOperations } = result;
-  const { replacements = { files: [], folders: [], all: [] } } = options;
+  // 2. Ensure the root directory exists (is this necessary if getStructure uses it?)
+  // ensureEmptyDir might be too destructive if getStructure already relied on existing sources within it.
+  // Let's ensure it exists, but not necessarily empty it here. Maybe add an option?
+  // For now, ensuring it exists seems safest if operations target it.
+  await fs.ensureDir(rootDir); // Changed from ensureEmptyDir
 
-  // Execute each operation
+  const { operations: structureOperations } = result;
+
+  // 3. Execute each operation
   for (const operation of structureOperations) {
+    // Skip 'included' operations as they are handled by parent copy/move
+    if (operation.type === "included") continue;
+
     try {
-      const destinationDir = path.dirname(operation.targetPath);
-      if (!(await fs.exists(destinationDir))) {
-        await createDirectory(destinationDir, { fs });
+      // Ensure parent directory exists *before* attempting the operation
+      const parentDir = pathUtils.getDirname(operation.targetPath);
+      if (
+        parentDir &&
+        parentDir !== "." &&
+        parentDir !== rootDir &&
+        !(await fs.exists(parentDir))
+      ) {
+        await executeCreateDirectory(parentDir, fs);
       }
 
       switch (operation.type) {
         case "create":
-          if (operation.isDirectory) {
-            await createDirectory(operation.targetPath, { fs });
-          } else {
-            await createEmptyFile(operation.targetPath, { fs });
-          }
+          await executeCreate(operation, fs);
           break;
-
         case "copy":
-          if (!operation.sourcePath) {
-            throw new Error("Source path is required for copy operations");
-          }
-          await copyFile(operation.sourcePath, operation.targetPath, {
-            fs,
-            replacements,
-          });
+          // Replacements are needed here again if the FS layer uses them during copyFolder
+          await executeCopy(operation, fs, replacements);
           break;
-
         case "move":
-          if (!operation.sourcePath) {
-            throw new Error("Source path is required for move operations");
-          }
-          await moveFile(operation.sourcePath, operation.targetPath, {
-            fs,
-            replacements,
-          });
+          // Replacements might be needed here for moveFolder if it implies copies/renames
+          await executeMove(operation, fs, replacements);
           break;
       }
     } catch (error: any) {
-      if (fs.emitWarning) {
-        if (error.code === "ENOENT") {
-          fs.emitWarning({
-            type: "missing_source",
-            message: `Source path not found: ${error.path}`,
-            path: error.path,
-          });
-          // Create empty file/directory as fallback
-          if (operation.isDirectory) {
-            await createDirectory(operation.targetPath, { fs });
-          } else {
-            await createEmptyFile(operation.targetPath, { fs });
-          }
-        } else {
-          fs.emitWarning({
-            type: "operation_failed",
-            message: error.message,
-            path: operation.targetPath,
-          });
-        }
-      }
+      // Handle errors, potentially falling back for missing sources
+      await handleExecutionError(error, operation, fs);
     }
   }
 
+  // Return the result from getStructure which includes the performed operations and options used
   return result;
 }
 
+// --- Helper Functions for Execution ---
+
 /**
- * Creates an empty file, creating parent directories if needed.
+ * Creates an empty file, ensuring parent directories exist.
  */
-async function createEmptyFile(
+async function executeCreateFile(
   filePath: string,
-  options: { fs: FileSystem }
+  fs: FileSystem
 ): Promise<void> {
-  const { fs: filesystem } = options;
-
-  const dir = path.dirname(filePath);
-  if (!(await filesystem.exists(dir))) {
-    await createDirectory(dir, { fs: filesystem });
+  const dir = pathUtils.getDirname(filePath);
+  if (dir && dir !== "." && !(await fs.exists(dir))) {
+    await executeCreateDirectory(dir, fs); // Reuse directory creation logic
   }
-
-  await filesystem.writeFile(filePath, "");
+  await fs.writeFile(filePath, "");
 }
 
 /**
- * Creates a directory if it doesn't exist.
+ * Creates a directory recursively if it doesn't exist.
  */
-async function createDirectory(
+async function executeCreateDirectory(
   dirPath: string,
-  options: { fs: FileSystem }
+  fs: FileSystem
 ): Promise<void> {
-  const { fs: filesystem } = options;
-  await filesystem.mkdir(dirPath, { recursive: true });
+  await fs.mkdir(dirPath, { recursive: true });
 }
 
 /**
- * Copies a file or directory.
+ * Executes a "create" operation (file or directory).
  */
-async function copyFile(
-  sourcePath: string,
-  targetPath: string,
-  options: {
-    fs: FileSystem;
-    replacements: {
-      all?: FileNameReplacement[];
-      files?: FileNameReplacement[];
-      folders?: FileNameReplacement[];
-    };
-  }
+async function executeCreate(
+  operation: StructureOperation,
+  fs: FileSystem
 ): Promise<void> {
-  const { fs: filesystem, replacements } = options;
-
-  const stat = await filesystem.stat(sourcePath);
-  const isDirectory = stat.isDirectory();
-
-  if (isDirectory) {
-    await filesystem.copyFolder(sourcePath, targetPath, {
-      replacements,
-    });
+  if (operation.isDirectory) {
+    await executeCreateDirectory(operation.targetPath, fs);
   } else {
-    await filesystem.copyFile(sourcePath, targetPath);
+    await executeCreateFile(operation.targetPath, fs);
   }
 }
 
 /**
- * Moves a file or directory.
+ * Executes a "copy" operation.
  */
-async function moveFile(
-  sourcePath: string,
-  targetPath: string,
-  options: {
-    fs: FileSystem;
-    replacements: {
-      all?: FileNameReplacement[];
-      files?: FileNameReplacement[];
-      folders?: FileNameReplacement[];
-    };
+async function executeCopy(
+  operation: StructureOperation,
+  fs: FileSystem,
+  replacements: {
+    all?: FileNameReplacement[];
+    files?: FileNameReplacement[];
+    folders?: FileNameReplacement[];
   }
 ): Promise<void> {
-  const { fs: filesystem, replacements } = options;
+  if (!operation.sourcePath) {
+    throw new Error(
+      `Source path missing for copy operation: ${operation.targetPath}`
+    );
+  }
+  const exists = await fs.exists(operation.sourcePath);
+  if (!exists) {
+    throw Object.assign(
+      new Error(`Source path not found: ${operation.sourcePath}`),
+      { code: "ENOENT", path: operation.sourcePath }
+    );
+  }
 
-  const stat = await filesystem.stat(sourcePath);
-  const isDirectory = stat.isDirectory();
+  const stat = await fs.stat(operation.sourcePath);
+  const isSourceDirectory = stat.isDirectory();
 
-  if (isDirectory) {
-    await filesystem.moveFolder(sourcePath, targetPath, {
+  if (isSourceDirectory) {
+    // Ensure target directory exists before copying folder contents
+    if (!(await fs.exists(operation.targetPath))) {
+      await executeCreateDirectory(operation.targetPath, fs);
+    }
+    await fs.copyFolder(operation.sourcePath, operation.targetPath, {
       replacements,
     });
   } else {
-    await filesystem.rename(sourcePath, targetPath);
+    // Ensure target directory exists before copying file
+    const targetDir = pathUtils.getDirname(operation.targetPath);
+    if (targetDir && targetDir !== "." && !(await fs.exists(targetDir))) {
+      await executeCreateDirectory(targetDir, fs);
+    }
+    await fs.copyFile(operation.sourcePath, operation.targetPath);
+  }
+}
+
+/**
+ * Executes a "move" operation.
+ */
+async function executeMove(
+  operation: StructureOperation,
+  fs: FileSystem,
+  replacements: {
+    all?: FileNameReplacement[];
+    files?: FileNameReplacement[];
+    folders?: FileNameReplacement[];
+  }
+): Promise<void> {
+  if (!operation.sourcePath) {
+    throw new Error(
+      `Source path missing for move operation: ${operation.targetPath}`
+    );
+  }
+  const exists = await fs.exists(operation.sourcePath);
+  if (!exists) {
+    throw Object.assign(
+      new Error(`Source path not found: ${operation.sourcePath}`),
+      { code: "ENOENT", path: operation.sourcePath }
+    );
+  }
+
+  const stat = await fs.stat(operation.sourcePath);
+  const isSourceDirectory = stat.isDirectory();
+
+  // Ensure target directory exists before moving
+  const targetDir = pathUtils.getDirname(operation.targetPath);
+  if (targetDir && targetDir !== "." && !(await fs.exists(targetDir))) {
+    await executeCreateDirectory(targetDir, fs);
+  }
+
+  if (isSourceDirectory) {
+    await fs.moveFolder(operation.sourcePath, operation.targetPath, {
+      replacements,
+    });
+  } else {
+    await fs.rename(operation.sourcePath, operation.targetPath);
+  }
+}
+
+/**
+ * Handles errors during operation execution, emitting warnings and potentially falling back.
+ */
+async function handleExecutionError(
+  error: any,
+  operation: StructureOperation,
+  fs: FileSystem
+): Promise<void> {
+  if (fs.emitWarning) {
+    if (error.code === "ENOENT" && error.path) {
+      // Check for specific ENOENT structure
+      fs.emitWarning({
+        type: "missing_source",
+        message: `Source path not found during execution: ${error.path}`,
+        path: error.path, // Use error.path which should be the source path
+      });
+      // Fallback: Create an empty target file/directory if source was missing
+      console.warn(
+        `Warning: Source ${error.path} not found for ${operation.type} operation. Creating empty target ${operation.targetPath}.`
+      );
+      await executeCreate(operation, fs); // Use the dedicated create function
+    } else {
+      fs.emitWarning({
+        type: "operation_failed",
+        message: `Failed to execute ${operation.type} for ${operation.targetPath}: ${error.message}`,
+        path: operation.targetPath,
+      });
+      console.error(
+        `Error executing operation for ${operation.targetPath}:`,
+        error
+      );
+    }
+  } else {
+    // If no warning emitter, just log the error
+    console.error(
+      `Error executing operation for ${operation.targetPath}:`,
+      error
+    );
   }
 }

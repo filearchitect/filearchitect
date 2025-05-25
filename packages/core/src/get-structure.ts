@@ -1,18 +1,19 @@
-import path from "path";
-import yaml from "yaml";
 import { NodeFileSystem } from "./node-filesystem.js";
-import { resolveTildePath } from "./path-utils.js";
+import * as pathUtils from "./path-utils.js"; // Import path utils
 import type {
   FileNameReplacement,
   FileSystem,
   GetStructureOptions,
   GetStructureResult,
-  StructureFrontmatter,
   StructureOperation,
   StructureOperationLine,
   StructureOperationType,
 } from "./types.js";
-import { Replacements } from "./types/operations.js";
+import {
+  mergeReplacements,
+  parseFrontmatter,
+} from "./utils/frontmatter-parser.js"; // Import frontmatter utils
+// Removed incorrect Replacements import
 import { handleOperationError } from "./utils/error-utils.js";
 import { applyReplacements } from "./utils/replacements.js";
 import { validateOperation } from "./utils/validation.js";
@@ -78,25 +79,27 @@ function parseOperation(
   // Move operation
   const moveMatch = line.match(/^\((.+?)\)(?:\s*>\s*(.+))?$/);
   if (moveMatch) {
+    const source = moveMatch[1].trim();
     return {
       type: "move",
-      sourcePath: resolveTildePath(moveMatch[1].trim()),
-      name: moveMatch[2]?.trim() || path.basename(moveMatch[1].trim()),
+      sourcePath: pathUtils.resolveTildePath(source), // Use pathUtils
+      name: moveMatch[2]?.trim() || pathUtils.getBasename(source), // Use pathUtils
     };
   }
 
   // Copy operation
   const copyMatch = line.match(/^\[(.+?)\](?:\s*>\s*(.+))?$/);
   if (copyMatch) {
+    const source = copyMatch[1].trim();
     return {
       type: "copy",
-      sourcePath: resolveTildePath(copyMatch[1].trim()),
-      name: copyMatch[2]?.trim() || path.basename(copyMatch[1].trim()),
+      sourcePath: pathUtils.resolveTildePath(source), // Use pathUtils
+      name: copyMatch[2]?.trim() || pathUtils.getBasename(source), // Use pathUtils
     };
   }
 
   // Create operation
-  const isDirectory = !path.extname(line);
+  const isDirectory = !pathUtils.hasFileExtension(line); // Use pathUtils
   return {
     type: "create",
     name: line,
@@ -141,8 +144,8 @@ async function listDirectoryContents(
         : options.fileNameReplacements
     );
 
-    const currentSourcePath = path.join(sourcePath, entry.name);
-    const currentTargetPath = path.join(targetPath, replacedName);
+    const currentSourcePath = pathUtils.joinPaths(sourcePath, entry.name); // Use pathUtils
+    const currentTargetPath = pathUtils.joinPaths(targetPath, replacedName); // Use pathUtils
 
     results.push({
       type: "included",
@@ -207,9 +210,9 @@ async function processLine(
     return {
       type: "create",
       name: replacedName + "/",
-      targetPath: path.join(currentDir, replacedName),
+      targetPath: pathUtils.joinPaths(currentDir, replacedName), // Use pathUtils
       isDirectory: true,
-      depth: directoryMatch[1].length / 2,
+      depth: directoryMatch[1].length / 2, // Assuming space indentation is 2
     };
   }
 
@@ -217,15 +220,20 @@ async function processLine(
   // For create operations, check the line itself to handle directories correctly
   const isDirectory =
     operation.type === "create"
-      ? !path.extname(line.trim())
-      : !path.extname(operation.name);
+      ? !pathUtils.hasFileExtension(line.trim()) // Use pathUtils
+      : !pathUtils.hasFileExtension(operation.name); // Use pathUtils
 
   // Apply replacements based on whether it's a file or directory
-  const replacedName = applyReplacements(
-    operation.name,
-    isDirectory ? folderNameReplacements : fileNameReplacements
-  );
-  const targetPath = path.join(currentDir, replacedName);
+  // Apply 'all' first, then specific type replacements
+  const allReplacements = options.replacements?.all || [];
+  const specificReplacements = isDirectory
+    ? options.replacements?.folders || []
+    : options.replacements?.files || [];
+
+  let tempName = applyReplacements(operation.name, allReplacements);
+  const replacedName = applyReplacements(tempName, specificReplacements);
+
+  const targetPath = pathUtils.joinPaths(currentDir, replacedName); // Use pathUtils
 
   // Create the structure operation with proper type assertion
   const structureOperation: StructureOperation = {
@@ -234,7 +242,7 @@ async function processLine(
     sourcePath: operation.sourcePath,
     isDirectory,
     depth: level,
-    name: path.basename(targetPath),
+    name: pathUtils.getBasename(targetPath), // Use pathUtils
   };
 
   // If it's a directory, add it to the stack for nesting
@@ -341,63 +349,9 @@ async function handleFileSourceCheck(
       );
     }
   }
-}
+} // <-- Add missing closing brace for handleFileSourceCheck
 
-/**
- * Parses YAML frontmatter from the input string if present
- */
-function parseFrontmatter(input: string): {
-  frontmatter: StructureFrontmatter | null;
-  content: string;
-} {
-  const match = input.match(/^\s*---\s*([\s\S]*?)\s*---\s*([\s\S]*)$/);
-  if (!match) {
-    return { frontmatter: null, content: input };
-  }
-
-  try {
-    const yamlContent = match[1].replace(/\t/g, "  ");
-
-    const parsed = yaml.parse(yamlContent);
-    const frontmatter = {
-      replacements: {
-        files: parsed.fileReplacements || [],
-        folders: parsed.folderReplacements || [],
-        all: parsed.allReplacements || [],
-      },
-    };
-
-    return { frontmatter, content: match[2] };
-  } catch (error) {
-    // If YAML parsing fails, treat the whole input as content
-    return { frontmatter: null, content: input };
-  }
-}
-
-function mergeReplacements(
-  frontmatter: StructureFrontmatter | null,
-  options: GetStructureOptions
-): Replacements {
-  // De-duplicate replacements with priority: options > frontmatter
-  const allReplacements = [
-    ...(frontmatter?.replacements?.all || []),
-    ...(options.replacements?.all || []),
-  ].filter((v, i, a) => a.findIndex((t) => t.search === v.search) === i);
-
-  return {
-    files: [
-      ...allReplacements,
-      ...(frontmatter?.replacements?.files || []),
-      ...(options.replacements?.files || []),
-    ],
-    folders: [
-      ...allReplacements,
-      ...(frontmatter?.replacements?.folders || []),
-      ...(options.replacements?.folders || []),
-    ],
-    all: allReplacements,
-  };
-}
+// parseFrontmatter and mergeReplacements functions moved to utils/frontmatter-parser.ts
 
 /**
  * Gets an array of structure operations from a tab-indented string.
@@ -453,8 +407,10 @@ export async function getStructure(
   // Sort operations to maintain parent-child relationships while preserving original order
   operations.sort((a, b) => {
     // If one path is a parent of the other, parent comes first
-    if (b.targetPath.startsWith(a.targetPath + path.sep)) return -1;
-    if (a.targetPath.startsWith(b.targetPath + path.sep)) return 1;
+    if (b.targetPath.startsWith(a.targetPath + pathUtils.pathSeparator))
+      return -1; // Use pathUtils
+    if (a.targetPath.startsWith(b.targetPath + pathUtils.pathSeparator))
+      return 1; // Use pathUtils
 
     // Otherwise preserve original order based on orderIndex
     return a.orderIndex - b.orderIndex;

@@ -38,7 +38,8 @@ src
         helpers.ts
 `;
 
-    await createStructure(input, testDir, {
+    await createStructure(input, {
+      rootDir: testDir,
       fs,
     });
 
@@ -64,7 +65,8 @@ src
     [${sourceFile}] > copied.ts
 `;
 
-    await createStructure(input, testDir, {
+    await createStructure(input, {
+      rootDir: testDir,
       fs,
     });
 
@@ -85,7 +87,8 @@ src
     (${sourceFile}) > moved.ts
 `;
 
-    await createStructure(input, testDir, {
+    await createStructure(input, {
+      rootDir: testDir,
       fs,
     });
 
@@ -108,7 +111,8 @@ src
     [${sourceDir}] > copied
 `;
 
-    await createStructure(input, testDir, {
+    await createStructure(input, {
+      rootDir: testDir,
       fs,
     });
 
@@ -133,7 +137,8 @@ src
     file-NAME-test.ts
 `;
 
-    await createStructure(input, testDir, {
+    await createStructure(input, {
+      rootDir: testDir,
       replacements: {
         files: [{ search: "NAME", replace: "replaced" }],
       },
@@ -151,7 +156,8 @@ src
     [/non/existent/file.ts] > copied.ts
 `;
 
-    await createStructure(input, testDir, {
+    await createStructure(input, {
+      rootDir: testDir,
       fs,
     });
 
@@ -170,7 +176,8 @@ fileReplacements:
 src
     index.ts`;
 
-    await createStructure(input, "test", {
+    await createStructure(input, {
+      rootDir: "test",
       fs,
     });
 
@@ -187,7 +194,8 @@ fileReplacements:
 [src] > lib
     [index.js] > index.ts`;
 
-    await createStructure(input, "test", {
+    await createStructure(input, {
+      rootDir: "test",
       fs,
     });
 
@@ -204,7 +212,8 @@ fileReplacements:
 (src) > lib
     (index.js) > index.ts`;
 
-    await createStructure(input, "test", {
+    await createStructure(input, {
+      rootDir: "test",
       fs,
     });
 
@@ -219,7 +228,9 @@ src
         client-name_file.ts
 `;
 
-    await createStructure(input, testDir, {
+    await createStructure(input, {
+      rootDir: testDir,
+      fs,
       replacements: {
         all: [{ search: "client-name", replace: "foo" }],
         folders: [{ search: "folder", replace: "bar" }],
@@ -240,7 +251,9 @@ src
     test-file.txt
 `;
 
-    await createStructure(input, testDir, {
+    await createStructure(input, {
+      rootDir: testDir,
+      fs,
       replacements: {
         all: [{ search: "test-", replace: "" }],
         files: [

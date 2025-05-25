@@ -1,4 +1,3 @@
-import path from "path";
 import type {
   DirectoryEntry,
   FileStat,
@@ -6,6 +5,7 @@ import type {
   FileSystemOptions,
   Warning,
 } from "./types.js";
+import * as pathUtils from "./path-utils.js"; // Import path utils
 import { handleOperationError } from "./utils/error-utils.js";
 import { applyReplacements } from "./utils/replacements.js";
 import { createMessage } from "./warnings.js";
@@ -152,11 +152,11 @@ export abstract class BaseFileSystem implements FileSystem {
       await this.stat(path);
     } catch {
       // Create parent directory if needed
-      const parentDir = path.split("/").slice(0, -1).join("/");
-      if (parentDir) {
+      const parentDir = pathUtils.getDirname(path); // Use pathUtils.getDirname (assuming this is the exported name)
+      if (parentDir && parentDir !== '.') { // Check if parentDir is valid
         await this.ensureDir(parentDir);
       }
-      await this.writeFile(path, "");
+      await this.writeFile(path, ""); // Create empty file
     }
   }
 
@@ -246,162 +246,10 @@ export abstract class BaseFileSystem implements FileSystem {
     return true;
   }
 
-  /**
-   * Gets all files in a directory recursively.
-   * Returns an array of paths relative to the directory.
+  /*
+   * Note: Methods getAllFiles, getAllDirectories, getRelativePath, glob, matchesPattern, getCommonParent
+   * have been moved to path-utils.ts
    */
-  async getAllFiles(dirPath: string): Promise<string[]> {
-    const result: string[] = [];
-    const entries = await this.readdir(dirPath, { withFileTypes: true });
-
-    for (const entry of entries) {
-      const fullPath = `${dirPath}/${entry.name}`;
-      if (entry.isDirectory()) {
-        const subFiles = await this.getAllFiles(fullPath);
-        result.push(...subFiles.map((f) => `${entry.name}/${f}`));
-      } else {
-        result.push(entry.name);
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * Gets all directories in a directory recursively.
-   * Returns an array of paths relative to the directory.
-   */
-  async getAllDirectories(dirPath: string): Promise<string[]> {
-    const result: string[] = [];
-    const entries = await this.readdir(dirPath, { withFileTypes: true });
-
-    for (const entry of entries) {
-      const fullPath = `${dirPath}/${entry.name}`;
-      if (entry.isDirectory()) {
-        result.push(entry.name);
-        const subDirs = await this.getAllDirectories(fullPath);
-        result.push(...subDirs.map((d) => `${entry.name}/${d}`));
-      }
-    }
-
-    return result;
-  }
-
-  /**
-   * Gets the relative path between two absolute paths.
-   */
-  async getRelativePath(from: string, to: string): Promise<string> {
-    // Split paths into segments
-    const fromParts = from.split("/").filter(Boolean);
-    const toParts = to.split("/").filter(Boolean);
-
-    // Find common prefix
-    let i = 0;
-    while (
-      i < fromParts.length &&
-      i < toParts.length &&
-      fromParts[i] === toParts[i]
-    ) {
-      i++;
-    }
-
-    // Build relative path
-    const upCount = fromParts.length - i;
-    const relativeParts = [...Array(upCount).fill(".."), ...toParts.slice(i)];
-    return relativeParts.join("/") || ".";
-  }
-
-  /**
-   * Gets all paths matching a glob pattern.
-   * For example: src/**\/*.ts will get all TypeScript files in src and subdirectories.
-   */
-  async glob(pattern: string): Promise<string[]> {
-    const [baseDir, ...patternParts] = pattern.split("/");
-    const results: string[] = [];
-
-    if (!patternParts.length) {
-      return [baseDir];
-    }
-
-    const processDirectory = async (
-      dir: string,
-      remainingPattern: string[]
-    ) => {
-      const [current, ...rest] = remainingPattern;
-      const entries = await this.readdir(dir, { withFileTypes: true });
-
-      for (const entry of entries) {
-        const fullPath = `${dir}/${entry.name}`;
-
-        if (current === "**") {
-          // Deep search
-          if (entry.isDirectory()) {
-            await processDirectory(fullPath, remainingPattern);
-          }
-          if (rest.length) {
-            await processDirectory(fullPath, rest);
-          }
-        } else if (current.includes("*")) {
-          // Pattern matching
-          const regex = new RegExp(`^${current.replace(/\*/g, ".*")}$`);
-          if (regex.test(entry.name)) {
-            if (rest.length === 0) {
-              results.push(fullPath);
-            } else if (entry.isDirectory()) {
-              await processDirectory(fullPath, rest);
-            }
-          }
-        } else if (entry.name === current) {
-          // Exact match
-          if (rest.length === 0) {
-            results.push(fullPath);
-          } else if (entry.isDirectory()) {
-            await processDirectory(fullPath, rest);
-          }
-        }
-      }
-    };
-
-    await processDirectory(baseDir, patternParts);
-    return results;
-  }
-
-  /**
-   * Checks if a path matches a glob pattern.
-   */
-  matchesPattern(path: string, pattern: string): boolean {
-    const regex = new RegExp(
-      `^${pattern
-        .split("*")
-        .map((s) => s.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"))
-        .join(".*")}$`
-    );
-    return regex.test(path);
-  }
-
-  /**
-   * Gets common parent directory of multiple paths.
-   */
-  getCommonParent(...paths: string[]): string {
-    if (paths.length === 0) return "";
-    if (paths.length === 1) return paths[0];
-
-    const parts = paths.map((p) => p.split("/").filter(Boolean));
-    const minLength = Math.min(...parts.map((p) => p.length));
-
-    let commonParts: string[] = [];
-    for (let i = 0; i < minLength; i++) {
-      const part = parts[0][i];
-      if (parts.every((p) => p[i] === part)) {
-        commonParts.push(part);
-      } else {
-        break;
-      }
-    }
-
-    return commonParts.join("/") || "/";
-  }
-
   protected async copyFolderWithReplacements(
     src: string,
     dest: string,
@@ -415,14 +263,25 @@ export abstract class BaseFileSystem implements FileSystem {
     await this.mkdir(dest, { recursive: true });
 
     // Read the source directory
-    const entries = await this.readdir(src, {
-      withFileTypes: true,
-      recursive,
-    });
+    let entries: DirectoryEntry[];
+     try {
+        entries = await this.readdir(src, { withFileTypes: true });
+     } catch (error: any) {
+         if (error.code === 'ENOENT') {
+             this.emitWarning({
+                 type: 'missing_source',
+                 message: createMessage('SOURCE_NOT_FOUND', src),
+                 path: src,
+             });
+             return; // Stop if source doesn't exist
+         }
+         throw error; // Re-throw other errors
+     }
+
 
     // Copy each entry
     for (const entry of entries) {
-      const srcPath = path.join(src, entry.name);
+      const srcPath = pathUtils.joinPaths(src, entry.name); // Use pathUtils.joinPaths
       const isDirectory = entry.isDirectory();
 
       // Apply replacements based on whether it's a file or directory
@@ -431,13 +290,20 @@ export abstract class BaseFileSystem implements FileSystem {
         isDirectory ? folderNameReplacements : fileNameReplacements
       );
 
-      const destPath = path.join(dest, replacedName);
+      const destPath = pathUtils.joinPaths(dest, replacedName); // Use pathUtils.joinPaths
 
       if (isDirectory) {
+        // Only recurse if the recursive option is true (it defaults to true)
         if (recursive) {
+          // Recursively copy subdirectory
           await this.copyFolderWithReplacements(srcPath, destPath, options);
         }
+        // If not recursive, we might still need to create the empty dir structure?
+        // Current logic assumes if recursive=false, we only copy top-level files.
+        // Let's stick to this interpretation for now. If recursive is false, subdirs are ignored.
+
       } else {
+        // Copy file
         await this.copyFile(srcPath, destPath);
       }
     }

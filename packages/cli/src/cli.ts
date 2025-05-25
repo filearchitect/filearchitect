@@ -120,7 +120,8 @@ async function main() {
       console.log("\nNo changes were made to the filesystem.");
     } else {
       // Create the structure using the same options from the result
-      await createStructure(structure, absoluteOutput, {
+      await createStructure(structure, {
+        rootDir: absoluteOutput,
         fs,
         replacements: {
           files: result.options.replacements.files,

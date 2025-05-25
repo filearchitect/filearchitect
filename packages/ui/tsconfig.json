@@ -1,0 +1,29 @@
+{
+  "compilerOptions": {
+    "target": "ESNext",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "module": "ESNext",
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "allowSyntheticDefaultImports": true,
+    "strict": true,
+    "forceConsistentCasingInFileNames": true,
+    "moduleResolution": "bundler", // Or "node" depending on preference/setup
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "noEmit": false, // We want tsc to emit declaration files
+    "emitDeclarationOnly": true, // Only emit .d.ts files, JS is handled by Vite
+    "jsx": "react-jsx",
+    "declaration": true,
+    "declarationDir": "./dist",
+    "outDir": "./dist", // Also specify outDir for completeness
+    "rootDir": "./src",
+    "baseUrl": ".", // For path aliases if needed later
+    "paths": {
+      // Example path alias setup (like Shadcn)
+      "@/*": ["./src/*"]
+    }
+  },
+  "include": ["src"],
+  "exclude": ["node_modules", "dist"]
+}

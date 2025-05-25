@@ -24,3 +24,5 @@ structure.txt
 tsconfig.tsbuildinfo
 notes.md
 scripts/
+
+packages/core/test/lib
