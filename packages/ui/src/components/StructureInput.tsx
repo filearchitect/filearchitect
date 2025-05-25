@@ -157,11 +157,10 @@ export function StructureInput({
           onKeyDown={handleKeyDown}
           onScroll={handleScroll}
           placeholder="Define your file structure here..."
-          className="absolute inset-0 min-h-[400px] font-mono text-sm border border-gray-300 rounded-lg p-4 transition-all resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="absolute inset-0 outline-none ring-0 focus:outline-none h-full font-mono text-sm border border-gray-300 rounded-md p-4  resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           style={{
             tabSize: 2,
             lineHeight: "24px",
-            backgroundColor: "transparent",
             fontSize: "0.875rem",
           }}
         />

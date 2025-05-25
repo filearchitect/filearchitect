@@ -17,13 +17,13 @@ interface StructurePreviewProps {
 
 export function StructurePreview({ operations, error }: StructurePreviewProps) {
   return (
-    <div>
+    <div className="h-full">
       {error && (
         <pre className="bg-red-100 text-red-700 p-4 rounded mb-4 whitespace-pre-wrap break-words">
           {error}
         </pre>
       )}
-      <div className="bg-gray-100 p-4 rounded min-h-[400px] font-mono text-sm overflow-auto">
+      <div className="bg-gray-100 p-4 rounded h-full font-mono text-sm overflow-auto">
         {operations.length > 0 ? (
           operations.map((op) => (
             <div
