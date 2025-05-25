@@ -1,17 +1,17 @@
-import { getBasename } from "@filearchitect/core";
+import { getBasename, type StructureOperation } from "@filearchitect/core";
 import { File, Folder } from "lucide-react";
 
 // Define type for the operation (copied from FileArchitectPreview)
-interface StructureOperation {
-  type: string;
-  targetPath: string;
-  sourcePath?: string;
-  isDirectory: boolean;
-  depth: number;
-}
+// interface StructureOperation { // <-- Remove local definition
+//   type: string;
+//   targetPath: string;
+//   sourcePath?: string;
+//   isDirectory: boolean;
+//   depth: number;
+// }
 
 interface StructurePreviewProps {
-  operations: StructureOperation[];
+  operations: StructureOperation[]; // Use imported StructureOperation
   error: string | null;
 }
 
@@ -23,7 +23,7 @@ export function StructurePreview({ operations, error }: StructurePreviewProps) {
           {error}
         </pre>
       )}
-      <div className="bg-gray-100 p-4 rounded h-full font-mono text-sm overflow-auto">
+      <div className="bg-gray-50 border border-gray-200 p-4 rounded h-full font-mono text-sm overflow-auto">
         {operations.length > 0 ? (
           operations.map((op) => (
             <div
@@ -38,11 +38,11 @@ export function StructurePreview({ operations, error }: StructurePreviewProps) {
                   style={{
                     display: "inline-block",
                     width: "1ch",
-                    marginLeft: "0ch",
+                    marginLeft: ".5ch",
                     marginRight: "1ch",
                     textAlign: "center",
                     color: "rgba(0,0,0,0.08)",
-                    fontWeight: 700,
+                    fontWeight: 300,
                   }}
                   aria-hidden="true"
                 >
@@ -64,6 +64,15 @@ export function StructurePreview({ operations, error }: StructurePreviewProps) {
                 className={op.isDirectory ? "break-all font-bold" : "break-all"}
               >
                 {getBasename(op.targetPath)}
+                {op.type === "copy" ? (
+                  <span className="ml-2 px-1.5 py-0.5 text-xs rounded-md bg-green-100 text-green-800">
+                    copy
+                  </span>
+                ) : op.type === "move" ? (
+                  <span className="ml-2 px-1.5 py-0.5 text-xs rounded-md bg-purple-100 text-purple-800">
+                    move
+                  </span>
+                ) : null}
               </span>
             </div>
           ))

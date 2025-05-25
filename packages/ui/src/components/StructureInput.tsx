@@ -38,8 +38,9 @@ const TabIndicator = ({ text }: { text: string }) => {
                   width: `${tabWidth}ch`,
                   textAlign: "center",
                   color: "rgba(0, 0, 0, 0.2)",
-                  fontWeight: 700,
-                  marginRight: tabIndex === arr.length - 1 ? 0 : "0.5ch",
+                  fontWeight: 300,
+                  marginLeft: tabIndex === 0 ? "0.5ch" : "0ch",
+                  marginRight: tabIndex === arr.length - 1 ? "0.5ch" : "0ch",
                 }}
               >
                 |
@@ -157,7 +158,7 @@ export function StructureInput({
           onKeyDown={handleKeyDown}
           onScroll={handleScroll}
           placeholder="Define your file structure here..."
-          className="absolute inset-0 outline-none ring-0 focus:outline-none h-full font-mono text-sm border border-gray-300 rounded-md p-4  resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="absolute inset-0 outline-none ring-0 focus:outline-none h-full font-mono text-sm border border-gray-300 rounded p-4  resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
           style={{
             tabSize: 2,
             lineHeight: "24px",

@@ -1,18 +1,23 @@
-import { getStructure } from "@filearchitect/core";
+import {
+  BrowserFileSystem,
+  getStructure,
+  type GetStructureOptions,
+  type StructureOperation,
+} from "@filearchitect/core";
 import { useEffect, useState } from "react";
 import { StructureInput } from "./StructureInput";
 import { StructurePreview } from "./StructurePreview";
 
 // Define type for the operation (adjust based on actual structure if different)
 // This should ideally be imported from @filearchitect/core if available
-interface StructureOperation {
-  type: string;
-  targetPath: string;
-  sourcePath?: string;
-  isDirectory: boolean;
-  depth: number;
-  // Add other properties if needed
-}
+// interface StructureOperation { <--- Remove local definition
+//   type: string;
+//   targetPath: string;
+//   sourcePath?: string;
+//   isDirectory: boolean;
+//   depth: number;
+//   // Add other properties if needed
+// }
 
 const initialStructure = `
 src
@@ -41,7 +46,15 @@ export function StructureEditor() {
     const updatePreview = async () => {
       setError(null);
       try {
-        const result = await getStructure(structure, {});
+        // Instantiate BrowserFileSystem
+        const fs = new BrowserFileSystem();
+        // Define options for getStructure
+        const options: GetStructureOptions = {
+          fs,
+          rootDir: "/", // Using root as the base
+          // recursive: true, // This is default, can be omitted unless explicitly false
+        };
+        const result = await getStructure(structure, options); // Pass options
         if (result && Array.isArray(result.operations)) {
           setPreviewOperations(result.operations);
           setError(null);
