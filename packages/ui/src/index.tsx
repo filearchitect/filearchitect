@@ -1,11 +1,7 @@
-import {
-  BrowserFileSystem,
-  createStructure,
-  ZipArchiver,
-  type StructureOperation,
-} from "@filearchitect/core";
-import React, { useCallback, useState } from "react";
+import { type StructureOperation } from "@filearchitect/core";
+import React, { useState } from "react";
 import ReactDOM from "react-dom/client";
+import { DownloadZipButton } from "./components/DownloadZipButton";
 import { StructureEditor } from "./components/StructureEditor";
 import "./index.css";
 
@@ -34,52 +30,6 @@ function App() {
     StructureOperation[]
   >([]);
   const [error, setError] = useState<string | null>(null);
-  const [isDownloading, setIsDownloading] = useState(false);
-
-  const handleDownloadZip = useCallback(async () => {
-    if (!structure.trim()) {
-      alert("Please define a file structure first.");
-      return;
-    }
-    setIsDownloading(true);
-    setError(null);
-    try {
-      const inMemoryFs = new BrowserFileSystem();
-      await createStructure(structure, {
-        fs: inMemoryFs,
-        rootDir: "/",
-      });
-
-      const archiver = new ZipArchiver({ fs: inMemoryFs, relativeTo: "/" });
-
-      const directories = Array.from(inMemoryFs.getDirectories());
-      for (const dir of directories) {
-        if (dir === "" || dir === "/") continue;
-        await archiver.addDirectory(dir);
-      }
-
-      const files = Array.from(inMemoryFs.getFiles().entries());
-      for (const [path, content] of files) {
-        await archiver.addFile(path, content);
-      }
-
-      const zipOutput = await archiver.generate("blob");
-
-      const url = URL.createObjectURL(zipOutput.data as Blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = "file-structure.zip";
-      document.body.appendChild(a);
-      a.click();
-      document.body.removeChild(a);
-      URL.revokeObjectURL(url);
-    } catch (e: any) {
-      console.error("Error creating ZIP:", e);
-      setError(`Error creating ZIP: ${e.message}`);
-    } finally {
-      setIsDownloading(false);
-    }
-  }, [structure]);
 
   return (
     <div className="h-screen flex flex-col py-16">
@@ -104,13 +54,7 @@ function App() {
           />
         </div>
         <div className="flex justify-end">
-          <button
-            onClick={handleDownloadZip}
-            disabled={isDownloading}
-            className="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50"
-          >
-            {isDownloading ? "Downloading..." : "Download ZIP"}
-          </button>
+          <DownloadZipButton structure={structure} onError={setError} />
         </div>
       </div>
     </div>
