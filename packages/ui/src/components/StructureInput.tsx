@@ -1,5 +1,11 @@
 import { Textarea } from "@/components/ui/textarea";
-import React, { ChangeEvent, useCallback, useEffect, useRef } from "react";
+import React, {
+  ChangeEvent,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 
 /**
  * Props for the StructureInput component.
@@ -71,10 +77,14 @@ const TabIndicator = React.forwardRef<HTMLDivElement, { text: string }>(
 );
 TabIndicator.displayName = "TabIndicator";
 
+// Type for desired selection state
+type DesiredSelection = { start: number; end: number } | null;
+
 // Helper function for Shift+Tab
 function handleShiftTabKeyPress(
   textarea: HTMLTextAreaElement,
-  onStructureChange: (value: string) => void
+  onStructureChange: (value: string) => void,
+  setDesiredSelection: (selection: DesiredSelection) => void
 ) {
   const start = textarea.selectionStart;
   const val = textarea.value;
@@ -90,18 +100,16 @@ function handleShiftTabKeyPress(
       val.substring(lineStart + currentLineIndentation.length);
 
     onStructureChange(newValue);
-
-    setTimeout(() => {
-      const newCursorPos = Math.max(lineStart, start - 1);
-      textarea.selectionStart = textarea.selectionEnd = newCursorPos;
-    }, 0);
+    const newCursorPos = Math.max(lineStart, start - 1);
+    setDesiredSelection({ start: newCursorPos, end: newCursorPos });
   }
 }
 
 // Helper function for Tab
 function handleTabKeyPress(
   textarea: HTMLTextAreaElement,
-  onStructureChange: (value: string) => void
+  onStructureChange: (value: string) => void,
+  setDesiredSelection: (selection: DesiredSelection) => void
 ) {
   const start = textarea.selectionStart;
   const end = textarea.selectionEnd;
@@ -109,40 +117,27 @@ function handleTabKeyPress(
 
   const selectedText = val.substring(start, end);
 
-  // Multi-line selection case (indent selected lines)
   if (start !== end && selectedText.includes("\n")) {
     const firstLineStart = val.lastIndexOf("\n", start - 1) + 1;
-    // The block of text to process is from the start of the first selected line
-    // to the 'end' of the selection.
     const blockToIndent = val.substring(firstLineStart, end);
     const lines = blockToIndent.split("\n");
     const linesAffectedCount = lines.length;
-
     const indentedBlock = lines.map((line) => "\t" + line).join("\n");
-
     const newValue =
       val.substring(0, firstLineStart) + indentedBlock + val.substring(end);
-
     onStructureChange(newValue);
-
-    setTimeout(() => {
-      textarea.selectionStart = start + 1; // Start of selection moves by one tab on the first affected line
-      textarea.selectionEnd = end + linesAffectedCount; // End of selection adjusts by the number of tabs inserted
-    }, 0);
+    setDesiredSelection({
+      start: start + 1,
+      end: end + linesAffectedCount,
+    });
   } else {
-    // Single-line selection or no selection (insert tab at beginning of current line)
     const currentLineStart = val.lastIndexOf("\n", start - 1) + 1;
     const newValue =
       val.substring(0, currentLineStart) +
       "\t" +
       val.substring(currentLineStart);
-
     onStructureChange(newValue);
-
-    setTimeout(() => {
-      textarea.selectionStart = start + 1;
-      textarea.selectionEnd = end + 1;
-    }, 0);
+    setDesiredSelection({ start: start + 1, end: end + 1 });
   }
 }
 
@@ -150,18 +145,19 @@ function handleTabKeyPress(
 function handleEnterKeyPress(
   textarea: HTMLTextAreaElement,
   onStructureChange: (value: string) => void,
-  maxLines?: number
+  maxLines: number | undefined,
+  setDesiredSelection: (selection: DesiredSelection) => void
 ) {
   const val = textarea.value;
   if (maxLines !== undefined && val.split("\n").length >= maxLines) {
-    return; // Prevent adding new line if maxLines is reached
+    return;
   }
 
   const start = textarea.selectionStart;
   const currentLineStartIndex = val.lastIndexOf("\n", start - 1) + 1;
   let currentLineEndIndex = val.indexOf("\n", currentLineStartIndex);
   if (currentLineEndIndex === -1) {
-    currentLineEndIndex = val.length; // It's the last line
+    currentLineEndIndex = val.length;
   }
   const currentLineContent = val.substring(
     currentLineStartIndex,
@@ -169,23 +165,17 @@ function handleEnterKeyPress(
   );
 
   if (currentLineContent.trim() === "") {
-    // If the current line is empty (or only whitespace), do not add a new line.
-    // event.preventDefault() was already called by handleKeyDown.
     return;
   }
 
-  const end = textarea.selectionEnd; // Keep for consistency, though not directly used for insertion point
+  const end = textarea.selectionEnd;
   const textBeforeCursorOnCurrentLine = val.slice(currentLineStartIndex, start);
   const indentation = textBeforeCursorOnCurrentLine.match(/^\t*/)?.[0] || "";
-
   const newValue =
     val.substring(0, start) + "\n" + indentation + val.substring(end);
   onStructureChange(newValue);
-
-  setTimeout(() => {
-    textarea.selectionStart = textarea.selectionEnd =
-      start + 1 + indentation.length;
-  }, 0);
+  const newCursorPos = start + 1 + indentation.length;
+  setDesiredSelection({ start: newCursorPos, end: newCursorPos });
 }
 
 /**
@@ -205,7 +195,19 @@ export function StructureInput({
 }: StructureInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
+  const [desiredSelection, setDesiredSelection] =
+    useState<DesiredSelection>(null);
 
+  // Effect to apply desired selection
+  useEffect(() => {
+    if (textareaRef.current && desiredSelection) {
+      textareaRef.current.selectionStart = desiredSelection.start;
+      textareaRef.current.selectionEnd = desiredSelection.end;
+      setDesiredSelection(null); // Reset after applying
+    }
+  }, [desiredSelection]);
+
+  // Effect for auto-height (remains the same)
   useEffect(() => {
     if (textareaRef.current) {
       textareaRef.current.style.height = "auto";
@@ -230,16 +232,27 @@ export function StructureInput({
       if (event.key === "Tab") {
         event.preventDefault();
         if (event.shiftKey) {
-          handleShiftTabKeyPress(textarea, onStructureChange);
+          handleShiftTabKeyPress(
+            textarea,
+            onStructureChange,
+            setDesiredSelection
+          );
         } else {
-          handleTabKeyPress(textarea, onStructureChange);
+          handleTabKeyPress(textarea, onStructureChange, setDesiredSelection);
         }
+        return;
       } else if (event.key === "Enter") {
-        event.preventDefault(); // Placed here to ensure it's called for Enter
-        handleEnterKeyPress(textarea, onStructureChange, maxLines);
+        event.preventDefault();
+        handleEnterKeyPress(
+          textarea,
+          onStructureChange,
+          maxLines,
+          setDesiredSelection
+        );
+        return;
       }
     },
-    [onStructureChange, maxLines]
+    [onStructureChange, maxLines, setDesiredSelection]
   );
 
   return (
@@ -257,7 +270,13 @@ export function StructureInput({
                 newValue = lines.slice(0, maxLines).join("\n");
               }
             }
-            onStructureChange(newValue);
+            // Only call onStructureChange if the effective new value is different from the current prop value
+            if (newValue !== value) {
+              onStructureChange(newValue);
+            }
+            // When text changes directly (typing/pasting), we don't want a stale desiredSelection to apply.
+            // So, we clear it. The browser will handle natural cursor movement.
+            setDesiredSelection(null);
           }}
           onKeyDown={handleKeyDown}
           onScroll={handleScroll}
