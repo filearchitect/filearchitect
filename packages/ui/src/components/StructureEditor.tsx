@@ -8,17 +8,6 @@ import { useEffect } from "react";
 import { StructureInput } from "./StructureInput";
 import { StructurePreview } from "./StructurePreview";
 
-// Define type for the operation (adjust based on actual structure if different)
-// This should ideally be imported from @filearchitect/core if available
-// interface StructureOperation { <--- Remove local definition
-//   type: string;
-//   targetPath: string;
-//   sourcePath?: string;
-//   isDirectory: boolean;
-//   depth: number;
-//   // Add other properties if needed
-// }
-
 interface StructureEditorProps {
   structure: string;
   onStructureChange: (newStructure: string) => void;
@@ -26,6 +15,8 @@ interface StructureEditorProps {
   onPreviewOperationsChange: (operations: StructureOperation[]) => void;
   error: string | null;
   onErrorChange: (error: string | null) => void;
+  maxLines?: number;
+  disabled?: boolean;
 }
 
 // Renamed to StructureEditor
@@ -37,6 +28,8 @@ export function StructureEditor({
   onPreviewOperationsChange,
   error,
   onErrorChange,
+  maxLines,
+  disabled,
 }: StructureEditorProps) {
   useEffect(() => {
     const updatePreview = async () => {
@@ -78,6 +71,8 @@ export function StructureEditor({
         <StructureInput
           value={structure}
           onStructureChange={onStructureChange}
+          maxLines={maxLines}
+          disabled={disabled}
         />
 
         {/* Column 2: Preview Component */}

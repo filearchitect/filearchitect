@@ -4,6 +4,8 @@ import React, { ChangeEvent, useCallback, useEffect, useRef } from "react";
 interface StructureInputProps {
   value: string;
   onStructureChange: (value: string) => void;
+  disabled?: boolean;
+  maxLines?: number;
 }
 
 const TabIndicator = React.forwardRef<HTMLDivElement, { text: string }>(
@@ -60,6 +62,8 @@ TabIndicator.displayName = "TabIndicator";
 export function StructureInput({
   value,
   onStructureChange,
+  disabled,
+  maxLines,
 }: StructureInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
@@ -153,11 +157,16 @@ export function StructureInput({
           }, 0);
         }
       } else if (event.key === "Enter") {
-        event.preventDefault();
         const textarea = event.target as HTMLTextAreaElement;
+        const val = textarea.value;
+        if (maxLines !== undefined && val.split("\n").length >= maxLines) {
+          event.preventDefault();
+          return;
+        }
+
+        event.preventDefault();
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
-        const val = textarea.value;
 
         const lineStart = val.lastIndexOf("\n", start - 1) + 1;
         const currentLine = val.slice(lineStart, start);
@@ -173,7 +182,7 @@ export function StructureInput({
         }, 0);
       }
     },
-    [onStructureChange]
+    [onStructureChange, maxLines]
   );
 
   return (
@@ -183,9 +192,16 @@ export function StructureInput({
         <Textarea
           ref={textareaRef}
           value={value}
-          onChange={(e: ChangeEvent<HTMLTextAreaElement>) =>
-            onStructureChange(e.target.value)
-          }
+          onChange={(e: ChangeEvent<HTMLTextAreaElement>) => {
+            let newValue = e.target.value;
+            if (maxLines !== undefined) {
+              const lines = newValue.split("\n");
+              if (lines.length > maxLines) {
+                newValue = lines.slice(0, maxLines).join("\n");
+              }
+            }
+            onStructureChange(newValue);
+          }}
           onKeyDown={handleKeyDown}
           onScroll={handleScroll}
           placeholder="Define your file structure here..."
@@ -196,6 +212,7 @@ export function StructureInput({
             fontSize: "0.875rem",
             minHeight: "72px",
           }}
+          disabled={disabled}
         />
       </div>
     </div>

@@ -49,6 +49,7 @@ function App() {
             onStructureChange={setStructure}
             previewOperations={previewOperations}
             onPreviewOperationsChange={setPreviewOperations}
+            maxLines={10}
             error={error}
             onErrorChange={setError}
           />
