@@ -51,6 +51,7 @@ function App() {
             onPreviewOperationsChange={setPreviewOperations}
             error={error}
             onErrorChange={setError}
+            maxLines={10}
           />
         </div>
         <div className="flex justify-end">

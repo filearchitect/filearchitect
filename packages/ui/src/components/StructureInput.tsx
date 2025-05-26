@@ -200,9 +200,11 @@ export function StructureInput({
 
   // Effect to apply desired selection
   useEffect(() => {
-    if (textareaRef.current && desiredSelection) {
-      textareaRef.current.selectionStart = desiredSelection.start;
-      textareaRef.current.selectionEnd = desiredSelection.end;
+    if (desiredSelection && textareaRef.current) {
+      textareaRef.current.setSelectionRange(
+        desiredSelection.start,
+        desiredSelection.end
+      );
       setDesiredSelection(null); // Reset after applying
     }
   }, [desiredSelection]);
@@ -210,9 +212,12 @@ export function StructureInput({
   // Effect for auto-height (remains the same)
   useEffect(() => {
     if (textareaRef.current) {
-      textareaRef.current.style.height = "auto";
-      const newHeight = textareaRef.current.scrollHeight;
-      textareaRef.current.style.height = `${newHeight}px`;
+      textareaRef.current.style.height = "0px"; // Reset height to shrink if needed
+      const scrollHeight = textareaRef.current.scrollHeight;
+      textareaRef.current.style.height = `${Math.max(
+        scrollHeight,
+        LINE_HEIGHT_PX * (value.split("\n").length || 1)
+      )}px`;
     }
   }, [value]);
 
@@ -228,23 +233,30 @@ export function StructureInput({
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
-      const textarea = event.target as HTMLTextAreaElement;
+      if (!textareaRef.current) return;
+
       if (event.key === "Tab") {
         event.preventDefault();
         if (event.shiftKey) {
           handleShiftTabKeyPress(
-            textarea,
+            textareaRef.current,
             onStructureChange,
             setDesiredSelection
           );
         } else {
-          handleTabKeyPress(textarea, onStructureChange, setDesiredSelection);
+          handleTabKeyPress(
+            textareaRef.current,
+            onStructureChange,
+            setDesiredSelection
+          );
         }
         return;
-      } else if (event.key === "Enter") {
+      }
+
+      if (event.key === "Enter") {
         event.preventDefault();
         handleEnterKeyPress(
-          textarea,
+          textareaRef.current,
           onStructureChange,
           maxLines,
           setDesiredSelection
@@ -255,42 +267,43 @@ export function StructureInput({
     [onStructureChange, maxLines, setDesiredSelection]
   );
 
+  const handleChange = (event: ChangeEvent<HTMLTextAreaElement>) => {
+    let newValue = event.target.value;
+    if (maxLines !== undefined && newValue.split("\n").length > maxLines) {
+      newValue = newValue.split("\n").slice(0, maxLines).join("\n");
+    }
+    if (newValue !== value) {
+      // Only call if value actually changed
+      onStructureChange(newValue);
+    }
+  };
+
+  // Calculate current number of lines
+  const currentLines = value.split("\n").length;
+
   return (
     <div className="relative">
-      <div className="relative">
-        <TabIndicator ref={indicatorRef} text={value} />
-        <Textarea
-          ref={textareaRef}
-          value={value}
-          onChange={(e: ChangeEvent<HTMLTextAreaElement>) => {
-            let newValue = e.target.value;
-            if (maxLines !== undefined) {
-              const lines = newValue.split("\n");
-              if (lines.length > maxLines) {
-                newValue = lines.slice(0, maxLines).join("\n");
-              }
-            }
-            // Only call onStructureChange if the effective new value is different from the current prop value
-            if (newValue !== value) {
-              onStructureChange(newValue);
-            }
-            // When text changes directly (typing/pasting), we don't want a stale desiredSelection to apply.
-            // So, we clear it. The browser will handle natural cursor movement.
-            setDesiredSelection(null);
-          }}
-          onKeyDown={handleKeyDown}
-          onScroll={handleScroll}
-          placeholder="Define your file structure here..."
-          className="outline-none ring-0 focus:outline-none font-mono text-sm border border-gray-300 rounded p-4 resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] overflow-y-hidden w-full"
-          style={{
-            tabSize: TAB_WIDTH_CH,
-            lineHeight: `${LINE_HEIGHT_PX}px`,
-            fontSize: "0.875rem",
-            minHeight: "72px",
-          }}
-          disabled={disabled}
-        />
-      </div>
+      <TabIndicator text={value} ref={indicatorRef} />
+      <Textarea
+        ref={textareaRef}
+        value={value}
+        onChange={handleChange}
+        onKeyDown={handleKeyDown}
+        onScroll={handleScroll}
+        disabled={disabled}
+        placeholder="Define your file structure here..."
+        className="flex ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 outline-none ring-0 focus:outline-none font-mono text-sm border border-gray-300 rounded p-4 resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] overflow-y-hidden w-full"
+        style={{
+          lineHeight: `${LINE_HEIGHT_PX}px`,
+          minHeight: `${LINE_HEIGHT_PX * 3}px`, // Minimum height for 3 lines
+          tabSize: TAB_WIDTH_CH, // For browsers supporting CSS tab-size
+        }}
+      />
+      {maxLines && maxLines > 0 && (
+        <div className="absolute bottom-2 right-3 text-xs text-gray-500 pointer-events-none select-none z-30">
+          {currentLines} / {maxLines}
+        </div>
+      )}
     </div>
   );
 }

@@ -79,12 +79,9 @@ export function StructureEditor({
   }, [structure, onErrorChange, onPreviewOperationsChange]);
 
   return (
-    // Main grid layout. Removed h-full from grid to allow content (specifically input) to define height.
-    // Grid items in the same row will stretch to the height of the tallest item.
     <div className={className}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-sans">
-        {/* Column 1: Input Component */}
-        {/* This column's height will be determined by StructureInput's content */}
+        {/* StructureInput no longer needs to be wrapped in a relative div here */}
         <StructureInput
           value={structure}
           onStructureChange={onStructureChange}
@@ -93,8 +90,6 @@ export function StructureEditor({
         />
 
         {/* Column 2: Preview Component */}
-        {/* This div will take the height of the grid cell (which matches Column 1's height) */}
-        {/* and provide scrolling for StructurePreview if its content is taller. */}
         <div className="h-full overflow-y-auto">
           <StructurePreview operations={previewOperations} error={error} />
         </div>
