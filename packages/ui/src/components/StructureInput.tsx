@@ -1,16 +1,32 @@
 import { Textarea } from "@/components/ui/textarea";
 import React, { ChangeEvent, useCallback, useEffect, useRef } from "react";
 
+/**
+ * Props for the StructureInput component.
+ */
 interface StructureInputProps {
+  /** The current value of the textarea. */
   value: string;
+  /** Callback function invoked when the textarea value changes. */
   onStructureChange: (value: string) => void;
+  /** Optional flag to disable the textarea. Defaults to false. */
   disabled?: boolean;
+  /**
+   * Optional maximum number of lines for the textarea.
+   * If exceeded, new lines via Enter key are prevented, and pasted text is truncated.
+   */
   maxLines?: number;
 }
 
 const LINE_HEIGHT_PX = 24;
 const TAB_WIDTH_CH = 2;
 
+/**
+ * `TabIndicator` is a purely visual component that renders tab character indicators
+ * overlaid on the `Textarea` within `StructureInput`.
+ * It helps visualize the indentation levels.
+ * @private Not intended for direct external use.
+ */
 const TabIndicator = React.forwardRef<HTMLDivElement, { text: string }>(
   ({ text }, ref) => {
     const lines = text.split("\n");
@@ -172,6 +188,15 @@ function handleEnterKeyPress(
   }, 0);
 }
 
+/**
+ * `StructureInput` is a custom textarea component designed for inputting hierarchical
+ * structure definitions (like file trees). It provides features such as:
+ * - Automatic handling of Tab and Shift+Tab for indentation.
+ * - Smart Enter key behavior for maintaining indentation on new lines.
+ * - Prevention of new lines on empty lines.
+ * - Optional line limiting.
+ * - Visual tab indicators.
+ */
 export function StructureInput({
   value,
   onStructureChange,
