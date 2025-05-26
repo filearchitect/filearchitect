@@ -17,6 +17,7 @@ interface StructureEditorProps {
   onErrorChange: (error: string | null) => void;
   maxLines?: number;
   disabled?: boolean;
+  className?: string;
 }
 
 // Renamed to StructureEditor
@@ -30,6 +31,7 @@ export function StructureEditor({
   onErrorChange,
   maxLines,
   disabled,
+  className,
 }: StructureEditorProps) {
   useEffect(() => {
     const updatePreview = async () => {
@@ -64,7 +66,7 @@ export function StructureEditor({
   return (
     // Main grid layout. Removed h-full from grid to allow content (specifically input) to define height.
     // Grid items in the same row will stretch to the height of the tallest item.
-    <div className="">
+    <div className={className}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-sans">
         {/* Column 1: Input Component */}
         {/* This column's height will be determined by StructureInput's content */}

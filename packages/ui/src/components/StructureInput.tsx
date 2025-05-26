@@ -59,6 +59,99 @@ const TabIndicator = React.forwardRef<HTMLDivElement, { text: string }>(
 );
 TabIndicator.displayName = "TabIndicator";
 
+// Helper function for Shift+Tab
+function handleShiftTabKeyPress(
+  textarea: HTMLTextAreaElement,
+  onStructureChange: (value: string) => void
+) {
+  const start = textarea.selectionStart;
+  const val = textarea.value;
+  const lineStart = val.lastIndexOf("\n", start - 1) + 1;
+  const currentLineContentBeforeCursor = val.substring(lineStart, start);
+  const indentMatch = currentLineContentBeforeCursor.match(/^(\t*)/);
+  const currentLineIndentation = indentMatch ? indentMatch[0] : "";
+
+  if (currentLineIndentation.length > 0) {
+    const newValue =
+      val.substring(0, lineStart) +
+      currentLineIndentation.substring(1) +
+      val.substring(lineStart + currentLineIndentation.length);
+
+    onStructureChange(newValue);
+
+    setTimeout(() => {
+      const newCursorPos = Math.max(lineStart, start - 1);
+      textarea.selectionStart = textarea.selectionEnd = newCursorPos;
+    }, 0);
+  }
+}
+
+// Helper function for Tab
+function handleTabKeyPress(
+  textarea: HTMLTextAreaElement,
+  onStructureChange: (value: string) => void
+) {
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const val = textarea.value;
+  const lineStart = val.lastIndexOf("\n", start - 1) + 1;
+
+  const selectedText = val.substring(start, end);
+
+  if (start !== end && selectedText.includes("\n")) {
+    let linesAffected = 0;
+    const newText = val
+      .substring(lineStart, end)
+      .split("\n")
+      .map((line) => {
+        linesAffected++;
+        return "\t" + line;
+      })
+      .join("\n");
+
+    const finalValue =
+      val.substring(0, lineStart) + newText + val.substring(end);
+    onStructureChange(finalValue);
+    setTimeout(() => {
+      textarea.selectionStart = start + 1;
+      textarea.selectionEnd = end + linesAffected;
+    }, 0);
+  } else {
+    const newValue = val.substring(0, start) + "\t" + val.substring(end);
+    onStructureChange(newValue);
+    setTimeout(() => {
+      textarea.selectionStart = textarea.selectionEnd = start + 1;
+    }, 0);
+  }
+}
+
+// Helper function for Enter
+function handleEnterKeyPress(
+  textarea: HTMLTextAreaElement,
+  onStructureChange: (value: string) => void,
+  maxLines?: number
+) {
+  const val = textarea.value;
+  if (maxLines !== undefined && val.split("\n").length >= maxLines) {
+    return; // Prevent adding new line if maxLines is reached
+  }
+
+  const start = textarea.selectionStart;
+  const end = textarea.selectionEnd;
+  const lineStart = val.lastIndexOf("\n", start - 1) + 1;
+  const currentLine = val.slice(lineStart, start);
+  const indentation = currentLine.match(/^\t*/)?.[0] || "";
+
+  const newValue =
+    val.substring(0, start) + "\n" + indentation + val.substring(end);
+  onStructureChange(newValue);
+
+  setTimeout(() => {
+    textarea.selectionStart = textarea.selectionEnd =
+      start + 1 + indentation.length;
+  }, 0);
+}
+
 export function StructureInput({
   value,
   onStructureChange,
@@ -88,98 +181,17 @@ export function StructureInput({
 
   const handleKeyDown = useCallback(
     (event: React.KeyboardEvent<HTMLTextAreaElement>) => {
+      const textarea = event.target as HTMLTextAreaElement;
       if (event.key === "Tab") {
         event.preventDefault();
-        const textarea = event.target as HTMLTextAreaElement;
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-        const val = textarea.value;
-
         if (event.shiftKey) {
-          const lineStart = val.lastIndexOf("\n", start - 1) + 1;
-          const currentLineContentBeforeCursor = val.substring(
-            lineStart,
-            start
-          );
-          const indentMatch = currentLineContentBeforeCursor.match(/^(\t*)/);
-          const currentLineIndentation = indentMatch ? indentMatch[0] : "";
-
-          if (currentLineIndentation.length > 0) {
-            const newValue =
-              val.substring(0, lineStart) +
-              currentLineIndentation.substring(1) +
-              val.substring(lineStart + currentLineIndentation.length);
-
-            onStructureChange(newValue);
-
-            setTimeout(() => {
-              const newCursorPos = Math.max(lineStart, start - 1);
-              textarea.selectionStart = textarea.selectionEnd = newCursorPos;
-            }, 0);
-            return;
-          }
-          return;
-        }
-
-        const lineStart = val.lastIndexOf("\n", start - 1) + 1;
-        const lineEnd = val.indexOf("\n", end);
-        const actualEnd = lineEnd === -1 ? val.length : lineEnd;
-
-        const selectedText = val.substring(start, end);
-        const lines = selectedText.split("\n");
-        const numSelectedLines = val
-          .substring(lineStart, end)
-          .split("\n").length;
-
-        if (start !== end && selectedText.includes("\n")) {
-          let linesAffected = 0;
-          const newText = val
-            .substring(lineStart, end)
-            .split("\n")
-            .map((line) => {
-              linesAffected++;
-              return "\t" + line;
-            })
-            .join("\n");
-
-          const finalValue =
-            val.substring(0, lineStart) + newText + val.substring(end);
-          onStructureChange(finalValue);
-          setTimeout(() => {
-            textarea.selectionStart = start + 1;
-            textarea.selectionEnd = end + linesAffected;
-          }, 0);
+          handleShiftTabKeyPress(textarea, onStructureChange);
         } else {
-          const newValue = val.substring(0, start) + "\t" + val.substring(end);
-          onStructureChange(newValue);
-          setTimeout(() => {
-            textarea.selectionStart = textarea.selectionEnd = start + 1;
-          }, 0);
+          handleTabKeyPress(textarea, onStructureChange);
         }
       } else if (event.key === "Enter") {
-        const textarea = event.target as HTMLTextAreaElement;
-        const val = textarea.value;
-        if (maxLines !== undefined && val.split("\n").length >= maxLines) {
-          event.preventDefault();
-          return;
-        }
-
-        event.preventDefault();
-        const start = textarea.selectionStart;
-        const end = textarea.selectionEnd;
-
-        const lineStart = val.lastIndexOf("\n", start - 1) + 1;
-        const currentLine = val.slice(lineStart, start);
-        const indentation = currentLine.match(/^\t*/)?.[0] || "";
-
-        const newValue =
-          val.substring(0, start) + "\n" + indentation + val.substring(end);
-        onStructureChange(newValue);
-
-        setTimeout(() => {
-          textarea.selectionStart = textarea.selectionEnd =
-            start + 1 + indentation.length;
-        }, 0);
+        event.preventDefault(); // Placed here to ensure it's called for Enter
+        handleEnterKeyPress(textarea, onStructureChange, maxLines);
       }
     },
     [onStructureChange, maxLines]

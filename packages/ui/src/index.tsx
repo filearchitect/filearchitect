@@ -43,13 +43,12 @@ function App() {
             <code>(source) &gt; target</code> for moves.
           </p>
         </div>
-        <div className="flex-1 my-8">
+        <div className="my-8">
           <StructureEditor
             structure={structure}
             onStructureChange={setStructure}
             previewOperations={previewOperations}
             onPreviewOperationsChange={setPreviewOperations}
-            maxLines={10}
             error={error}
             onErrorChange={setError}
           />
