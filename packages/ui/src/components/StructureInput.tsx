@@ -17,15 +17,13 @@ const TabIndicator = React.forwardRef<HTMLDivElement, { text: string }>(
     return (
       <div
         ref={ref}
-        className="absolute inset-0 pointer-events-none whitespace-pre font-mono text-sm z-10 overflow-hidden"
+        className="absolute inset-0 pointer-events-none whitespace-pre font-mono text-sm z-10 overflow-hidden px-0 py-4 text-black/20"
         style={{
           top: 0,
           left: "10px",
           right: "1px",
           bottom: 0,
           marginLeft: "-3px",
-          padding: "16px 0px",
-          color: "rgba(0, 0, 0, 0.2)",
           lineHeight: `${lineHeight}px`,
           zIndex: 1,
         }}
@@ -37,12 +35,9 @@ const TabIndicator = React.forwardRef<HTMLDivElement, { text: string }>(
               {tabs.split("").map((_, tabIndex, arr) => (
                 <span
                   key={tabIndex}
+                  className="inline-block text-center text-black/20 font-light"
                   style={{
-                    display: "inline-block",
                     width: `${tabWidth}ch`,
-                    textAlign: "center",
-                    color: "rgba(0, 0, 0, 0.2)",
-                    fontWeight: 300,
                     marginLeft: tabIndex === 0 ? "0.5ch" : "0ch",
                     marginRight: tabIndex === arr.length - 1 ? "0.5ch" : "0ch",
                   }}
@@ -94,33 +89,42 @@ function handleTabKeyPress(
   const start = textarea.selectionStart;
   const end = textarea.selectionEnd;
   const val = textarea.value;
-  const lineStart = val.lastIndexOf("\n", start - 1) + 1;
 
   const selectedText = val.substring(start, end);
 
+  // Multi-line selection case (indent selected lines)
   if (start !== end && selectedText.includes("\n")) {
-    let linesAffected = 0;
-    const newText = val
-      .substring(lineStart, end)
-      .split("\n")
-      .map((line) => {
-        linesAffected++;
-        return "\t" + line;
-      })
-      .join("\n");
+    const firstLineStart = val.lastIndexOf("\n", start - 1) + 1;
+    // The block of text to process is from the start of the first selected line
+    // to the 'end' of the selection.
+    const blockToIndent = val.substring(firstLineStart, end);
+    const lines = blockToIndent.split("\n");
+    const linesAffectedCount = lines.length;
 
-    const finalValue =
-      val.substring(0, lineStart) + newText + val.substring(end);
-    onStructureChange(finalValue);
+    const indentedBlock = lines.map((line) => "\t" + line).join("\n");
+
+    const newValue =
+      val.substring(0, firstLineStart) + indentedBlock + val.substring(end);
+
+    onStructureChange(newValue);
+
     setTimeout(() => {
-      textarea.selectionStart = start + 1;
-      textarea.selectionEnd = end + linesAffected;
+      textarea.selectionStart = start + 1; // Start of selection moves by one tab on the first affected line
+      textarea.selectionEnd = end + linesAffectedCount; // End of selection adjusts by the number of tabs inserted
     }, 0);
   } else {
-    const newValue = val.substring(0, start) + "\t" + val.substring(end);
+    // Single-line selection or no selection (insert tab at beginning of current line)
+    const currentLineStart = val.lastIndexOf("\n", start - 1) + 1;
+    const newValue =
+      val.substring(0, currentLineStart) +
+      "\t" +
+      val.substring(currentLineStart);
+
     onStructureChange(newValue);
+
     setTimeout(() => {
-      textarea.selectionStart = textarea.selectionEnd = start + 1;
+      textarea.selectionStart = start + 1;
+      textarea.selectionEnd = end + 1;
     }, 0);
   }
 }
@@ -137,10 +141,25 @@ function handleEnterKeyPress(
   }
 
   const start = textarea.selectionStart;
-  const end = textarea.selectionEnd;
-  const lineStart = val.lastIndexOf("\n", start - 1) + 1;
-  const currentLine = val.slice(lineStart, start);
-  const indentation = currentLine.match(/^\t*/)?.[0] || "";
+  const currentLineStartIndex = val.lastIndexOf("\n", start - 1) + 1;
+  let currentLineEndIndex = val.indexOf("\n", currentLineStartIndex);
+  if (currentLineEndIndex === -1) {
+    currentLineEndIndex = val.length; // It's the last line
+  }
+  const currentLineContent = val.substring(
+    currentLineStartIndex,
+    currentLineEndIndex
+  );
+
+  if (currentLineContent.trim() === "") {
+    // If the current line is empty (or only whitespace), do not add a new line.
+    // event.preventDefault() was already called by handleKeyDown.
+    return;
+  }
+
+  const end = textarea.selectionEnd; // Keep for consistency, though not directly used for insertion point
+  const textBeforeCursorOnCurrentLine = val.slice(currentLineStartIndex, start);
+  const indentation = textBeforeCursorOnCurrentLine.match(/^\t*/)?.[0] || "";
 
   const newValue =
     val.substring(0, start) + "\n" + indentation + val.substring(end);
