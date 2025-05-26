@@ -8,11 +8,12 @@ interface StructureInputProps {
   maxLines?: number;
 }
 
+const LINE_HEIGHT_PX = 24;
+const TAB_WIDTH_CH = 2;
+
 const TabIndicator = React.forwardRef<HTMLDivElement, { text: string }>(
   ({ text }, ref) => {
     const lines = text.split("\n");
-    const tabWidth = 2;
-    const lineHeight = 24;
 
     return (
       <div
@@ -24,20 +25,20 @@ const TabIndicator = React.forwardRef<HTMLDivElement, { text: string }>(
           right: "1px",
           bottom: 0,
           marginLeft: "-3px",
-          lineHeight: `${lineHeight}px`,
+          lineHeight: `${LINE_HEIGHT_PX}px`,
           zIndex: 1,
         }}
       >
         {lines.map((line, lineIndex) => {
           const tabs = line.match(/^\t*/)?.[0] || "";
           return (
-            <div key={lineIndex} style={{ height: `${lineHeight}px` }}>
+            <div key={lineIndex} style={{ height: `${LINE_HEIGHT_PX}px` }}>
               {tabs.split("").map((_, tabIndex, arr) => (
                 <span
                   key={tabIndex}
                   className="inline-block text-center text-black/20 font-light"
                   style={{
-                    width: `${tabWidth}ch`,
+                    width: `${TAB_WIDTH_CH}ch`,
                     marginLeft: tabIndex === 0 ? "0.5ch" : "0ch",
                     marginRight: tabIndex === arr.length - 1 ? "0.5ch" : "0ch",
                   }}
@@ -238,8 +239,8 @@ export function StructureInput({
           placeholder="Define your file structure here..."
           className="outline-none ring-0 focus:outline-none font-mono text-sm border border-gray-300 rounded p-4 resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] overflow-y-hidden w-full"
           style={{
-            tabSize: 2,
-            lineHeight: "24px",
+            tabSize: TAB_WIDTH_CH,
+            lineHeight: `${LINE_HEIGHT_PX}px`,
             fontSize: "0.875rem",
             minHeight: "72px",
           }}
