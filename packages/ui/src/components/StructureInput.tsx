@@ -1,57 +1,61 @@
 import { Textarea } from "@/components/ui/textarea";
-import { ChangeEvent, useCallback, useRef } from "react";
+import React, { ChangeEvent, useCallback, useEffect, useRef } from "react";
 
 interface StructureInputProps {
   value: string;
   onStructureChange: (value: string) => void;
 }
 
-const TabIndicator = ({ text }: { text: string }) => {
-  const lines = text.split("\n");
-  const tabWidth = 2;
-  const lineHeight = 24;
+const TabIndicator = React.forwardRef<HTMLDivElement, { text: string }>(
+  ({ text }, ref) => {
+    const lines = text.split("\n");
+    const tabWidth = 2;
+    const lineHeight = 24;
 
-  return (
-    <div
-      className="absolute inset-0 pointer-events-none whitespace-pre font-mono text-sm z-10 overflow-hidden"
-      style={{
-        top: 0,
-        left: "10px",
-        right: "1px",
-        bottom: 0,
-        marginLeft: "-3px",
-        padding: "16px 0px",
-        color: "rgba(0, 0, 0, 0.2)",
-        lineHeight: `${lineHeight}px`,
-        zIndex: 1,
-      }}
-    >
-      {lines.map((line, lineIndex) => {
-        const tabs = line.match(/^\t*/)?.[0] || "";
-        return (
-          <div key={lineIndex} style={{ height: `${lineHeight}px` }}>
-            {tabs.split("").map((_, tabIndex, arr) => (
-              <span
-                key={tabIndex}
-                style={{
-                  display: "inline-block",
-                  width: `${tabWidth}ch`,
-                  textAlign: "center",
-                  color: "rgba(0, 0, 0, 0.2)",
-                  fontWeight: 300,
-                  marginLeft: tabIndex === 0 ? "0.5ch" : "0ch",
-                  marginRight: tabIndex === arr.length - 1 ? "0.5ch" : "0ch",
-                }}
-              >
-                |
-              </span>
-            ))}
-          </div>
-        );
-      })}
-    </div>
-  );
-};
+    return (
+      <div
+        ref={ref}
+        className="absolute inset-0 pointer-events-none whitespace-pre font-mono text-sm z-10 overflow-hidden"
+        style={{
+          top: 0,
+          left: "10px",
+          right: "1px",
+          bottom: 0,
+          marginLeft: "-3px",
+          padding: "16px 0px",
+          color: "rgba(0, 0, 0, 0.2)",
+          lineHeight: `${lineHeight}px`,
+          zIndex: 1,
+        }}
+      >
+        {lines.map((line, lineIndex) => {
+          const tabs = line.match(/^\t*/)?.[0] || "";
+          return (
+            <div key={lineIndex} style={{ height: `${lineHeight}px` }}>
+              {tabs.split("").map((_, tabIndex, arr) => (
+                <span
+                  key={tabIndex}
+                  style={{
+                    display: "inline-block",
+                    width: `${tabWidth}ch`,
+                    textAlign: "center",
+                    color: "rgba(0, 0, 0, 0.2)",
+                    fontWeight: 300,
+                    marginLeft: tabIndex === 0 ? "0.5ch" : "0ch",
+                    marginRight: tabIndex === arr.length - 1 ? "0.5ch" : "0ch",
+                  }}
+                >
+                  |
+                </span>
+              ))}
+            </div>
+          );
+        })}
+      </div>
+    );
+  }
+);
+TabIndicator.displayName = "TabIndicator";
 
 export function StructureInput({
   value,
@@ -59,6 +63,14 @@ export function StructureInput({
 }: StructureInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "auto";
+      const newHeight = textareaRef.current.scrollHeight;
+      textareaRef.current.style.height = `${newHeight}px`;
+    }
+  }, [value]);
 
   const handleScroll = useCallback(
     (event: React.UIEvent<HTMLTextAreaElement>) => {
@@ -77,45 +89,64 @@ export function StructureInput({
         const textarea = event.target as HTMLTextAreaElement;
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
-        const value = textarea.value;
+        const val = textarea.value;
 
-        // Handle Shift+Tab to remove a tab
         if (event.shiftKey) {
-          const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-          const currentLine = value.slice(lineStart, end);
-          const firstTabIndex = currentLine.indexOf("\t");
+          const lineStart = val.lastIndexOf("\n", start - 1) + 1;
+          const currentLineContentBeforeCursor = val.substring(
+            lineStart,
+            start
+          );
+          const indentMatch = currentLineContentBeforeCursor.match(/^(\t*)/);
+          const currentLineIndentation = indentMatch ? indentMatch[0] : "";
 
-          if (firstTabIndex !== -1) {
+          if (currentLineIndentation.length > 0) {
             const newValue =
-              value.substring(0, lineStart) +
-              currentLine.substring(firstTabIndex + 1) +
-              value.substring(end);
+              val.substring(0, lineStart) +
+              currentLineIndentation.substring(1) +
+              val.substring(lineStart + currentLineIndentation.length);
+
             onStructureChange(newValue);
+
             setTimeout(() => {
-              textarea.selectionStart = textarea.selectionEnd = start - 1;
+              const newCursorPos = Math.max(lineStart, start - 1);
+              textarea.selectionStart = textarea.selectionEnd = newCursorPos;
             }, 0);
             return;
           }
+          return;
         }
 
-        // Regular tab insertion
-        const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-        const lineBeforeCursor = value.slice(lineStart, start);
-        const currentLine = value.slice(lineStart, end);
+        const lineStart = val.lastIndexOf("\n", start - 1) + 1;
+        const lineEnd = val.indexOf("\n", end);
+        const actualEnd = lineEnd === -1 ? val.length : lineEnd;
 
-        if (currentLine.trim().length > 0) {
-          const newValue =
-            value.substring(0, lineStart) +
-            "\t" +
-            currentLine +
-            value.substring(end);
-          onStructureChange(newValue);
+        const selectedText = val.substring(start, end);
+        const lines = selectedText.split("\n");
+        const numSelectedLines = val
+          .substring(lineStart, end)
+          .split("\n").length;
+
+        if (start !== end && selectedText.includes("\n")) {
+          let linesAffected = 0;
+          const newText = val
+            .substring(lineStart, end)
+            .split("\n")
+            .map((line) => {
+              linesAffected++;
+              return "\t" + line;
+            })
+            .join("\n");
+
+          const finalValue =
+            val.substring(0, lineStart) + newText + val.substring(end);
+          onStructureChange(finalValue);
           setTimeout(() => {
-            textarea.selectionStart = textarea.selectionEnd = start + 1;
+            textarea.selectionStart = start + 1;
+            textarea.selectionEnd = end + linesAffected;
           }, 0);
-        } else if (/^\t*$/.test(lineBeforeCursor)) {
-          const newValue =
-            value.substring(0, start) + "\t" + value.substring(end);
+        } else {
+          const newValue = val.substring(0, start) + "\t" + val.substring(end);
           onStructureChange(newValue);
           setTimeout(() => {
             textarea.selectionStart = textarea.selectionEnd = start + 1;
@@ -126,14 +157,14 @@ export function StructureInput({
         const textarea = event.target as HTMLTextAreaElement;
         const start = textarea.selectionStart;
         const end = textarea.selectionEnd;
-        const value = textarea.value;
+        const val = textarea.value;
 
-        const lineStart = value.lastIndexOf("\n", start - 1) + 1;
-        const currentLine = value.slice(lineStart, start);
+        const lineStart = val.lastIndexOf("\n", start - 1) + 1;
+        const currentLine = val.slice(lineStart, start);
         const indentation = currentLine.match(/^\t*/)?.[0] || "";
 
         const newValue =
-          value.substring(0, start) + "\n" + indentation + value.substring(end);
+          val.substring(0, start) + "\n" + indentation + val.substring(end);
         onStructureChange(newValue);
 
         setTimeout(() => {
@@ -146,9 +177,9 @@ export function StructureInput({
   );
 
   return (
-    <div className="relative h-full">
-      <div className="h-full overflow-hidden relative">
-        <TabIndicator text={value} />
+    <div className="relative">
+      <div className="relative">
+        <TabIndicator ref={indicatorRef} text={value} />
         <Textarea
           ref={textareaRef}
           value={value}
@@ -158,11 +189,12 @@ export function StructureInput({
           onKeyDown={handleKeyDown}
           onScroll={handleScroll}
           placeholder="Define your file structure here..."
-          className="absolute inset-0 outline-none ring-0 focus:outline-none h-full font-mono text-sm border border-gray-300 rounded p-4  resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none]"
+          className="outline-none ring-0 focus:outline-none font-mono text-sm border border-gray-300 rounded p-4 resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] overflow-y-hidden w-full"
           style={{
             tabSize: 2,
             lineHeight: "24px",
             fontSize: "0.875rem",
+            minHeight: "72px",
           }}
         />
       </div>
