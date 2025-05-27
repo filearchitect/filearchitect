@@ -11,7 +11,7 @@ import { StructurePreview } from "./StructurePreview";
 /**
  * Props for the StructureEditor component.
  */
-interface StructureEditorProps {
+export interface StructureEditorProps {
   /** The current structure definition string. */
   structure: string;
   /** Callback function invoked when the structure string changes. */
