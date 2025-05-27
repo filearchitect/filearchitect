@@ -8,6 +8,7 @@ import tsconfigPaths from "vite-tsconfig-paths";
 export default defineConfig({
   plugins: [react(), tsconfigPaths(), tailwindcss()],
   build: {
+    emptyOutDir: false, // Ensure Vite doesn't clear the dist dir
     // If you are building a library, uncomment and configure the following:
     lib: {
       entry: path.resolve(__dirname, "src/index.ts"), // Your library's entry point

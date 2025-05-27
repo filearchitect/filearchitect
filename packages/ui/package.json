@@ -20,7 +20,7 @@
     "./package.json": "./package.json"
   },
   "scripts": {
-    "build": "pnpm run clean && tsc && vite build",
+    "build": "pnpm run clean && tsc -p tsconfig.json && vite build",
     "dev": "vite",
     "lint": "echo \"Lint script not implemented yet\"",
     "clean": "rm -rf dist"
