@@ -1,20 +1,24 @@
+import { Button, buttonVariants } from "@/components/ui/button";
 import {
   BrowserFileSystem,
   createStructure,
   ZipArchiver,
 } from "@filearchitect/core";
+import type { VariantProps } from "class-variance-authority";
 import { useCallback, useState } from "react";
 
 interface DownloadZipButtonProps {
   structure: string;
   onError: (message: string | null) => void;
-  className?: string; // Optional className for custom styling
+  variant?: VariantProps<typeof buttonVariants>["variant"];
+  className?: string;
 }
 
 export function DownloadZipButton({
   structure,
   onError,
-  className = "bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded disabled:opacity-50",
+  variant,
+  className, // Removed default value here, default variant will be from Button
 }: DownloadZipButtonProps) {
   const [isDownloading, setIsDownloading] = useState(false);
 
@@ -64,12 +68,13 @@ export function DownloadZipButton({
   }, [structure, onError]);
 
   return (
-    <button
+    <Button
       onClick={handleDownload}
       disabled={isDownloading}
+      variant={variant}
       className={className}
     >
       {isDownloading ? "Downloading..." : "Download ZIP"}
-    </button>
+    </Button>
   );
 }

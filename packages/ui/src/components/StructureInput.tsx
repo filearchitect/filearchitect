@@ -22,6 +22,8 @@ interface StructureInputProps {
    * If exceeded, new lines via Enter key are prevented, and pasted text is truncated.
    */
   maxLines?: number;
+  /** Optional placeholder for the textarea. */
+  placeholder?: string;
 }
 
 const LINE_HEIGHT_PX = 24;
@@ -192,6 +194,7 @@ export function StructureInput({
   onStructureChange,
   disabled,
   maxLines,
+  placeholder,
 }: StructureInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
@@ -291,12 +294,12 @@ export function StructureInput({
         onKeyDown={handleKeyDown}
         onScroll={handleScroll}
         disabled={disabled}
-        placeholder="Define your file structure here..."
-        className="flex ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 outline-none ring-0 focus:outline-none font-mono text-sm border border-gray-300 rounded p-4 resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] overflow-y-hidden w-full"
+        placeholder={placeholder}
+        className="flex ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 outline-none ring-0 focus:outline-none font-mono text-sm border border-gray-300 rounded p-4 resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] overflow-y-hidden w-full placeholder:text-gray-400"
         style={{
           lineHeight: `${LINE_HEIGHT_PX}px`,
-          minHeight: `${LINE_HEIGHT_PX * 3}px`, // Minimum height for 3 lines
-          tabSize: TAB_WIDTH_CH, // For browsers supporting CSS tab-size
+          minHeight: `${LINE_HEIGHT_PX * 3}px`,
+          tabSize: TAB_WIDTH_CH,
         }}
       />
       {maxLines && maxLines > 0 && (

@@ -10,19 +10,7 @@ if (!rootElement) {
   throw new Error("Failed to find the root element");
 }
 
-const initialStructure = `
-src
-\tcomponents
-\t\tButton.tsx
-\t\tInput.tsx
-\tstyles
-\t\tglobal.css
-\tutils
-\t\tapi.ts
-\t\thelpers.ts
-\ttypes
-\t\tindex.d.ts
-`.trim();
+const initialStructure = ``.trim();
 
 function App() {
   const [structure, setStructure] = useState<string>(initialStructure);

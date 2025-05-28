@@ -48,6 +48,12 @@ export function StructureEditor({
   disabled,
   className,
 }: StructureEditorProps) {
+  const placeholderText = `folder-name
+|  sub-folder
+|  |  file.js
+|  another-sub-folder
+|  |  document.docx`;
+
   useEffect(() => {
     const updatePreview = async () => {
       onErrorChange(null);
@@ -87,6 +93,7 @@ export function StructureEditor({
           onStructureChange={onStructureChange}
           maxLines={maxLines}
           disabled={disabled}
+          placeholder={placeholderText}
         />
 
         {/* Column 2: Preview Component */}
