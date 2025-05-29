@@ -5,6 +5,7 @@ import {
   type StructureOperation,
 } from "@filearchitect/core";
 import { useEffect } from "react";
+import { HelpPopoverContent } from "./HelpPopoverContent";
 import { StructureInput } from "./StructureInput";
 import { StructurePreview } from "./StructurePreview";
 
@@ -54,107 +55,7 @@ export function StructureEditor({
 	another-sub-folder
 		document.docx`;
 
-  const Quadrant = ({
-    title,
-    children,
-  }: {
-    title: string;
-    children: React.ReactNode;
-  }) => (
-    <div className="p-2 border border-gray-100 dark:border-gray-700 rounded-md flex flex-col h-full">
-      <h5 className="font-semibold text-sm mb-1.5 text-gray-700 dark:text-gray-300">
-        {title}
-      </h5>
-      <div className="text-xs space-y-1 text-gray-600 dark:text-gray-400 flex-grow">
-        {children}
-      </div>
-    </div>
-  );
-
-  const helpItems = [
-    {
-      title: "Nesting",
-      content: (
-        <>
-          <p>
-            <strong>Tabs</strong> indentation nest folders and files.
-          </p>
-          <p className="mt-3">
-            <pre className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded font-mono">
-              folder
-              <br />| subfolder
-            </pre>
-          </p>
-        </>
-      ),
-    },
-    {
-      title: "Folders",
-      content: (
-        <>
-          <p>
-            Names <strong>with no extensions</strong> are directories.
-          </p>
-          <p className="mt-3">
-            <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded font-mono">
-              my-folder
-            </code>
-          </p>
-        </>
-      ),
-    },
-    {
-      title: "Files",
-      content: (
-        <>
-          <p>
-            Names <strong>with extensions</strong> are files.
-          </p>
-          <p className="mt-3">
-            <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded font-mono">
-              file.txt
-            </code>
-          </p>
-        </>
-      ),
-    },
-    {
-      title: "Copy Operations",
-      content: (
-        <>
-          <p>Use square brackets for the source.</p>
-          <p className="mt-3">
-            <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded font-mono">
-              [source] &gt; target-copy
-            </code>
-          </p>
-        </>
-      ),
-    },
-    {
-      title: "Move Operations",
-      content: (
-        <>
-          <p>Use parentheses for the source.</p>
-          <p className="mt-3">
-            <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded font-mono">
-              (source) &gt; target-move
-            </code>
-          </p>
-        </>
-      ),
-    },
-  ];
-
-  const helpContent = (
-    <div className="grid grid-cols-2 gap-3">
-      {helpItems.map((item) => (
-        <Quadrant key={item.title} title={item.title}>
-          {item.content}
-        </Quadrant>
-      ))}
-    </div>
-  );
+  const helpContent = <HelpPopoverContent />;
 
   useEffect(() => {
     const updatePreview = async () => {
