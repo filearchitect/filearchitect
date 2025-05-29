@@ -1,4 +1,11 @@
+import { Button } from "@/components/ui/button";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import { Textarea } from "@/components/ui/textarea";
+import { HelpCircle } from "lucide-react";
 import React, {
   ChangeEvent,
   useCallback,
@@ -24,6 +31,8 @@ interface StructureInputProps {
   maxLines?: number;
   /** Optional placeholder for the textarea. */
   placeholder?: string;
+  /** Optional content for the help popover */
+  helpContent?: React.ReactNode;
 }
 
 const LINE_HEIGHT_PX = 24;
@@ -195,6 +204,7 @@ export function StructureInput({
   disabled,
   maxLines,
   placeholder,
+  helpContent,
 }: StructureInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
@@ -295,13 +305,29 @@ export function StructureInput({
         onScroll={handleScroll}
         disabled={disabled}
         placeholder={placeholder}
-        className="flex ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 outline-none ring-0 focus:outline-none font-mono text-sm border border-gray-300 rounded p-4 resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] overflow-y-hidden w-full placeholder:text-gray-400"
+        className="flex ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 outline-none ring-0 focus:outline-none font-mono text-sm border border-gray-300 rounded p-4 pr-10 resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] overflow-y-hidden w-full placeholder:text-gray-400"
         style={{
           lineHeight: `${LINE_HEIGHT_PX}px`,
           minHeight: `${LINE_HEIGHT_PX * 3}px`,
           tabSize: TAB_WIDTH_CH,
         }}
       />
+      {helpContent && (
+        <Popover>
+          <PopoverTrigger asChild className="absolute top-3 right-3 z-30">
+            <Button variant="ghost" size="icon" className="w-6 h-6">
+              <HelpCircle className="w-4 h-4 text-muted-foreground" />
+            </Button>
+          </PopoverTrigger>
+          <PopoverContent className="w-[600px]">
+            <div className="grid gap-4">
+              <div className="space-y-2">
+                <div>{helpContent}</div>
+              </div>
+            </div>
+          </PopoverContent>
+        </Popover>
+      )}
       {maxLines && maxLines > 0 && (
         <div className="absolute bottom-2 right-3 text-xs text-gray-500 pointer-events-none select-none z-30">
           {currentLines} / {maxLines}
