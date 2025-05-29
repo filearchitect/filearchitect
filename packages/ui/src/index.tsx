@@ -31,6 +31,8 @@ function App() {
             error={error}
             onErrorChange={setError}
             maxLines={10}
+            supportCopy={true}
+            supportMove={true}
           />
         </div>
         <div className="flex justify-end">

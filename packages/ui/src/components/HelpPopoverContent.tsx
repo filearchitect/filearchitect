@@ -1,5 +1,10 @@
 import React from "react";
 
+interface HelpPopoverContentProps {
+  supportCopy: boolean;
+  supportMove: boolean;
+}
+
 const Quadrant = ({
   title,
   children,
@@ -127,15 +132,28 @@ const helpItems = [
   },
 ];
 
-export function HelpPopoverContent() {
+export function HelpPopoverContent({
+  supportCopy,
+  supportMove,
+}: HelpPopoverContentProps) {
+  const filteredHelpItems = helpItems.filter((item) => {
+    if (item.title === "Copy" && !supportCopy) {
+      return false;
+    }
+    if (item.title === "Move" && !supportMove) {
+      return false;
+    }
+    return true;
+  });
+
   return (
     <div className="grid grid-cols-2 ">
-      {helpItems.map((item, index) => (
+      {filteredHelpItems.map((item, index) => (
         <Quadrant
           key={item.title}
           title={item.title}
           index={index}
-          totalItems={helpItems.length}
+          totalItems={filteredHelpItems.length}
         >
           {item.content}
         </Quadrant>
