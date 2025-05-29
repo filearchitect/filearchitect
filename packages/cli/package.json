@@ -1,6 +1,6 @@
 {
   "name": "@filearchitect/cli",
-  "version": "0.0.12",
+  "version": "0.0.13",
   "description": "CLI for FileArchitect",
   "type": "module",
   "bin": {
