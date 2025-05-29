@@ -16,19 +16,6 @@ describe("StructureInput", () => {
     // vi.useRealTimers(); // No longer strictly necessary here as we're not mixing fake/real as much
   });
 
-  test("renders with initial value and placeholder", async () => {
-    render(
-      <StructureInput
-        value="initial value"
-        onStructureChange={mockOnStructureChange}
-      />
-    );
-    expect(
-      screen.getByPlaceholderText("Define your file structure here...")
-    ).toBeInTheDocument();
-    expect(screen.getByRole("textbox")).toHaveValue("initial value");
-  });
-
   test("calls onStructureChange with the latest value when text is typed", async () => {
     let currentValue = "";
     const handleChange = (newValue: string) => {

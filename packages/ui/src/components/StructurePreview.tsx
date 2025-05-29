@@ -13,9 +13,16 @@ import { File, Folder } from "lucide-react";
 interface StructurePreviewProps {
   operations: StructureOperation[]; // Use imported StructureOperation
   error: string | null;
+  supportCopy?: boolean;
+  supportMove?: boolean;
 }
 
-export function StructurePreview({ operations, error }: StructurePreviewProps) {
+export function StructurePreview({
+  operations,
+  error,
+  supportCopy = false,
+  supportMove = false,
+}: StructurePreviewProps) {
   return (
     <div className="h-full">
       {error && (
@@ -74,6 +81,34 @@ export function StructurePreview({ operations, error }: StructurePreviewProps) {
                   </span>
                 ) : null}
               </span>
+              {op.type === "copy" && !supportCopy && (
+                <span className="ml-2 px-1.5 py-0.5 text-xs rounded-md bg-yellow-100 text-yellow-800 border border-yellow-300">
+                  Not supported in browser,{" "}
+                  <a
+                    href="https://filearchitect.app"
+                    className="underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    download app
+                  </a>{" "}
+                  to use
+                </span>
+              )}
+              {op.type === "move" && !supportMove && (
+                <span className="ml-2 px-1.5 py-0.5 text-xs rounded-md bg-yellow-100 text-yellow-800 border border-yellow-300">
+                  Not supported in browser,{" "}
+                  <a
+                    href="https://filearchitect.app"
+                    className="underline"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                  >
+                    download app
+                  </a>{" "}
+                  to use
+                </span>
+              )}
             </div>
           ))
         ) : (

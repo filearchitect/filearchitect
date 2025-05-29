@@ -5,6 +5,7 @@ import {
   type StructureOperation,
 } from "@filearchitect/core";
 import { useEffect } from "react";
+import { HelpPopoverContent } from "./HelpPopoverContent";
 import { StructureInput } from "./StructureInput";
 import { StructurePreview } from "./StructurePreview";
 
@@ -30,6 +31,10 @@ export interface StructureEditorProps {
   disabled?: boolean;
   /** Optional CSS class name to apply to the root element of the editor. */
   className?: string;
+  /** Optional flag to indicate if copy operations are supported. Defaults to false. */
+  supportCopy?: boolean;
+  /** Optional flag to indicate if move operations are supported. Defaults to false. */
+  supportMove?: boolean;
 }
 
 /**
@@ -47,7 +52,19 @@ export function StructureEditor({
   maxLines,
   disabled,
   className,
+  supportCopy = false,
+  supportMove = false,
 }: StructureEditorProps) {
+  const placeholderText = `folder-name
+	sub-folder
+		file.js
+	another-sub-folder
+		document.docx`;
+
+  const helpContent = (
+    <HelpPopoverContent supportCopy={supportCopy} supportMove={supportMove} />
+  );
+
   useEffect(() => {
     const updatePreview = async () => {
       onErrorChange(null);
@@ -81,17 +98,25 @@ export function StructureEditor({
   return (
     <div className={className}>
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-sans">
-        {/* StructureInput no longer needs to be wrapped in a relative div here */}
-        <StructureInput
-          value={structure}
-          onStructureChange={onStructureChange}
-          maxLines={maxLines}
-          disabled={disabled}
-        />
+        <div>
+          <StructureInput
+            value={structure}
+            onStructureChange={onStructureChange}
+            maxLines={maxLines}
+            disabled={disabled}
+            placeholder={placeholderText}
+            helpContent={helpContent}
+          />
+        </div>
 
         {/* Column 2: Preview Component */}
         <div className="h-full overflow-y-auto">
-          <StructurePreview operations={previewOperations} error={error} />
+          <StructurePreview
+            operations={previewOperations}
+            error={error}
+            supportCopy={supportCopy}
+            supportMove={supportMove}
+          />
         </div>
       </div>
     </div>
