@@ -16,20 +16,20 @@ const Quadrant = ({
 
   // Apply border-r if in the first column and not the absolute last item if total is odd
   if (index % 2 === 0 && index < totalItems - 1) {
-    borderClasses += ` border-r ${borderColorClass}`;
+    borderClasses += ` border-r ${borderColorClass} pr-2`;
   }
 
   // Apply border-b if not in the last visual row
   if (Math.floor(index / 2) < Math.floor((totalItems - 1) / 2)) {
-    borderClasses += ` border-b ${borderColorClass}`;
+    borderClasses += ` border-b ${borderColorClass} pb-2`;
   }
 
   return (
-    <div className={`p-2 flex flex-col h-full ${borderClasses}`.trim()}>
+    <div className={`p-4 flex flex-col gap-2 h-full ${borderClasses}`.trim()}>
       <h5 className="font-semibold text-sm mb-1.5 text-gray-700 dark:text-gray-300">
         {title}
       </h5>
-      <div className="text-xs space-y-1 text-gray-600 dark:text-gray-400 flex-grow pb-2">
+      <div className="text-xs space-y-1 text-gray-600 dark:text-gray-400 flex-grow pb-2 space-y-2">
         {children}
       </div>
     </div>
@@ -44,12 +44,11 @@ const helpItems = [
         <p>
           <strong>Tabs</strong> indentation nest folders and files.
         </p>
-        <p className="mt-3">
-          <pre className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded font-mono">
-            folder
-            <br />| subfolder
-          </pre>
-        </p>
+
+        <pre className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded font-mono">
+          folder
+          <br />| subfolder
+        </pre>
       </>
     ),
   },
@@ -60,11 +59,10 @@ const helpItems = [
         <p>
           Lines <strong>with extensions</strong> create files.
         </p>
-        <p className="mt-3">
-          <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded font-mono">
-            file.txt
-          </code>
-        </p>
+
+        <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded font-mono">
+          file.txt
+        </code>
       </>
     ),
   },
@@ -75,38 +73,39 @@ const helpItems = [
         <p>
           Lines <strong>without extensions</strong> create directories.
         </p>
-        <p className="mt-3">
-          <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded font-mono">
-            my-folder
-          </code>
-        </p>
+
+        <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded font-mono">
+          my-folder
+        </code>
       </>
     ),
   },
 
   {
-    title: "Copy Operations",
+    title: "Copy",
     content: (
       <>
-        <p>Use square brackets for the source.</p>
-        <p className="mt-3">
-          <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded font-mono">
-            [source] &gt; target-copy
-          </code>
+        <p>
+          Square brackets <strong>copy</strong> the source.
         </p>
+
+        <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded font-mono">
+          [path/to/source]
+        </code>
       </>
     ),
   },
   {
-    title: "Move Operations",
+    title: "Move",
     content: (
       <>
-        <p>Use parentheses for the source.</p>
-        <p className="mt-3">
-          <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded font-mono">
-            (source) &gt; target-move
-          </code>
+        <p>
+          Parentheses <strong>move</strong> the source.
         </p>
+
+        <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded font-mono">
+          (path/to/source)
+        </code>
       </>
     ),
   },
@@ -130,7 +129,7 @@ const helpItems = [
 
 export function HelpPopoverContent() {
   return (
-    <div className="grid grid-cols-2 gap-3">
+    <div className="grid grid-cols-2 ">
       {helpItems.map((item, index) => (
         <Quadrant
           key={item.title}

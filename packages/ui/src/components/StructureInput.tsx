@@ -319,12 +319,8 @@ export function StructureInput({
               <HelpCircle className="w-4 h-4 text-muted-foreground" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className="w-[600px]">
-            <div className="grid gap-4">
-              <div className="space-y-2">
-                <div>{helpContent}</div>
-              </div>
-            </div>
+          <PopoverContent className="w-[600px] p-0">
+            <div>{helpContent}</div>
           </PopoverContent>
         </Popover>
       )}
