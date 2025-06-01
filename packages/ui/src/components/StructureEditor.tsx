@@ -96,9 +96,9 @@ export function StructureEditor({
   }, [structure, onErrorChange, onPreviewOperationsChange]);
 
   return (
-    <div className={className}>
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 font-sans">
-        <div>
+    <div className={`flex flex-col flex-1 ${className || ""}`.trim()}>
+      <div className="grid flex-1 grid-cols-1 md:grid-cols-2 gap-6 font-sans">
+        <div className="h-full flex flex-col">
           <StructureInput
             value={structure}
             onStructureChange={onStructureChange}

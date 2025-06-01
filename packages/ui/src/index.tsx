@@ -21,21 +21,19 @@ function App() {
 
   return (
     <div className="h-screen flex flex-col py-16">
-      <div className="max-w-6xl mx-auto w-full flex-1 flex flex-col">
-        <div className="my-8">
-          <StructureEditor
-            structure={structure}
-            onStructureChange={setStructure}
-            previewOperations={previewOperations}
-            onPreviewOperationsChange={setPreviewOperations}
-            error={error}
-            onErrorChange={setError}
-            maxLines={10}
-            supportCopy={true}
-            supportMove={true}
-          />
-        </div>
-        <div className="flex justify-end">
+      <div className="max-w-6xl  mx-auto w-full flex-1 flex flex-col">
+        <StructureEditor
+          structure={structure}
+          onStructureChange={setStructure}
+          previewOperations={previewOperations}
+          onPreviewOperationsChange={setPreviewOperations}
+          error={error}
+          onErrorChange={setError}
+          maxLines={10}
+          supportCopy={true}
+          supportMove={true}
+        />
+        <div className="flex justify-end mt-8">
           <DownloadZipButton structure={structure} onError={setError} />
         </div>
       </div>
