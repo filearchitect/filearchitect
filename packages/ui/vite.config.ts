@@ -19,7 +19,14 @@ export default defineConfig({
     rollupOptions: {
       // Make sure to externalize deps that shouldn't be bundled
       // into your library (e.g., react, react-dom)
-      external: ["react", "react-dom", "@filearchitect/core", "lucide-react"],
+      external: [
+        "react",
+        "react-dom",
+        "react/jsx-runtime",
+        "react/jsx-dev-runtime",
+        "@filearchitect/core",
+        "lucide-react",
+      ],
       output: {
         // Provide global variables to use in the UMD build
         // for externalized deps (optional)

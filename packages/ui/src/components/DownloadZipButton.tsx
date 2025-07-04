@@ -21,6 +21,7 @@ export function DownloadZipButton({
   className, // Removed default value here, default variant will be from Button
 }: DownloadZipButtonProps) {
   const [isDownloading, setIsDownloading] = useState(false);
+  const isDisabled = !structure.trim();
 
   const handleDownload = useCallback(async () => {
     if (!structure.trim()) {
@@ -70,9 +71,9 @@ export function DownloadZipButton({
   return (
     <Button
       onClick={handleDownload}
-      disabled={isDownloading}
+      disabled={isDownloading || isDisabled}
       variant={variant}
-      className={className}
+      className={`${className ?? ""} ${isDisabled ? "opacity-50" : ""}`.trim()}
     >
       {isDownloading ? "Downloading..." : "Download ZIP"}
     </Button>
