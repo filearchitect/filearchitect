@@ -293,7 +293,7 @@ export function StructureInput({
         onScroll={handleScroll}
         disabled={disabled}
         placeholder={placeholder}
-        className="flex-1 ring-offset-background placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50 outline-none ring-0 focus:outline-none font-mono text-sm border border-gray-300 rounded p-4 pr-10 resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] overflow-y-auto w-full placeholder:text-gray-400"
+        className="flex-1 placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 outline-none ring-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0 font-mono text-sm border border-gray-300 rounded p-4 pr-10 resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] overflow-y-auto w-full placeholder:text-gray-400"
         style={{
           lineHeight: `${LINE_HEIGHT_PX}px`,
           minHeight: `${LINE_HEIGHT_PX * 3}px`,
