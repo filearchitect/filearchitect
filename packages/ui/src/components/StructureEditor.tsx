@@ -1,4 +1,9 @@
 import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from "@/components/ui/resizable";
+import {
   BrowserFileSystem,
   getStructure,
   type GetStructureOptions,
@@ -97,28 +102,33 @@ export function StructureEditor({
 
   return (
     <div className={`flex flex-col flex-1 ${className || ""}`.trim()}>
-      <div className="grid flex-1 grid-cols-1 md:grid-cols-2 gap-6 font-sans">
-        <div className="h-full flex flex-col">
-          <StructureInput
-            value={structure}
-            onStructureChange={onStructureChange}
-            maxLines={maxLines}
-            disabled={disabled}
-            placeholder={placeholderText}
-            helpContent={helpContent}
-          />
-        </div>
+      <ResizablePanelGroup direction="horizontal" className="flex-1 font-sans">
+        <ResizablePanel minSize={30} defaultSize={50}>
+          <div className="h-full flex flex-col pr-2">
+            <StructureInput
+              value={structure}
+              onStructureChange={onStructureChange}
+              maxLines={maxLines}
+              disabled={disabled}
+              placeholder={placeholderText}
+              helpContent={helpContent}
+            />
+          </div>
+        </ResizablePanel>
 
-        {/* Column 2: Preview Component */}
-        <div className="h-full overflow-y-auto">
-          <StructurePreview
-            operations={previewOperations}
-            error={error}
-            supportCopy={supportCopy}
-            supportMove={supportMove}
-          />
-        </div>
-      </div>
+        <ResizableHandle className="w-px transition-all hover:w-2 data-[dragging]:w-2" />
+
+        <ResizablePanel minSize={30} defaultSize={50}>
+          <div className="h-full overflow-y-auto pl-2">
+            <StructurePreview
+              operations={previewOperations}
+              error={error}
+              supportCopy={supportCopy}
+              supportMove={supportMove}
+            />
+          </div>
+        </ResizablePanel>
+      </ResizablePanelGroup>
     </div>
   );
 }
