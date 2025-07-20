@@ -21,6 +21,41 @@ export function resolveTildePath(filePath: string): string {
   return path.join(os.homedir(), filePath.slice(1));
 }
 
+/**
+ * Checks if a path contains escaped dots (backslash followed by dot).
+ */
+export function hasEscapedDot(filePath: string): boolean {
+  return filePath.includes("\\.");
+}
+
+/**
+ * Removes backslashes from escaped dots in a path.
+ * Converts "\." to "." to create the actual file/directory name.
+ */
+export function unescapeDots(filePath: string): string {
+  return filePath.replace(/\\\./g, ".");
+}
+
+/**
+ * Checks if a path has a file extension, considering escaped dots.
+ * Escaped dots (\.) are ignored when determining file extension.
+ * If the path contains only escaped dots, it's considered a directory.
+ */
+export function hasFileExtensionIgnoreEscaped(filePath: string): boolean {
+  // If there are escaped dots, we need to check if there are any unescaped dots
+  if (hasEscapedDot(filePath)) {
+    // Temporarily replace escaped dots with a placeholder to check for real extensions
+    const pathWithPlaceholders = filePath.replace(/\\\./g, "__ESCAPED_DOT__");
+    const hasRealExtension = isBrowser
+      ? browserHasFileExtension(pathWithPlaceholders)
+      : path.extname(pathWithPlaceholders).length > 0;
+    return hasRealExtension;
+  }
+
+  // No escaped dots, use normal logic
+  return hasFileExtension(filePath);
+}
+
 // --- Browser-safe path functions (using POSIX separator '/') ---
 
 function browserJoinPaths(...paths: string[]): string {

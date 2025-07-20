@@ -1,17 +1,20 @@
 // Core functionality
 export { createStructure } from "./create-structure.js";
 export { getStructure } from "./get-structure.js";
-export { createMessage, Messages } from "./warnings.js";
+export { Messages, createMessage } from "./warnings.js";
 export { ZipArchiver } from "./zip-archiver.js";
 
 // Path utilities
 export {
   getBasename,
   getDirname,
+  hasEscapedDot,
   hasFileExtension,
+  hasFileExtensionIgnoreEscaped,
   joinPaths,
   pathSeparator,
   resolveTildePath,
+  unescapeDots,
 } from "./path-utils.js";
 
 // Filesystem implementations

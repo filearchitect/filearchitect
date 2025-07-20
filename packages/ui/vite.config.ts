@@ -7,6 +7,11 @@ import tsconfigPaths from "vite-tsconfig-paths";
 // Vite config for the UI package as an Application/Demo
 export default defineConfig({
   plugins: [react(), tsconfigPaths(), tailwindcss()],
+  resolve: {
+    alias: {
+      "@filearchitect/core": path.resolve(__dirname, "../core/src/index.ts"),
+    },
+  },
   build: {
     emptyOutDir: false, // Ensure Vite doesn't clear the dist dir
     // If you are building a library, uncomment and configure the following:

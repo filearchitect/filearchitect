@@ -80,10 +80,11 @@ function parseOperation(
   const moveMatch = line.match(/^\((.+?)\)(?:\s*>\s*(.+))?$/);
   if (moveMatch) {
     const source = moveMatch[1].trim();
+    const targetName = moveMatch[2]?.trim() || pathUtils.getBasename(source);
     return {
       type: "move",
       sourcePath: pathUtils.resolveTildePath(source), // Use pathUtils
-      name: moveMatch[2]?.trim() || pathUtils.getBasename(source), // Use pathUtils
+      name: targetName, // Keep escaped dots for now, will be unescaped in processLine
     };
   }
 
@@ -91,15 +92,17 @@ function parseOperation(
   const copyMatch = line.match(/^\[(.+?)\](?:\s*>\s*(.+))?$/);
   if (copyMatch) {
     const source = copyMatch[1].trim();
+    const targetName = copyMatch[2]?.trim() || pathUtils.getBasename(source);
     return {
       type: "copy",
       sourcePath: pathUtils.resolveTildePath(source), // Use pathUtils
-      name: copyMatch[2]?.trim() || pathUtils.getBasename(source), // Use pathUtils
+      name: targetName, // Keep escaped dots for now, will be unescaped in processLine
     };
   }
 
   // Create operation
-  const isDirectory = !pathUtils.hasFileExtension(line); // Use pathUtils
+  // Use hasFileExtensionIgnoreEscaped to properly handle escaped dots for directory detection
+  const isDirectory = !pathUtils.hasFileExtensionIgnoreEscaped(line);
   return {
     type: "create",
     name: line,
@@ -205,23 +208,33 @@ async function processLine(
   const directoryMatch = line.match(/^(\s*)(.*\/)\s*$/);
   if (directoryMatch) {
     const rawName = directoryMatch[2].trim().replace(/\/$/, "");
-    const replacedName = applyReplacements(rawName, folderNameReplacements);
+    let replacedName = applyReplacements(rawName, folderNameReplacements);
+
+    // Unescape dots in directory names
+    replacedName = pathUtils.unescapeDots(replacedName);
+
+    const targetPath = pathUtils.joinPaths(currentDir, replacedName);
+    const depth = directoryMatch[1].length / 2; // Assuming space indentation is 2
+
+    // Add directory to stack for nesting
+    stack.push(targetPath);
 
     return {
       type: "create",
       name: replacedName + "/",
-      targetPath: pathUtils.joinPaths(currentDir, replacedName), // Use pathUtils
+      targetPath: targetPath,
       isDirectory: true,
-      depth: directoryMatch[1].length / 2, // Assuming space indentation is 2
+      depth: depth,
     };
   }
 
   // For copy/move operations, check the target name (operation.name)
   // For create operations, check the line itself to handle directories correctly
+  // Use hasFileExtensionIgnoreEscaped to properly handle escaped dots
   const isDirectory =
     operation.type === "create"
-      ? !pathUtils.hasFileExtension(line.trim()) // Use pathUtils
-      : !pathUtils.hasFileExtension(operation.name); // Use pathUtils
+      ? !pathUtils.hasFileExtensionIgnoreEscaped(line.trim())
+      : !pathUtils.hasFileExtensionIgnoreEscaped(operation.name);
 
   // Apply replacements based on whether it's a file or directory
   // Apply 'all' first, then specific type replacements
@@ -231,7 +244,10 @@ async function processLine(
     : options.replacements?.files || [];
 
   let tempName = applyReplacements(operation.name, allReplacements);
-  const replacedName = applyReplacements(tempName, specificReplacements);
+  let replacedName = applyReplacements(tempName, specificReplacements);
+
+  // Unescape dots in the final name to create the actual file/directory name
+  replacedName = pathUtils.unescapeDots(replacedName);
 
   const targetPath = pathUtils.joinPaths(currentDir, replacedName); // Use pathUtils
 

@@ -82,6 +82,15 @@ const helpItems = [
         <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded font-mono">
           my-folder
         </code>
+
+        <p className="text-xs text-gray-600 mt-4 ">
+          To create a directory with a dot in its name, use{" "}
+          <strong>backslash escape</strong>.
+        </p>
+
+        <code className="bg-gray-100 dark:bg-gray-700 text-gray-800 dark:text-gray-200 px-1 py-0.5 rounded font-mono">
+          01\.directory
+        </code>
       </>
     ),
   },

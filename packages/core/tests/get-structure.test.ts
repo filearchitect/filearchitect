@@ -452,4 +452,260 @@ src
       isDirectory: true,
     });
   });
+
+  test("handles escaped dots in directory names", async () => {
+    const input = `
+src
+    folder\\.name
+        file.txt
+    node_modules\\.cache
+        cache\\.data
+            some_file.json
+`;
+
+    const result = await getStructure(input, {
+      rootDir: "/test",
+      fs,
+    });
+
+    const operations = result.operations.map((op) => ({
+      type: op.type,
+      targetPath: op.targetPath,
+      isDirectory: op.isDirectory,
+    }));
+
+    expect(operations).toEqual([
+      {
+        type: "create",
+        targetPath: "/test/src",
+        isDirectory: true,
+      },
+      {
+        type: "create",
+        targetPath: "/test/src/folder.name",
+        isDirectory: true,
+      },
+      {
+        type: "create",
+        targetPath: "/test/src/folder.name/file.txt",
+        isDirectory: false,
+      },
+      {
+        type: "create",
+        targetPath: "/test/src/node_modules.cache",
+        isDirectory: true,
+      },
+      {
+        type: "create",
+        targetPath: "/test/src/node_modules.cache/cache.data",
+        isDirectory: true,
+      },
+      {
+        type: "create",
+        targetPath: "/test/src/node_modules.cache/cache.data/some_file.json",
+        isDirectory: false,
+      },
+    ]);
+  });
+
+  test("handles escaped dots in file names", async () => {
+    const input = `
+src
+    config\\.js
+    test\\.config\\.json
+    normal.ts
+`;
+
+    const result = await getStructure(input, {
+      rootDir: "/test",
+      fs,
+    });
+
+    const operations = result.operations.map((op) => ({
+      type: op.type,
+      targetPath: op.targetPath,
+      isDirectory: op.isDirectory,
+    }));
+
+    expect(operations).toEqual([
+      {
+        type: "create",
+        targetPath: "/test/src",
+        isDirectory: true,
+      },
+      {
+        type: "create",
+        targetPath: "/test/src/config.js",
+        isDirectory: true, // This should be treated as directory because the dot is escaped
+      },
+      {
+        type: "create",
+        targetPath: "/test/src/test.config.json",
+        isDirectory: true, // This should be treated as directory because dots are escaped
+      },
+      {
+        type: "create",
+        targetPath: "/test/src/normal.ts",
+        isDirectory: false, // This should be treated as file because dot is not escaped
+      },
+    ]);
+  });
+
+  test("handles mixed escaped and unescaped dots", async () => {
+    const input = `
+src
+    folder\\.with\\.dots
+        file.ts
+        another\\.folder
+            script.js
+`;
+
+    const result = await getStructure(input, {
+      rootDir: "/test",
+      fs,
+    });
+
+    const operations = result.operations.map((op) => ({
+      type: op.type,
+      targetPath: op.targetPath,
+      isDirectory: op.isDirectory,
+    }));
+
+    expect(operations).toEqual([
+      {
+        type: "create",
+        targetPath: "/test/src",
+        isDirectory: true,
+      },
+      {
+        type: "create",
+        targetPath: "/test/src/folder.with.dots",
+        isDirectory: true,
+      },
+      {
+        type: "create",
+        targetPath: "/test/src/folder.with.dots/file.ts",
+        isDirectory: false,
+      },
+      {
+        type: "create",
+        targetPath: "/test/src/folder.with.dots/another.folder",
+        isDirectory: true,
+      },
+      {
+        type: "create",
+        targetPath: "/test/src/folder.with.dots/another.folder/script.js",
+        isDirectory: false,
+      },
+    ]);
+  });
+
+  test("handles escaped dots in copy operations", async () => {
+    const input = `
+src
+    [/existing/file.txt] > config\\.backup
+    [/existing/dir] > data\\.folder
+`;
+
+    const fs = new MockFileSystem({
+      "/existing/file.txt": false,
+      "/existing/dir": true,
+    });
+
+    const result = await getStructure(input, {
+      rootDir: "/test",
+      fs,
+    });
+
+    expect(result.operations).toHaveLength(3);
+    expect(result.operations[1]).toMatchObject({
+      type: "copy",
+      name: "config.backup",
+      targetPath: "/test/src/config.backup",
+      sourcePath: "/existing/file.txt",
+      isDirectory: true, // Should be directory because dot is escaped
+    });
+    expect(result.operations[2]).toMatchObject({
+      type: "copy",
+      name: "data.folder",
+      targetPath: "/test/src/data.folder",
+      sourcePath: "/existing/dir",
+      isDirectory: true,
+    });
+  });
+
+  test("handles escaped dots in move operations", async () => {
+    const input = `
+src
+    (/existing/file.txt) > backup\\.data
+    (/existing/dir) > old\\.stuff
+`;
+
+    const fs = new MockFileSystem({
+      "/existing/file.txt": false,
+      "/existing/dir": true,
+    });
+
+    const result = await getStructure(input, {
+      rootDir: "/test",
+      fs,
+    });
+
+    expect(result.operations).toHaveLength(3);
+    expect(result.operations[1]).toMatchObject({
+      type: "move",
+      name: "backup.data",
+      targetPath: "/test/src/backup.data",
+      sourcePath: "/existing/file.txt",
+      isDirectory: true, // Should be directory because dot is escaped
+    });
+    expect(result.operations[2]).toMatchObject({
+      type: "move",
+      name: "old.stuff",
+      targetPath: "/test/src/old.stuff",
+      sourcePath: "/existing/dir",
+      isDirectory: true,
+    });
+  });
+
+  test("handles escaped dots with trailing slash directory markers", async () => {
+    const input = `
+src
+    folder\\.name/
+        file.txt
+`;
+
+    const result = await getStructure(input, {
+      rootDir: "/test",
+      fs,
+    });
+
+    const operations = result.operations.map((op) => ({
+      type: op.type,
+      targetPath: op.targetPath,
+      isDirectory: op.isDirectory,
+      name: op.name,
+    }));
+
+    expect(operations).toEqual([
+      {
+        type: "create",
+        targetPath: "/test/src",
+        isDirectory: true,
+        name: "src",
+      },
+      {
+        type: "create",
+        targetPath: "/test/src/folder.name",
+        isDirectory: true,
+        name: "folder.name/",
+      },
+      {
+        type: "create",
+        targetPath: "/test/src/folder.name/file.txt",
+        isDirectory: false,
+        name: "file.txt",
+      },
+    ]);
+  });
 });

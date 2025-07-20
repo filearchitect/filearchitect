@@ -265,4 +265,78 @@ src
 
     expect(await fs.exists(path.join(testDir, "src/document.txt"))).toBe(true);
   });
+
+  test("creates directories with escaped dots in names", async () => {
+    const input = `
+src
+    folder\\.with\\.dots
+        file.ts
+        another\\.folder
+            script.js
+    config\\.directory
+        settings\\.file
+`;
+
+    await createStructure(input, {
+      rootDir: testDir,
+      fs,
+    });
+
+    // Verify directories with dots in their names were created
+    expect(await fs.exists(path.join(testDir, "src"))).toBe(true);
+    expect(await fs.exists(path.join(testDir, "src/folder.with.dots"))).toBe(
+      true
+    );
+    expect(
+      await fs.exists(path.join(testDir, "src/folder.with.dots/file.ts"))
+    ).toBe(true);
+    expect(
+      await fs.exists(path.join(testDir, "src/folder.with.dots/another.folder"))
+    ).toBe(true);
+    expect(
+      await fs.exists(
+        path.join(testDir, "src/folder.with.dots/another.folder/script.js")
+      )
+    ).toBe(true);
+    expect(await fs.exists(path.join(testDir, "src/config.directory"))).toBe(
+      true
+    );
+    expect(
+      await fs.exists(path.join(testDir, "src/config.directory/settings.file"))
+    ).toBe(true);
+
+    // Verify they are actually directories, not files
+    expect(
+      await fs.existsAs(path.join(testDir, "src/folder.with.dots"), "directory")
+    ).toBe(true);
+    expect(
+      await fs.existsAs(
+        path.join(testDir, "src/folder.with.dots/another.folder"),
+        "directory"
+      )
+    ).toBe(true);
+    expect(
+      await fs.existsAs(path.join(testDir, "src/config.directory"), "directory")
+    ).toBe(true);
+    expect(
+      await fs.existsAs(
+        path.join(testDir, "src/config.directory/settings.file"),
+        "directory"
+      )
+    ).toBe(true);
+
+    // Verify files are still files
+    expect(
+      await fs.existsAs(
+        path.join(testDir, "src/folder.with.dots/file.ts"),
+        "file"
+      )
+    ).toBe(true);
+    expect(
+      await fs.existsAs(
+        path.join(testDir, "src/folder.with.dots/another.folder/script.js"),
+        "file"
+      )
+    ).toBe(true);
+  });
 });
