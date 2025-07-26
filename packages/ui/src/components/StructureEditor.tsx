@@ -40,6 +40,10 @@ export interface StructureEditorProps {
   supportCopy?: boolean;
   /** Optional flag to indicate if move operations are supported. Defaults to false. */
   supportMove?: boolean;
+  /** Optional CSS class name to apply to the StructureInput component. */
+  inputClassName?: string;
+  /** Optional CSS class name to apply to the StructurePreview component. */
+  previewClassName?: string;
 }
 
 /**
@@ -59,6 +63,8 @@ export function StructureEditor({
   className,
   supportCopy = false,
   supportMove = false,
+  inputClassName,
+  previewClassName,
 }: StructureEditorProps) {
   const placeholderText = `folder-name
 	sub-folder
@@ -112,6 +118,7 @@ export function StructureEditor({
               disabled={disabled}
               placeholder={placeholderText}
               helpContent={helpContent}
+              className={inputClassName}
             />
           </div>
         </ResizablePanel>
@@ -125,6 +132,7 @@ export function StructureEditor({
               error={error}
               supportCopy={supportCopy}
               supportMove={supportMove}
+              className={previewClassName}
             />
           </div>
         </ResizablePanel>

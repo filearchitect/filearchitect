@@ -15,6 +15,8 @@ interface StructurePreviewProps {
   error: string | null;
   supportCopy?: boolean;
   supportMove?: boolean;
+  /** Optional CSS class name to apply to the root element of the component. */
+  className?: string;
 }
 
 export function StructurePreview({
@@ -22,9 +24,10 @@ export function StructurePreview({
   error,
   supportCopy = false,
   supportMove = false,
+  className,
 }: StructurePreviewProps) {
   return (
-    <div className="h-full">
+    <div className={`h-full ${className || ""}`.trim()}>
       {error && (
         <pre className="bg-red-100 text-red-700 p-4 rounded mb-4 whitespace-pre-wrap break-words">
           {error}

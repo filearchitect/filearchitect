@@ -33,6 +33,8 @@ interface StructureInputProps {
   placeholder?: string;
   /** Optional content for the help popover */
   helpContent?: React.ReactNode;
+  /** Optional CSS class name to apply to the root element of the component. */
+  className?: string;
 }
 
 const LINE_HEIGHT_PX = 24;
@@ -205,6 +207,7 @@ export function StructureInput({
   maxLines,
   placeholder,
   helpContent,
+  className,
 }: StructureInputProps) {
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const indicatorRef = useRef<HTMLDivElement>(null);
@@ -283,7 +286,7 @@ export function StructureInput({
   const currentLines = value.split("\n").length;
 
   return (
-    <div className="relative h-full flex flex-col">
+    <div className={`relative h-full flex flex-col ${className}`}>
       <TabIndicator text={value} ref={indicatorRef} />
       <Textarea
         ref={textareaRef}
