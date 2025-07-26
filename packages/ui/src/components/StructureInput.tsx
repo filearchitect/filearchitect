@@ -286,7 +286,7 @@ export function StructureInput({
   const currentLines = value.split("\n").length;
 
   return (
-    <div className={`relative h-full flex flex-col ${className}`}>
+    <div className="relative h-full flex flex-col">
       <TabIndicator text={value} ref={indicatorRef} />
       <Textarea
         ref={textareaRef}
@@ -296,7 +296,9 @@ export function StructureInput({
         onScroll={handleScroll}
         disabled={disabled}
         placeholder={placeholder}
-        className="flex-1 placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 outline-none ring-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0 font-mono text-sm border border-gray-300 rounded p-4 pr-10 resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] overflow-y-auto w-full placeholder:text-gray-400"
+        className={`flex-1 placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50 outline-none ring-0 focus:outline-none focus-visible:outline-none focus-visible:ring-0 font-mono text-sm border border-gray-300 rounded p-4 pr-10 resize-none z-20 bg-transparent [&::-webkit-scrollbar]:hidden [-ms-overflow-style:none] [scrollbar-width:none] overflow-y-auto w-full placeholder:text-gray-400 ${
+          className || ""
+        }`.trim()}
         style={{
           lineHeight: `${LINE_HEIGHT_PX}px`,
           minHeight: `${LINE_HEIGHT_PX * 3}px`,

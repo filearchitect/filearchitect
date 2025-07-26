@@ -27,13 +27,17 @@ export function StructurePreview({
   className,
 }: StructurePreviewProps) {
   return (
-    <div className={`h-full ${className || ""}`.trim()}>
+    <div className="h-full">
       {error && (
         <pre className="bg-red-100 text-red-700 p-4 rounded mb-4 whitespace-pre-wrap break-words">
           {error}
         </pre>
       )}
-      <div className="bg-gray-50 border border-gray-200 p-4 rounded h-full font-mono text-sm overflow-auto">
+      <div
+        className={`bg-gray-50 border border-gray-200 p-4 rounded h-full font-mono text-sm overflow-auto ${
+          className || ""
+        }`.trim()}
+      >
         {operations.length > 0 ? (
           operations.map((op) => (
             <div
