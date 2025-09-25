@@ -7,7 +7,7 @@ import {
   getStructure,
   GetStructureResult,
   NodeFileSystem,
-} from "../../core/src/index.js";
+} from "@filearchitect/core";
 
 // Initialize filesystem for directory scanning
 const fs = new NodeFileSystem();
