@@ -25,7 +25,7 @@
     "src"
   ],
   "scripts": {
-    "build": "rm -rf dist && tsc -p tsconfig.json",
+    "build": "rimraf dist && tsc -p tsconfig.json",
     "test": "vitest run",
     "test:watch": "vitest",
     "prepublishOnly": "pnpm run build",
@@ -38,6 +38,7 @@
   },
   "devDependencies": {
     "@types/node": "^20.17.10",
+    "rimraf": "^6.0.1",
     "typescript": "^5.3.3",
     "vitest": "^1.2.2"
   }
