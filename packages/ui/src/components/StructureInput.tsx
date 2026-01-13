@@ -118,6 +118,31 @@ function handleShiftTabKeyPress(
   }
 }
 
+// Helper to get indentation level (count of leading tabs)
+function getIndentLevel(line: string): number {
+  const match = line.match(/^\t*/);
+  return match ? match[0].length : 0;
+}
+
+// Helper to get the previous non-empty line's indentation level
+function getPreviousLineIndentLevel(
+  val: string,
+  currentLineStart: number
+): number {
+  // Find all lines before the current line
+  const textBefore = val.substring(0, currentLineStart);
+  const linesBefore = textBefore.split("\n");
+
+  // Find the last non-empty line
+  for (let i = linesBefore.length - 1; i >= 0; i--) {
+    const line = linesBefore[i];
+    if (line.trim() !== "") {
+      return getIndentLevel(line);
+    }
+  }
+  return 0; // No previous line, so max allowed is 1 (0 + 1)
+}
+
 // Helper function for Tab
 function handleTabKeyPress(
   textarea: HTMLTextAreaElement,
@@ -131,26 +156,66 @@ function handleTabKeyPress(
   const selectedText = val.substring(start, end);
 
   if (start !== end && selectedText.includes("\n")) {
+    // Multi-line selection: indent each line, but respect max indent rule
     const firstLineStart = val.lastIndexOf("\n", start - 1) + 1;
     const blockToIndent = val.substring(firstLineStart, end);
     const lines = blockToIndent.split("\n");
-    const linesAffectedCount = lines.length;
-    const indentedBlock = lines.map((line) => "\t" + line).join("\n");
-    const newValue =
-      val.substring(0, firstLineStart) + indentedBlock + val.substring(end);
-    onStructureChange(newValue);
-    setDesiredSelection({
-      start: start + 1,
-      end: end + linesAffectedCount,
-    });
+
+    // Get indent level of the line before the selection
+    const prevIndentLevel = getPreviousLineIndentLevel(val, firstLineStart);
+
+    let currentMaxIndent = prevIndentLevel;
+    let tabsAdded = 0;
+
+    const indentedBlock = lines
+      .map((line) => {
+        const currentIndent = getIndentLevel(line);
+        const maxAllowed = currentMaxIndent + 1;
+
+        // Only add tab if we wouldn't exceed max allowed
+        if (currentIndent < maxAllowed) {
+          currentMaxIndent = currentIndent + 1;
+          tabsAdded++;
+          return "\t" + line;
+        } else {
+          currentMaxIndent = currentIndent;
+          return line;
+        }
+      })
+      .join("\n");
+
+    if (tabsAdded > 0) {
+      const newValue =
+        val.substring(0, firstLineStart) + indentedBlock + val.substring(end);
+      onStructureChange(newValue);
+      setDesiredSelection({
+        start: start + 1,
+        end: end + tabsAdded,
+      });
+    }
   } else {
+    // Single line: only add tab if it wouldn't exceed previous line's indent + 1
     const currentLineStart = val.lastIndexOf("\n", start - 1) + 1;
-    const newValue =
-      val.substring(0, currentLineStart) +
-      "\t" +
-      val.substring(currentLineStart);
-    onStructureChange(newValue);
-    setDesiredSelection({ start: start + 1, end: end + 1 });
+    const currentLineEnd = val.indexOf("\n", currentLineStart);
+    const currentLine = val.substring(
+      currentLineStart,
+      currentLineEnd === -1 ? val.length : currentLineEnd
+    );
+    const currentIndent = getIndentLevel(currentLine);
+
+    const prevIndentLevel = getPreviousLineIndentLevel(val, currentLineStart);
+    const maxAllowed = prevIndentLevel + 1;
+
+    // Only add tab if we wouldn't exceed max allowed indent
+    if (currentIndent < maxAllowed) {
+      const newValue =
+        val.substring(0, currentLineStart) +
+        "\t" +
+        val.substring(currentLineStart);
+      onStructureChange(newValue);
+      setDesiredSelection({ start: start + 1, end: end + 1 });
+    }
+    // If already at max indent, do nothing (don't add tab)
   }
 }
 
