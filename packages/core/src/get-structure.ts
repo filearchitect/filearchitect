@@ -15,6 +15,7 @@ import {
 } from "./utils/frontmatter-parser.js"; // Import frontmatter utils
 // Removed incorrect Replacements import
 import { handleOperationError } from "./utils/error-utils.js";
+import { expandRepeaters } from "./utils/repeater-expansion.js";
 import { applyReplacements } from "./utils/replacements.js";
 import { validateOperation } from "./utils/validation.js";
 import { createMessage } from "./warnings.js";
@@ -388,6 +389,7 @@ export async function getStructure(
 ): Promise<GetStructureResult> {
   const { rootDir } = options;
   const { frontmatter, content } = parseFrontmatter(input);
+  const expandedContent = expandRepeaters(content);
 
   // Merge frontmatter and options replacements here
   const mergedReplacements = mergeReplacements(frontmatter, options);
@@ -399,7 +401,9 @@ export async function getStructure(
 
   const operations: (StructureOperation & { orderIndex: number })[] = [];
   let orderIndex = 0;
-  const lines = content.split("\n").filter((line) => line.trim().length > 0);
+  const lines = expandedContent
+    .split("\n")
+    .filter((line) => line.trim().length > 0);
   const stack: string[] = [rootDir];
 
   for (const line of lines) {

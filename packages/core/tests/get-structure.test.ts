@@ -198,6 +198,90 @@ src
     });
   });
 
+  test("expands emmet-like repeaters for file creation", async () => {
+    const input = `
+src
+    filename_$*3.psd
+`;
+
+    const result = await getStructure(input, {
+      rootDir: "/test/root",
+      fs,
+    });
+
+    const createdFiles = result.operations
+      .filter((op) => !op.isDirectory)
+      .map((op) => op.name);
+
+    expect(createdFiles).toEqual([
+      "filename_1.psd",
+      "filename_2.psd",
+      "filename_3.psd",
+    ]);
+  });
+
+  test("repeats nested content for each repeated folder", async () => {
+    const input = `
+root
+    0_$*3
+        test
+`;
+
+    const result = await getStructure(input, {
+      rootDir: "/test/root",
+      fs,
+    });
+
+    const targetPaths = result.operations.map((op) => op.targetPath);
+    expect(targetPaths).toContain("/test/root/root/0_1");
+    expect(targetPaths).toContain("/test/root/root/0_1/test");
+    expect(targetPaths).toContain("/test/root/root/0_2");
+    expect(targetPaths).toContain("/test/root/root/0_2/test");
+    expect(targetPaths).toContain("/test/root/root/0_3");
+    expect(targetPaths).toContain("/test/root/root/0_3/test");
+  });
+
+  test("expands nested repeaters inside repeated folders", async () => {
+    const input = `
+root
+    folder_$*2
+        file_$*2.txt
+`;
+
+    const result = await getStructure(input, {
+      rootDir: "/test/root",
+      fs,
+    });
+
+    const targetPaths = result.operations.map((op) => op.targetPath);
+    expect(targetPaths).toContain("/test/root/root/folder_1/file_1.txt");
+    expect(targetPaths).toContain("/test/root/root/folder_1/file_2.txt");
+    expect(targetPaths).toContain("/test/root/root/folder_2/file_1.txt");
+    expect(targetPaths).toContain("/test/root/root/folder_2/file_2.txt");
+  });
+
+  test("expands repeaters for copy operation targets", async () => {
+    const input = `
+src
+    [/existing/file.ts] > copied_$*2.ts
+`;
+
+    const mockFs = new MockFileSystem({
+      "/existing/file.ts": false,
+    });
+
+    const result = await getStructure(input, {
+      rootDir: "/test",
+      fs: mockFs,
+    });
+
+    const copiedTargets = result.operations
+      .filter((op) => op.type === "copy")
+      .map((op) => op.name);
+
+    expect(copiedTargets).toEqual(["copied_1.ts", "copied_2.ts"]);
+  });
+
   test("handles missing source files", async () => {
     const input = `
 src
