@@ -150,6 +150,51 @@ src
     ).resolves.toBe(true);
   });
 
+  test("expands emmet-like repeaters during creation", async () => {
+    const input = `
+src
+    filename_$*3.psd
+`;
+
+    await createStructure(input, {
+      rootDir: testDir,
+      fs,
+    });
+
+    expect(fs.exists(path.join(testDir, "src", "filename_1.psd"))).resolves.toBe(
+      true
+    );
+    expect(fs.exists(path.join(testDir, "src", "filename_2.psd"))).resolves.toBe(
+      true
+    );
+    expect(fs.exists(path.join(testDir, "src", "filename_3.psd"))).resolves.toBe(
+      true
+    );
+  });
+
+  test("creates nested content inside each repeated folder", async () => {
+    const input = `
+root
+    0_$*3
+        test
+`;
+
+    await createStructure(input, {
+      rootDir: testDir,
+      fs,
+    });
+
+    expect(fs.exists(path.join(testDir, "root", "0_1", "test"))).resolves.toBe(
+      true
+    );
+    expect(fs.exists(path.join(testDir, "root", "0_2", "test"))).resolves.toBe(
+      true
+    );
+    expect(fs.exists(path.join(testDir, "root", "0_3", "test"))).resolves.toBe(
+      true
+    );
+  });
+
   test("handles missing source files gracefully", async () => {
     const input = `
 src
